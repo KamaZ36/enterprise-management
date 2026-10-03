@@ -1,4 +1,4 @@
-from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.auth.domain.entities.role import Role

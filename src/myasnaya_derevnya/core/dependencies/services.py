@@ -6,14 +6,9 @@ from myasnaya_derevnya.modules.auth.infrastructure.identity_provider import (
     HTTPIdentityProvider,
     HTTPSessionIDGetter,
 )
-from myasnaya_derevnya.modules.auth.infrastructure.readers.access_reader.base import (
-    AccessReader,
-)
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
-from myasnaya_derevnya.modules.auth.services.access_service import AccessService
-from myasnaya_derevnya.modules.auth.services.password_serivce import PasswordService
 
 
 class ServicesDepProvider(Provider):
@@ -32,11 +27,3 @@ class ServicesDepProvider(Provider):
         return HTTPIdentityProvider(
             session_id_getter=session_id_getter, session_repository=session_repository
         )
-
-    # MODULE AUTH
-
-    password_service = provide(PasswordService, scope=Scope.REQUEST)
-
-    @provide(scope=Scope.REQUEST)
-    def get_access_serivce(self, access_reader: AccessReader) -> AccessService:
-        return AccessService(access_reader)
