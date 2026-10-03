@@ -16,4 +16,4 @@ async def login_by_password(request: Request, command: LoginByPasswordCommand):
         interactor = await context.get(LoginByPasswordInteractor)
         session = await interactor(command)
 
-    return JSONResponse(content={"session": session})
+    return JSONResponse(content={"session": str(session)})

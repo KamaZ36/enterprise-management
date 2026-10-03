@@ -1,6 +1,9 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.auth.application.interactors.login.password import (
+    LoginByPasswordInteractor,
+)
 from myasnaya_derevnya.modules.auth.infrastructure.readers.access_reader.base import (
     AccessReader,
 )
@@ -37,10 +40,13 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.bas
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.sqlalchemy import (
     SQLAlchemyUserSessionRepository,
 )
+from myasnaya_derevnya.modules.auth.presentation.facade import AuthFacade
+from myasnaya_derevnya.modules.auth.services.access_service import AccessService
+from myasnaya_derevnya.modules.auth.services.password_serivce import PasswordService
 
 
-class RepositoriesDepProvider(Provider):
-    # MODULE AUTH
+class AuthDepProvider(Provider):
+    # REPOSITORIES
     @provide(scope=Scope.REQUEST)
     def get_credential_repository(self, session: AsyncSession) -> CredentialRepository:
         return SQLAlchemyCredentialRepository(session)
@@ -66,3 +72,20 @@ class RepositoriesDepProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_access_reader(self, session: AsyncSession) -> AccessReader:
         return SQLAlchemyAccessReader(session)
+
+    # SERVICES
+
+    password_service = provide(PasswordService, scope=Scope.REQUEST)
+
+    @provide(scope=Scope.REQUEST)
+    def get_access_serivce(self, access_reader: AccessReader) -> AccessService:
+        return AccessService(access_reader)
+
+    # INTERACTORS
+
+    login_by_password_interactor = provide(
+        LoginByPasswordInteractor, scope=Scope.REQUEST
+    )
+
+    # FACADE
+    auth_facade = provide(AuthFacade, scope=Scope.REQUEST)

@@ -23,7 +23,7 @@ class UserRole:
 
     @classmethod
     def create(
-        cls, user_id: UUID, role_id: UUID, location_id: UUID, created_by: UUID
+        cls, user_id: UUID, role_id: UUID, location_id: UUID | None, created_by: UUID
     ) -> UserRole:
         return cls(
             id=uuid7(),

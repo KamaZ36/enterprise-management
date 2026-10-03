@@ -18,7 +18,7 @@ class SQLAlchemyUserRoleRepository(UserRoleRepository):
         stmt = insert(USER_ROLES_TABLE).values(
             id=user_role.id,
             user_id=user_role.user_id,
-            role=user_role.role_id,
+            role_id=user_role.role_id,
             location_id=user_role.location_id,
             created_at=user_role.created_at,
             created_by=user_role.created_by,

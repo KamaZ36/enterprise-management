@@ -1,5 +1,3 @@
-from enum import StrEnum
+from myasnaya_derevnya.core.types.permission import Permission
 
-
-class AuthModulePermissions(StrEnum):
-    CREATE_USER = "auth:create_user"
+AUTH_ADD_ROLE = Permission()
