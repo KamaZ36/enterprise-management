@@ -9,13 +9,13 @@ class DatabaseSettings(BaseSettings):
     db_database: str
     sql_echo: bool = False
 
-    redis_host: str
-    redis_port: str
+    # redis_host: str
+    # redis_port: str
 
     @property
     def db_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_database}"
 
-    @property
-    def redis_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/0"
+    # @property
+    # def redis_url(self) -> str:
+    #     return f"redis://{self.redis_host}:{self.redis_port}/0"
