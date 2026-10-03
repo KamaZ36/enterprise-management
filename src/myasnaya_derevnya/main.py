@@ -6,15 +6,45 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 
-from myasnaya_derevnya.core.errors import AppError
+from myasnaya_derevnya.core.errors import (
+    AppError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+    ValidationError,
+)
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import login_router
 from myasnaya_derevnya.modules.organization.presentation.api.v1.endpoints import (
     router as organization_router,
 )
 
+STATUS_BY_CATEGORY: dict[type[AppError], int] = {
+    ValidationError: 422,
+    UnauthorizedError: 401,
+    ForbiddenError: 403,
+    NotFoundError: 404,
+}
+
 
 async def api_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    pass
+    if not isinstance(exc, AppError):
+        return JSONResponse(
+            status_code=500, content={"message": "Internal server error"}
+        )
+
+    status_code = next(
+        (
+            code
+            for category, code in STATUS_BY_CATEGORY.items()
+            if isinstance(exc, category)
+        ),
+        400,
+    )
+
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": type(exc).__name__, "message": str(exc)},
+    )
 
 
 @asynccontextmanager
