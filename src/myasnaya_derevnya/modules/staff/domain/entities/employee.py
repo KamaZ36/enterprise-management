@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID, uuid7
 
 from myasnaya_derevnya.core.types.phone_number import PhoneNumber
@@ -17,7 +17,7 @@ class Employee:
         middle_name: str | None,
         phone_number: PhoneNumber,
         position: str,
-        hired_at: datetime,
+        hired_at: date,
         dismissed_at: datetime | None,
         created_at: datetime,
     ) -> None:
@@ -40,7 +40,7 @@ class Employee:
         middle_name: str | None,
         phone_number: PhoneNumber,
         position: str,
-        hired_at: datetime,
+        hired_at: date,
     ) -> Employee:
         return cls(
             id=uuid7(),
@@ -84,7 +84,7 @@ class Employee:
         return self._position
 
     @property
-    def hired_at(self) -> datetime:
+    def hired_at(self) -> date:
         return self._hired_at
 
     @property
