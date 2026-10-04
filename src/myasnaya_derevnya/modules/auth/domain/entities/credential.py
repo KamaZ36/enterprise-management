@@ -1,8 +1,5 @@
-from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid7
-
-from myasnaya_derevnya.utils import get_datetime_utc
 
 
 class UserCredentialType(StrEnum):
@@ -16,13 +13,11 @@ class UserCredential:
         user_id: UUID,
         credential_type: UserCredentialType,
         secret: str,
-        created_at: datetime,
     ) -> None:
         self._id = id
         self._user_id = user_id
         self._credential_type = credential_type
         self._secret = secret
-        self._created_at = created_at
 
     @classmethod
     def create(
@@ -33,7 +28,6 @@ class UserCredential:
             user_id=user_id,
             credential_type=credential_type,
             secret=secret,
-            created_at=get_datetime_utc(),
         )
 
     @property
@@ -51,7 +45,3 @@ class UserCredential:
     @property
     def secret(self) -> str:
         return self._secret
-
-    @property
-    def created_at(self) -> datetime:
-        return self._created_at

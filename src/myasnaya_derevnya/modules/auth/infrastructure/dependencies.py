@@ -1,6 +1,12 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.auth.application.interactors.create import (
+    CreateUserInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.create_employee_credential import (
+    CreateEmployeeCredentialInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.login.password import (
     LoginByPasswordInteractor,
 )
@@ -62,6 +68,11 @@ class AuthDepProvider(Provider):
 
     login_by_password_interactor = provide(
         LoginByPasswordInteractor, scope=Scope.REQUEST
+    )
+
+    create_user_interactor = provide(CreateUserInteractor, scope=Scope.REQUEST)
+    create_employee_credential = provide(
+        CreateEmployeeCredentialInteractor, scope=Scope.REQUEST
     )
 
     # FACADE

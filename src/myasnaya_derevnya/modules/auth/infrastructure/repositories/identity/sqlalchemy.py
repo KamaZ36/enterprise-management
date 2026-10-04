@@ -5,7 +5,6 @@ from myasnaya_derevnya.modules.auth.domain.entities.identity import (
     UserIdentity,
     UserIdentityType,
 )
-from myasnaya_derevnya.modules.auth.domain.errors import UserIdentityNotFound
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base import (
     UserIdentityRepository,
 )
@@ -37,7 +36,7 @@ class SQLAlchemyUserIdentityRepository(UserIdentityRepository):
         row = result.mappings().one_or_none()
 
         if row is None:
-            raise UserIdentityNotFound()
+            return None
 
         return self._to_entity(row)
 

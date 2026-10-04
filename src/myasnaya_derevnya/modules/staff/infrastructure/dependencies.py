@@ -2,11 +2,23 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.access_serivce import AccessService
+from myasnaya_derevnya.modules.staff.application.interactors.assign_role import (
+    AssignRoleInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.create_credential import (
     CreateCredentialEmployeeInteractor,
 )
 from myasnaya_derevnya.modules.staff.application.interactors.create_employee import (
     CreateEmployeeInteractor,
+)
+from myasnaya_derevnya.modules.staff.application.interactors.create_role import (
+    CreateEmployeeRoleInteractor,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
+    EmployeeRepository,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.sqlalchemy import (
+    SQLAlchemyEmployeeRepository,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base import (
     RoleRepository,
@@ -35,6 +47,10 @@ class StaffDepProvider(Provider):
     def get_user_role_repository(self, session: AsyncSession) -> UserRoleRepository:
         return SQLAlchemyUserRoleRepository(session)
 
+    @provide(scope=Scope.REQUEST)
+    def get_employee_repository(self, session: AsyncSession) -> EmployeeRepository:
+        return SQLAlchemyEmployeeRepository(session)
+
     # SERVICES
     @provide(scope=Scope.REQUEST)
     def get_access_service(self, session: AsyncSession) -> AccessService:
@@ -46,3 +62,9 @@ class StaffDepProvider(Provider):
     create_credentials_interactor = provide(
         CreateCredentialEmployeeInteractor, scope=Scope.REQUEST
     )
+
+    create_employee_role_interactor = provide(
+        CreateEmployeeRoleInteractor, scope=Scope.REQUEST
+    )
+
+    assign_role_interactor = provide(AssignRoleInteractor, scope=Scope.REQUEST)

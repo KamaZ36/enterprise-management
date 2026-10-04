@@ -8,7 +8,7 @@ from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.core.types.phone_number import PhoneNumber
 from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
 from myasnaya_derevnya.modules.staff.domain.entities.employee import Employee
-from myasnaya_derevnya.modules.staff.domain.permissions import CREATE_EMPLOYEE
+from myasnaya_derevnya.modules.staff.domain.permissions import MANAGE_EMPLOYEES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
     EmployeeRepository,
 )
@@ -16,7 +16,6 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base i
 
 @dataclass(frozen=True, slots=True)
 class CreateEmployeeCommand:
-    location_id: UUID
     first_name: str
     last_name: str
     middle_name: str | None
@@ -44,8 +43,7 @@ class CreateEmployeeInteractor:
         current_user_id = await self._identity_provider.get_current_user_id()
         await self._access_service.require(
             user_id=current_user_id,
-            location_id=command.location_id,
-            permission=CREATE_EMPLOYEE,
+            permission=MANAGE_EMPLOYEES,
         )
 
         phone_number = PhoneNumber.parse(command.phone_number)

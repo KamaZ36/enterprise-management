@@ -14,6 +14,9 @@ from myasnaya_derevnya.core.errors import (
     ValidationError,
 )
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import login_router
+from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
+    router as inventory_router,
+)
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import router as staff_router
 
 STATUS_BY_CATEGORY: dict[type[AppError], int] = {
@@ -51,9 +54,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
-def include_routers(app: FastAPI, api_key_scheme: APIKeyHeader) -> None:
+def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
     app.include_router(staff_router)
+    app.include_router(inventory_router)
 
 
 def create_app() -> FastAPI:
@@ -70,7 +74,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],  # Разрешить все заголовки
     )
 
-    include_routers(app, api_key_scheme)
+    include_routers(app)
 
     return app
 

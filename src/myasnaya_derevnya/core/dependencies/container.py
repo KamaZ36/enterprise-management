@@ -3,13 +3,15 @@ from dishka import make_async_container
 from myasnaya_derevnya.core.dependencies.database import DatabaseProvider
 from myasnaya_derevnya.core.dependencies.services import ServicesDepProvider
 from myasnaya_derevnya.modules.auth.infrastructure.dependencies import AuthDepProvider
-from myasnaya_derevnya.modules.organization.infrastructure.dependencies import (
-    OrganizationDepProvidre,
+from myasnaya_derevnya.modules.inventory.infrastructure.dependencies import (
+    InventoryDepProvider,
 )
+from myasnaya_derevnya.modules.staff.infrastructure.dependencies import StaffDepProvider
 
 container = make_async_container(
     DatabaseProvider(),
     ServicesDepProvider(),
     AuthDepProvider(),
-    OrganizationDepProvidre(),
+    StaffDepProvider(),
+    InventoryDepProvider(),
 )
