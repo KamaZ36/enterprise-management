@@ -1,10 +1,12 @@
+from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid7
 
+from myasnaya_derevnya.utils import get_datetime_utc
 
-class UserCredentialProviderType(StrEnum):
-    PASSWORD = "password"  # Для сотрудников (логин + хэш пароля)
-    PHONE_OTP = "phone_otp"
+
+class UserCredentialType(StrEnum):
+    PASSWORD = "password"
 
 
 class UserCredential:
@@ -12,38 +14,26 @@ class UserCredential:
         self,
         id: UUID,
         user_id: UUID,
-        provider: UserCredentialProviderType,
-        identifier: str,
-        password_hash: str | None,
+        credential_type: UserCredentialType,
+        secret: str,
+        created_at: datetime,
     ) -> None:
         self._id = id
         self._user_id = user_id
-        self._provider = provider
-        self._identifier = identifier
-        self._password_hash = password_hash
+        self._credential_type = credential_type
+        self._secret = secret
+        self._created_at = created_at
 
     @classmethod
-    def create_password_identity(
-        cls, user_id: UUID, username: str, password_hash: str
+    def create(
+        cls, user_id: UUID, credential_type: UserCredentialType, secret: str
     ) -> UserCredential:
-        """Фабричный метод для создания логина/пароля сотрудника."""
         return cls(
             id=uuid7(),
             user_id=user_id,
-            provider=UserCredentialProviderType.PASSWORD,
-            identifier=username,
-            password_hash=password_hash,
-        )
-
-    @classmethod
-    def create_phone_identity(cls, user_id: UUID, phone: str) -> UserCredential:
-        """Фабричный метод для создания OTP-входа клиента по телефону."""
-        return cls(
-            id=uuid7(),
-            user_id=user_id,
-            provider=UserCredentialProviderType.PHONE_OTP,
-            identifier=phone,
-            password_hash=None,
+            credential_type=credential_type,
+            secret=secret,
+            created_at=get_datetime_utc(),
         )
 
     @property
@@ -55,19 +45,13 @@ class UserCredential:
         return self._user_id
 
     @property
-    def provider(self) -> UserCredentialProviderType:
-        return self._provider
+    def credential_type(self) -> UserCredentialType:
+        return self._credential_type
 
     @property
-    def identifier(self) -> str:
-        return self._identifier
+    def secret(self) -> str:
+        return self._secret
 
     @property
-    def password_hash(self) -> str | None:
-        return self._password_hash
-
-    def update_password(self, new_password_hash: str) -> None:
-        """Смена пароля сотрудника."""
-        if self._provider != UserCredentialProviderType.PASSWORD:
-            raise ValueError("Нельзя установить пароль для этого способа авторизации")
-        self._password_hash = new_password_hash
+    def created_at(self) -> datetime:
+        return self._created_at
