@@ -7,9 +7,9 @@ LOCATIONS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("name", String(255), nullable=False),
-    Column("location_type", nullable=False),
+    Column("location_type", String, nullable=False),
     Column("address", String(500), nullable=False),
     Column("is_active", Boolean, nullable=False),
-    Column("created_at", DateTime, nullable=False),
-    schema="business",
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    schema="inventory",
 )

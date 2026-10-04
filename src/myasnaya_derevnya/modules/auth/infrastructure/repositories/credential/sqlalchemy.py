@@ -23,7 +23,6 @@ class SQLAlchemyCredentialRepository(CredentialRepository):
             user_id=user_credential.user_id,
             credential_type=user_credential.credential_type.value,
             secret=user_credential.secret,
-            created_at=user_credential.created_at,
         )
         await self._session.execute(stmt)
 
@@ -56,5 +55,4 @@ class SQLAlchemyCredentialRepository(CredentialRepository):
             user_id=row["user_id"],
             credential_type=UserCredentialType(row["credential_type"]),
             secret=row["secret"],
-            created_at=row["created_at"],
         )

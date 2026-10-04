@@ -33,7 +33,9 @@ USER_IDENTITIES_TABLE = Table(
     ),
     Column("identity_type", String(50), nullable=False),
     Column("identifier", String, nullable=False),
-    Column("created_at", DateTime, nullable=False),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
     UniqueConstraint(
         "identity_type",
         "identifier",

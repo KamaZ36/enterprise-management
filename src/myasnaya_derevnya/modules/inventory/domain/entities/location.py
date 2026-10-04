@@ -58,3 +58,7 @@ class Location:
     @property
     def is_active(self) -> bool:
         return self._is_active
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at

@@ -18,7 +18,7 @@ class SQLAlchemyAccessService(AccessService):
         self._session = session
 
     async def has_permission(
-        self, user_id: UUID, permission: Permission, location_id: UUID | None
+        self, user_id: UUID, permission: Permission, location_id: UUID | None = None
     ) -> bool:
         result = await self._query(
             user_id=user_id, permission=permission, location_id=location_id
@@ -26,7 +26,7 @@ class SQLAlchemyAccessService(AccessService):
         return result
 
     async def require(
-        self, user_id: UUID, permission: Permission, location_id: UUID
+        self, user_id: UUID, permission: Permission, location_id: UUID | None = None
     ) -> None:
         result = await self._query(
             user_id=user_id, permission=permission, location_id=location_id
@@ -35,29 +35,42 @@ class SQLAlchemyAccessService(AccessService):
             raise ForbiddenError()
 
     async def _query(
-        self, user_id: UUID, permission: Permission, location_id: UUID | None
+        self,
+        user_id: UUID,
+        permission: Permission,
+        location_id: UUID | None,
     ) -> bool:
+        where_clauses = [
+            USER_ROLES_TABLE.c.user_id == user_id,
+            or_(
+                ROLES_TABLE.c.grants_all.is_(True),
+                ROLE_PERMISSIONS_TABLE.c.permission_code == permission.code,
+            ),
+        ]
+
+        if location_id is not None:
+            where_clauses.append(
+                or_(
+                    USER_ROLES_TABLE.c.location_id == location_id,
+                    USER_ROLES_TABLE.c.location_id.is_(None),
+                )
+            )
+        else:
+            where_clauses.append(USER_ROLES_TABLE.c.location_id.is_(None))
+
         query = (
             select(literal(1))
             .select_from(
                 USER_ROLES_TABLE.join(
-                    ROLES_TABLE, ROLES_TABLE.c.id == USER_ROLES_TABLE.c.role_id
+                    ROLES_TABLE,
+                    ROLES_TABLE.c.id == USER_ROLES_TABLE.c.role_id,
                 ).outerjoin(
                     ROLE_PERMISSIONS_TABLE,
                     ROLE_PERMISSIONS_TABLE.c.role_id == ROLES_TABLE.c.id,
                 )
             )
-            .where(
-                USER_ROLES_TABLE.c.user_id == user_id,
-                or_(
-                    USER_ROLES_TABLE.c.location_id.is_(None),
-                    USER_ROLES_TABLE.c.location_id == location_id,
-                ),
-                or_(
-                    ROLES_TABLE.c.grants_all.is_(True),
-                    ROLE_PERMISSIONS_TABLE.c.permission_code == permission.code,
-                ),
-            )
+            .where(*where_clauses)
             .limit(1)
         )
+
         return (await self._session.execute(query)).first() is not None

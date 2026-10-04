@@ -3,7 +3,12 @@ from uuid import UUID, uuid4
 
 class Role:
     def __init__(
-        self, id: UUID, name: str, code: str, grants_all: bool, permissions: set[str]
+        self,
+        id: UUID,
+        name: str,
+        code: str,
+        grants_all: bool,
+        permissions: frozenset[str],
     ) -> None:
         self._id = id
         self._name = name
@@ -12,15 +17,13 @@ class Role:
         self._permissions = permissions
 
     @classmethod
-    def create(
-        cls, name: str, code: str, grants_all: bool, permissions: set[str]
-    ) -> Role:
+    def create(cls, name: str, code: str, permissions: frozenset[str]) -> Role:
         name = name.strip()
         return Role(
             id=uuid4(),
             name=name,
+            grants_all=False,
             code=code,
-            grants_all=grants_all,
             permissions=permissions,
         )
 
@@ -43,18 +46,3 @@ class Role:
     @property
     def permissions(self) -> frozenset[str]:
         return frozenset(self._permissions)
-
-    def rename(self, name: str) -> None:
-        name = name.strip()
-        if not name:
-            raise InvalidRole
-        self._name = name
-
-    def set_permissions(self, codes: set[str]) -> None:
-        if self._grants_all:
-            raise SystemRoleProtected  # у роли "всё" список прав не редактируется
-        self._permissions = set(codes)
-
-    def ensure_deletable(self) -> None:
-        if self._is_system:
-            raise SystemRoleProtected

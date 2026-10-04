@@ -58,7 +58,7 @@ USER_ROLES_TABLE = Table(
     Column(
         "location_id",
         UUID,
-        # ForeignKey(LOCATIONS_TABLE.c.id),
+        ForeignKey("inventory.locations.id"),
         nullable=True,
     ),
     Column(

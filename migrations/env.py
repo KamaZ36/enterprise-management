@@ -14,6 +14,9 @@ from myasnaya_derevnya.modules.auth.infrastructure.tables import (  # noqa: F401
     USER_SESSIONS_TABLE,
     USERS_TABLE,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
+    LOCATIONS_TABLE,  # noqa: F401
+)
 from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
     EMPLOYEES_TABLE,
     ROLE_PERMISSIONS_TABLE,
