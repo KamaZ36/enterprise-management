@@ -1,9 +1,6 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from myasnaya_derevnya.modules.auth.domain.entities.credential import (
-    UserCredentialProviderType,
-)
 from myasnaya_derevnya.utils import get_datetime_utc
 
 
@@ -12,24 +9,19 @@ class UserSession:
         self,
         id: UUID,
         user_id: UUID,
-        provider: UserCredentialProviderType,
         expires_at: datetime,
         created_at: datetime,
     ) -> None:
         self._id = id
         self._user_id = user_id
-        self._provider = provider
         self._expires_at = expires_at
         self._created_at = created_at
 
     @classmethod
-    def create(
-        cls, user_id: UUID, provider: UserCredentialProviderType, expires_at: datetime
-    ) -> UserSession:
+    def create(cls, user_id: UUID, expires_at: datetime) -> UserSession:
         return cls(
             id=uuid4(),
             user_id=user_id,
-            provider=provider,
             expires_at=expires_at,
             created_at=get_datetime_utc(),
         )
@@ -41,10 +33,6 @@ class UserSession:
     @property
     def user_id(self) -> UUID:
         return self._user_id
-
-    @property
-    def provider(self) -> UserCredentialProviderType:
-        return self._provider
 
     @property
     def expires_at(self) -> datetime:

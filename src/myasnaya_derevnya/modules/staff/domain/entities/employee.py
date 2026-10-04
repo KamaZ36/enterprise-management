@@ -11,7 +11,7 @@ class Employee:
     def __init__(
         self,
         id: UUID,
-        user_id: UUID | None,
+        user_id: UUID,
         first_name: str,
         last_name: str,
         middle_name: str | None,
@@ -35,6 +35,7 @@ class Employee:
     @classmethod
     def create(
         cls,
+        user_id: UUID,
         first_name: str,
         last_name: str,
         middle_name: str | None,
@@ -44,7 +45,7 @@ class Employee:
     ) -> Employee:
         return cls(
             id=uuid7(),
-            user_id=None,
+            user_id=user_id,
             first_name=first_name,
             last_name=last_name,
             middle_name=middle_name,
@@ -60,7 +61,7 @@ class Employee:
         return self._id
 
     @property
-    def user_id(self) -> UUID | None:
+    def user_id(self) -> UUID:
         return self._user_id
 
     @property

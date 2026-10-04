@@ -14,9 +14,7 @@ from myasnaya_derevnya.core.errors import (
     ValidationError,
 )
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import login_router
-from myasnaya_derevnya.modules.organization.presentation.api.v1.endpoints import (
-    router as organization_router,
-)
+from myasnaya_derevnya.modules.staff.presentation.api.v1 import router as staff_router
 
 STATUS_BY_CATEGORY: dict[type[AppError], int] = {
     ValidationError: 422,
@@ -54,16 +52,15 @@ async def lifespan(app: FastAPI):
 
 
 def include_routers(app: FastAPI, api_key_scheme: APIKeyHeader) -> None:
-    app.include_router(login_router, dependencies=[Depends(api_key_scheme)])
-    app.include_router(organization_router, dependencies=[Depends(api_key_scheme)])
+    app.include_router(login_router)
+    app.include_router(staff_router)
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    api_key_scheme = APIKeyHeader(name="Authorization", auto_error=False)
+    app = FastAPI(lifespan=lifespan, dependencies=[Depends(api_key_scheme)])
 
     app.add_exception_handler(AppError, api_exception_handler)
-
-    api_key_scheme = APIKeyHeader(name="Authorization", auto_error=False)
 
     app.add_middleware(
         CORSMiddleware,

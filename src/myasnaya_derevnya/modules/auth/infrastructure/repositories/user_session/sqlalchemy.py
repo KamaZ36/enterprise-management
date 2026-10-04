@@ -4,7 +4,7 @@ from sqlalchemy import RowMapping, delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
-    UserCredentialProviderType,
+    UserCredentialType,
 )
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
@@ -50,7 +50,7 @@ class SQLAlchemyUserSessionRepository(UserSessionRepository):
         return UserSession(
             id=row["id"],
             user_id=row["user_id"],
-            provider=UserCredentialProviderType(row["provider"]),
+            provider=UserCredentialType(row["provider"]),
             expires_at=row["expires_at"],
             created_at=row["created_at"],
         )

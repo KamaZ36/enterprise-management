@@ -9,15 +9,16 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from myasnaya_derevnya.core.database import metadata
 from myasnaya_derevnya.core.settings import settings
 from myasnaya_derevnya.modules.auth.infrastructure.tables import (  # noqa: F401
-    ROLE_PERMISSIONS_TABLE,
-    ROLES_TABLE,
     USER_CREDENTIALS_TABLE,
-    USER_ROLES_TABLE,
+    USER_IDENTITIES_TABLE,
     USER_SESSIONS_TABLE,
     USERS_TABLE,
 )
-from myasnaya_derevnya.modules.organization.infrastructure.tables import (
-    LOCATIONS_TABLE,  # noqa: F401
+from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
+    EMPLOYEES_TABLE,
+    ROLE_PERMISSIONS_TABLE,
+    ROLES_TABLE,
+    USER_ROLES_TABLE,
 )
 
 # this is the Alembic Config object, which provides

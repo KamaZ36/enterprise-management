@@ -1,19 +1,33 @@
 from uuid import UUID
 
-from myasnaya_derevnya.core.types.permission import Permission
-from myasnaya_derevnya.modules.auth.services.access_service import AccessService
+from myasnaya_derevnya.modules.auth.application.interactors.create import (
+    CreateUserInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.create_employee_credential import (
+    CreateEmployeeCredentialCommand,
+    CreateEmployeeCredentialInteractor,
+)
 
 
-class AuthFacade:
-    def __init__(self, access_service: AccessService) -> None:
-        self._access_service = access_service
-
-    async def has(
-        self, user_id: UUID, permission: Permission, location_id: UUID | None = None
-    ) -> bool:
-        return await self._access_service.has(user_id, permission.code, location_id)
-
-    async def require(
-        self, user_id: UUID, permission: Permission, location_id: UUID | None = None
+class AuthAPI:
+    def __init__(
+        self,
+        create_user_interactor: CreateUserInteractor,
+        create_employee_credential_interactor: CreateEmployeeCredentialInteractor,
     ) -> None:
-        await self._access_service.require(user_id, permission.code, location_id)
+        self._create_user_interactor = create_user_interactor
+        self._create_employee_credential_interactor = (
+            create_employee_credential_interactor
+        )
+
+    async def create_user(self) -> UUID:
+        user_id = await self._create_user_interactor()
+        return user_id
+
+    async def create_employee_credential(
+        self, user_id: UUID, password: str, username: str
+    ) -> None:
+        command = CreateEmployeeCredentialCommand(
+            user_id=user_id, password=password, username=username
+        )
+        await self._create_employee_credential_interactor(command)

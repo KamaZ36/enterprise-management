@@ -1,5 +1,6 @@
 from sqlalchemy import (
     UUID,
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -35,4 +36,63 @@ EMPLOYEES_TABLE = Table(
         postgresql_where=text("user_id IS NOT NULL"),
     ),
     Index("ix_employees_last_name", "last_name"),
+    schema="staff",
+)
+
+USER_ROLES_TABLE = Table(
+    "user_roles",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column(
+        "user_id",
+        UUID,
+        ForeignKey("auth.users.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "role_id",
+        UUID,
+        ForeignKey("staff.roles.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column(
+        "location_id",
+        UUID,
+        # ForeignKey(LOCATIONS_TABLE.c.id),
+        nullable=True,
+    ),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column(
+        "created_by",
+        UUID,
+        ForeignKey("auth.users.id"),
+        nullable=False,
+    ),
+    Index("ix_role_assignments_user_id", "user_id"),
+    schema="staff",
+)
+
+ROLE_PERMISSIONS_TABLE = Table(
+    "role_permissions",
+    metadata,
+    Column(
+        "role_id",
+        UUID,
+        ForeignKey("staff.roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("permission_code", String(100), primary_key=True),
+    schema="staff",
+)
+
+ROLES_TABLE = Table(
+    "roles",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("code", String(50), nullable=False, unique=True),
+    Column("name", String(100), nullable=False),
+    Column("grants_all", Boolean, nullable=False),
+    schema="staff",
 )

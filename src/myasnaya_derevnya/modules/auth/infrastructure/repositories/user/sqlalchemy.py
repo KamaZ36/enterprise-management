@@ -21,7 +21,11 @@ class SQLAlchemyUserRepository(UserRepository):
         await self._session.execute(stmt)
 
     async def save(self, user: User) -> None:
-        stmt = update(USERS_TABLE).values(status=user.status.value)
+        stmt = (
+            update(USERS_TABLE)
+            .where(USERS_TABLE.c.id == user.id)
+            .values(status=user.status.value)
+        )
         await self._session.execute(stmt)
 
     async def get_by_id(self, user_id: UUID) -> User | None:
