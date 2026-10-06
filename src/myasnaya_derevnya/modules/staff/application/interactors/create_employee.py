@@ -19,6 +19,7 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base i
 
 @dataclass(frozen=True, slots=True)
 class CreateEmployeeCommand:
+    org_unit_id: UUID
     first_name: str
     last_name: str
     middle_name: str | None
@@ -45,7 +46,9 @@ class CreateEmployeeInteractor:
     async def __call__(self, command: CreateEmployeeCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
         if not await self._access_service.can(
-            user_id=current_user_id, permission=MANAGE_EMPLOYEES, org_unit_id=None
+            user_id=current_user_id,
+            permission=MANAGE_EMPLOYEES,
+            org_unit_id=command.org_unit_id,
         ):
             raise ForbiddenError()
 
@@ -57,6 +60,7 @@ class CreateEmployeeInteractor:
 
         employee = Employee.create(
             user_id=user_id,
+            org_unit_id=command.org_unit_id,
             first_name=command.first_name,
             last_name=command.last_name,
             middle_name=command.middle_name,

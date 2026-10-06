@@ -29,17 +29,17 @@ class Nomenclature:
         id: UUID,
         sku: str,
         name: str,
+        unit: UnitOfMeasurement,
         type_: NomenclatureType,
         category_id: UUID,
-        gtin: str | None,
         created_at: datetime,
     ) -> None:
         self._id = id
         self._sku = sku
         self._name = name
+        self._unit = unit
         self._type = type_
         self._category_id = category_id
-        self._gtin = gtin
         self._created_at = created_at
 
     @classmethod
@@ -47,9 +47,9 @@ class Nomenclature:
         cls,
         sku: str,
         name: str,
+        unit: UnitOfMeasurement,
         type_: NomenclatureType,
         category_id: UUID,
-        gtin: str | None,
     ) -> Nomenclature:
         if not name.strip():
             raise EmptyNameError()
@@ -60,9 +60,9 @@ class Nomenclature:
             id=uuid7(),
             sku=sku,
             name=name,
+            unit=unit,
             type_=type_,
             category_id=category_id,
-            gtin=gtin,
             created_at=get_datetime_utc(),
         )
 
@@ -79,5 +79,8 @@ class Nomenclature:
         return self._name
 
     @property
-    def gtin(self) -> str | None:
-        return self._gtin
+    def unit(self) -> UnitOfMeasurement:
+        return self._unit
+
+    @property
+    def 

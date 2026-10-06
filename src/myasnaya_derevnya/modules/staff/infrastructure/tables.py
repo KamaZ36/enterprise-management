@@ -19,6 +19,12 @@ EMPLOYEES_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("user_id", UUID, ForeignKey("auth.users.id"), nullable=False),
+    Column(
+        "org_unit_id",
+        UUID(as_uuid=True),
+        ForeignKey("business.org_units.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
     Column("first_name", String(100), nullable=False),
     Column("last_name", String(100), nullable=False),
     Column("middle_name", String(100), nullable=True),
