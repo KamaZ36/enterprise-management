@@ -6,10 +6,10 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Table,
     func,
-    text,
 )
 
 from myasnaya_derevnya.core.database import metadata
@@ -18,7 +18,7 @@ EMPLOYEES_TABLE = Table(
     "employees",
     metadata,
     Column("id", UUID, primary_key=True),
-    Column("user_id", UUID, ForeignKey("auth.users.id"), nullable=True),
+    Column("user_id", UUID, ForeignKey("auth.users.id"), nullable=False),
     Column("first_name", String(100), nullable=False),
     Column("last_name", String(100), nullable=False),
     Column("middle_name", String(100), nullable=True),
@@ -33,44 +33,24 @@ EMPLOYEES_TABLE = Table(
         "uq_employees_user_id",
         "user_id",
         unique=True,
-        postgresql_where=text("user_id IS NOT NULL"),
     ),
     Index("ix_employees_last_name", "last_name"),
     schema="staff",
 )
 
-USER_ROLES_TABLE = Table(
-    "user_roles",
+ROLES_TABLE = Table(
+    "roles",
     metadata,
-    Column("id", UUID, primary_key=True),
-    Column(
-        "user_id",
-        UUID,
-        ForeignKey("auth.users.id", ondelete="CASCADE"),
-        nullable=False,
-    ),
-    Column(
-        "role_id",
-        UUID,
-        ForeignKey("staff.roles.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
-    Column(
-        "location_id",
-        UUID,
-        ForeignKey("inventory.locations.id"),
-        nullable=True,
-    ),
-    Column(
-        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
-    ),
-    Column(
-        "created_by",
-        UUID,
-        ForeignKey("auth.users.id"),
-        nullable=False,
-    ),
-    Index("ix_role_assignments_user_id", "user_id"),
+    Column("id", UUID(as_uuid=True), primary_key=True),
+    Column("code", String(64), nullable=False, unique=True),
+    Column("name", String(128), nullable=False),
+    Column("description", String(512), nullable=True),
+    Column("level", Integer, nullable=False, server_default="0"),
+    Column("is_system", Boolean, nullable=False, server_default="false"),
+    Column("is_assignable", Boolean, nullable=False, server_default="true"),
+    Column("is_wildcard", Boolean, nullable=False, server_default="false"),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("updated_at", DateTime(timezone=True), nullable=False),
     schema="staff",
 )
 
@@ -79,20 +59,64 @@ ROLE_PERMISSIONS_TABLE = Table(
     metadata,
     Column(
         "role_id",
-        UUID,
+        UUID(as_uuid=True),
         ForeignKey("staff.roles.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("permission_code", String(100), primary_key=True),
+    Column("permission_code", String(128), primary_key=True),
     schema="staff",
 )
 
-ROLES_TABLE = Table(
-    "roles",
+ROLE_GRANT_RULES_TABLE = Table(
+    "role_grant_rules",
     metadata,
-    Column("id", UUID, primary_key=True),
-    Column("code", String(50), nullable=False, unique=True),
-    Column("name", String(100), nullable=False),
-    Column("grants_all", Boolean, nullable=False),
+    Column(
+        "granter_role_id",
+        UUID(as_uuid=True),
+        ForeignKey("staff.roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "grantable_role_id",
+        UUID(as_uuid=True),
+        ForeignKey("staff.roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    schema="staff",
+)
+
+ROLE_ASSIGNMENTS_TABLE = Table(
+    "role_assignments",
+    metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True),
+    Column(
+        "user_id",
+        UUID(as_uuid=True),
+        ForeignKey("auth.users.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "role_id",
+        UUID(as_uuid=True),
+        ForeignKey("staff.roles.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column(
+        "org_unit_id",
+        UUID(as_uuid=True),
+        ForeignKey("business.org_units.id", ondelete="RESTRICT"),
+        nullable=True,
+    ),
+    Column("include_descendants", Boolean, nullable=False, server_default="true"),
+    Column("status", String(32), nullable=False),
+    Column(
+        "granted_by_user_id",
+        UUID(as_uuid=True),
+        ForeignKey("auth.users.id", ondelete="SET NULL"),
+        nullable=True,
+    ),
+    Column("granted_at", DateTime(timezone=True), nullable=False),
+    Index("ix_role_assignments_user_active", "user_id", "status"),
+    Index("ix_role_assignments_org_unit", "org_unit_id"),
     schema="staff",
 )

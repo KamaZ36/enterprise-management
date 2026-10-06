@@ -1,20 +1,25 @@
-import bcrypt
+from argon2 import PasswordHasher as _Argon2
+from argon2.exceptions import (
+    InvalidHashError,
+    VerificationError,
+    VerifyMismatchError,
+)
 
 
 class PasswordService:
     def __init__(self) -> None:
-        pass
+        self._hasher = _Argon2(
+            time_cost=2,
+            memory_cost=19456,
+            parallelism=1,
+        )
 
-    def hash_password(self, password: str) -> str:
-        password_bytes = password.encode("utf-8")
-        salt = bcrypt.gensalt(rounds=12)
-        hashed_bytes = bcrypt.hashpw(password_bytes, salt)
-        return hashed_bytes.decode("utf-8")
+    def hash(self, password: str) -> str:
+        return self._hasher.hash(password)
 
-    def verify(self, password: str, hashed_password: str) -> bool:
+    def verify(self, password: str, password_hash: str) -> bool:
         try:
-            password_bytes = password.encode("utf-8")
-            hashed_bytes = hashed_password.encode("utf-8")
-            return bcrypt.checkpw(password_bytes, hashed_bytes)
-        except ValueError, TypeError:
+            self._hasher.verify(password_hash, password)
+        except VerifyMismatchError, VerificationError, InvalidHashError:
             return False
+        return True

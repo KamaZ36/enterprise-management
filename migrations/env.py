@@ -14,14 +14,20 @@ from myasnaya_derevnya.modules.auth.infrastructure.tables import (  # noqa: F401
     USER_SESSIONS_TABLE,
     USERS_TABLE,
 )
+from myasnaya_derevnya.modules.business.infrastructure.tables import (  # noqa: F401
+    COMPANIES_TABLE,
+    ORG_UNIT_CLOSURE_TABLE,
+    ORG_UNITS_TABLE,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
-    LOCATIONS_TABLE,  # noqa: F401
+    WAREHOUSES_TABLE,  # noqa: F401
 )
 from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
     EMPLOYEES_TABLE,
+    ROLE_ASSIGNMENTS_TABLE,
+    ROLE_GRANT_RULES_TABLE,
     ROLE_PERMISSIONS_TABLE,
     ROLES_TABLE,
-    USER_ROLES_TABLE,
 )
 
 # this is the Alembic Config object, which provides

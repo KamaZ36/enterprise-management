@@ -31,13 +31,19 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         await self._session.execute(stmt)
 
     async def save(self, employee: Employee) -> None:
-        stmt = update(EMPLOYEES_TABLE).values(
-            first_name=employee.first_name,
-            last_name=employee.last_name,
-            middle_name=employee.middle_name,
-            phone_number=employee.phone_number.value if employee.phone_number else None,
-            position=employee.position,
-            dismissed_at=employee.dismissed_at,
+        stmt = (
+            update(EMPLOYEES_TABLE)
+            .where(EMPLOYEES_TABLE.c.id == employee.id)
+            .values(
+                first_name=employee.first_name,
+                last_name=employee.last_name,
+                middle_name=employee.middle_name,
+                phone_number=employee.phone_number.value
+                if employee.phone_number
+                else None,
+                position=employee.position,
+                dismissed_at=employee.dismissed_at,
+            )
         )
         await self._session.execute(stmt)
 
@@ -47,7 +53,7 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         row = result.mappings().one_or_none()
 
         if row is None:
-            raise NotImplementedError
+            return None
 
         return self._to_entity(row)
 
