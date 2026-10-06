@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from myasnaya_derevnya.core.access_serivce import AccessService
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
+from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.auth.domain.errors import RoleNotFound
+from myasnaya_derevnya.modules.staff.application.services.access_service import (
+    AccessService,
+)
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignment,
 )
@@ -25,7 +28,8 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment
 class AssignRoleCommand:
     employee_id: UUID
     role_id: UUID
-    target_location_id: UUID | None
+    org_unit_id: UUID
+    include_descendants: bool
 
 
 class AssignRoleInteractor:
@@ -47,27 +51,35 @@ class AssignRoleInteractor:
 
     async def __call__(self, command: AssignRoleCommand) -> None:
         current_user_id = await self._identity_provider.get_current_user_id()
-        await self._access_service.require(
+        if not await self._access_service.can(
             user_id=current_user_id,
             permission=MANAGE_ROLES,
-            location_id=command.target_location_id,
-        )
+            org_unit_id=command.org_unit_id,
+        ):
+            raise ForbiddenError()
+
+        role = await self._role_repository.get_by_id(role_id=command.role_id)
+        if role is None:
+            raise RoleNotFound()
+
+        if not await self._access_service.can_assign(
+            actor_user_id=current_user_id,
+            role_id=role.id,
+            org_unit_id=command.org_unit_id,
+        ):
+            raise ForbiddenError()
 
         employee = await self._employee_repository.get_by_id(command.employee_id)
 
         if employee is None:
             raise EmployeeNotFound()
 
-        role = await self._role_repository.get_by_id(role_id=command.role_id)
-
-        if role is None:
-            raise RoleNotFound()
-
         assigned_role = RoleAssignment.create(
             user_id=employee.user_id,
             role_id=role.id,
-            location_id=command.target_location_id,
-            created_by=current_user_id,
+            org_unit_id=command.org_unit_id,
+            include_descendants=command.include_descendants,
+            granted_by_user_id=current_user_id,
         )
 
         await self._role_assignment_repository.add(assigned_role)

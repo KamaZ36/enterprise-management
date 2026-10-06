@@ -36,13 +36,13 @@ class Role:
     @classmethod
     def create(
         cls,
-        code,
-        name,
-        level,
-        description=None,
-        is_system=False,
-        is_assignable=True,
-        is_wildcard=False,
+        code: str,
+        name: str,
+        level: int,
+        description: str | None,
+        is_system: bool,
+        is_assignable: bool,
+        is_wildcard: bool = False,
     ) -> Role:
         return cls(
             id_=uuid7(),
@@ -77,7 +77,7 @@ class Role:
 
     @property
     def description(self) -> str | None:
-        return self.description
+        return self._description
 
     @property
     def permission_codes(self) -> frozenset[str]:

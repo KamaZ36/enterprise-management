@@ -32,7 +32,6 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
                 id=assignment.id,
                 user_id=assignment.user_id,
                 role_id=assignment.role_id,
-                company_id=assignment.company_id,
                 org_unit_id=assignment.org_unit_id,
                 include_descendants=assignment.include_descendants,
                 status=assignment.status.value,
@@ -66,11 +65,9 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
     async def load_active_for_user(
         self,
         user_id: UUID,
-        company_id: UUID,
     ) -> list[ResolvedAssignment]:
         stmt = select(ROLE_ASSIGNMENTS_TABLE).where(
             ROLE_ASSIGNMENTS_TABLE.c.user_id == user_id,
-            ROLE_ASSIGNMENTS_TABLE.c.company_id == company_id,
             ROLE_ASSIGNMENTS_TABLE.c.status == RoleAssignmentStatus.ACTIVE.value,
         )
 
@@ -133,7 +130,6 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
             id_=row["id"],
             user_id=row["user_id"],
             role_id=row["role_id"],
-            company_id=row["company_id"],
             org_unit_id=row["org_unit_id"],
             include_descendants=row["include_descendants"],
             status=RoleAssignmentStatus(row["status"]),

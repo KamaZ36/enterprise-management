@@ -78,6 +78,17 @@ class SQLAlchemyRoleRepository(RoleRepository):
 
         return self._to_entity(row)
 
+    async def get_by_code(self, code: str) -> Role | None:
+        stmt = self._base_select().where(ROLES_TABLE.c.code == code)
+
+        result = await self._session.execute(stmt)
+        row = result.mappings().one_or_none()
+
+        if row is None:
+            return None
+
+        return self._to_entity(row)
+
     async def get_many(self, role_ids: set[UUID]) -> dict[UUID, Role]:
         if not role_ids:
             return {}
