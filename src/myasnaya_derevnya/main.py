@@ -8,8 +8,10 @@ from fastapi.security import APIKeyHeader
 
 from myasnaya_derevnya.core.errors import (
     AppError,
+    DomainError,
     ForbiddenError,
     NotFoundError,
+    ProjectError,
     UnauthorizedError,
     ValidationError,
 )
@@ -28,9 +30,15 @@ STATUS_BY_CATEGORY: dict[type[AppError], int] = {
 
 
 async def api_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    if not isinstance(exc, AppError):
+
+    if not isinstance(exc, ProjectError):
         return JSONResponse(
             status_code=500, content={"message": "Internal server error"}
+        )
+
+    if isinstance(exc, DomainError):
+        return JSONResponse(
+            status_code=400, content={"error": type(exc).__name__, "message": str(exc)}
         )
 
     status_code = next(

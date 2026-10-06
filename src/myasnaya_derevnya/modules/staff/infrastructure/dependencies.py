@@ -1,7 +1,6 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from myasnaya_derevnya.core.access_serivce import AccessService
 from myasnaya_derevnya.modules.staff.application.interactors.assign_role import (
     AssignRoleInteractor,
 )
@@ -13,6 +12,12 @@ from myasnaya_derevnya.modules.staff.application.interactors.create_employee imp
 )
 from myasnaya_derevnya.modules.staff.application.interactors.create_role import (
     CreateEmployeeRoleInteractor,
+)
+from myasnaya_derevnya.modules.staff.application.services.access_service import (
+    AccessService,
+)
+from myasnaya_derevnya.modules.staff.domain.services.policy_of_access import (
+    AccessPolicy,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
     EmployeeRepository,
@@ -26,14 +31,11 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base impor
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.sqlalchemy import (
     SQLAlchemyRoleRepository,
 )
-from myasnaya_derevnya.modules.staff.infrastructure.repositories.user_role.base import (
-    UserRoleRepository,
+from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment.base import (
+    RoleAssignmentRepository,
 )
-from myasnaya_derevnya.modules.staff.infrastructure.repositories.user_role.sqlalchemy import (
-    SQLAlchemyUserRoleRepository,
-)
-from myasnaya_derevnya.modules.staff.infrastructure.services.access_service import (
-    SQLAlchemyAccessService,
+from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment.sqlalchemy import (
+    SQLAlchemyRoleAssignmentRepository,
 )
 
 
@@ -44,17 +46,20 @@ class StaffDepProvider(Provider):
         return SQLAlchemyRoleRepository(session)
 
     @provide(scope=Scope.REQUEST)
-    def get_user_role_repository(self, session: AsyncSession) -> UserRoleRepository:
-        return SQLAlchemyUserRoleRepository(session)
+    def get_user_role_repository(
+        self, session: AsyncSession
+    ) -> RoleAssignmentRepository:
+        return SQLAlchemyRoleAssignmentRepository(session)
 
     @provide(scope=Scope.REQUEST)
     def get_employee_repository(self, session: AsyncSession) -> EmployeeRepository:
         return SQLAlchemyEmployeeRepository(session)
 
     # SERVICES
-    @provide(scope=Scope.REQUEST)
-    def get_access_service(self, session: AsyncSession) -> AccessService:
-        return SQLAlchemyAccessService(session)
+
+    access_policy = provide(AccessPolicy, scope=Scope.REQUEST)
+
+    acess_service = provide(AccessService, scope=Scope.REQUEST)
 
     # INTERACTORS
     create_employee_interactor = provide(CreateEmployeeInteractor, scope=Scope.REQUEST)

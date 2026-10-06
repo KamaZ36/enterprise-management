@@ -3,7 +3,11 @@ from uuid import UUID
 from fastapi import Request
 
 from myasnaya_derevnya.core.errors import UnauthorizedError
-from myasnaya_derevnya.core.identity_provider import IdentityProvider, SessionIdGetter
+from myasnaya_derevnya.core.identity_provider import (
+    IdentityProvider,
+    OrgUnitIdGetter,
+    SessionIdGetter,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
@@ -30,6 +34,14 @@ class HTTPSessionIDGetter(SessionIdGetter):
             return UUID(value)
         except ValueError:
             return None
+
+
+class HTTPOrgUnitIdGetter(OrgUnitIdGetter):
+    def __init__(self, request: Request) -> None:
+        self._request = request
+
+    async def get(self) -> UUID | None:
+        pass
 
 
 class HTTPIdentityProvider(IdentityProvider):
@@ -70,3 +82,6 @@ class HTTPIdentityProvider(IdentityProvider):
     async def get_current_session_id(self) -> UUID:
         session = await self._get_active_session()
         return session.id
+
+    async def get_current_org_unit_id(self) -> UUID | None:
+        pass

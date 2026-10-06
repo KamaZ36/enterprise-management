@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import date, datetime
 from uuid import UUID, uuid7
 
@@ -15,10 +13,10 @@ class Employee:
         first_name: str,
         last_name: str,
         middle_name: str | None,
-        phone_number: PhoneNumber,
+        phone_number: PhoneNumber | None,
         position: str,
         hired_at: date,
-        dismissed_at: datetime | None,
+        dismissed_at: date | None,
         created_at: datetime,
     ) -> None:
         self._id = id
@@ -39,7 +37,7 @@ class Employee:
         first_name: str,
         last_name: str,
         middle_name: str | None,
-        phone_number: PhoneNumber,
+        phone_number: PhoneNumber | None,
         position: str,
         hired_at: date,
     ) -> Employee:
@@ -77,7 +75,7 @@ class Employee:
         return self._middle_name
 
     @property
-    def phone_number(self) -> PhoneNumber:
+    def phone_number(self) -> PhoneNumber | None:
         return self._phone_number
 
     @property
@@ -89,7 +87,7 @@ class Employee:
         return self._hired_at
 
     @property
-    def dismissed_at(self) -> datetime | None:
+    def dismissed_at(self) -> date | None:
         return self._dismissed_at
 
     @property
@@ -99,11 +97,6 @@ class Employee:
     @property
     def is_active(self) -> bool:
         return self._dismissed_at is None
-
-    def attach_user(self, user_id: UUID) -> None:
-        if self._user_id is not None:
-            return
-        self._user_id = user_id
 
     def dismiss(self, at: datetime) -> None:
         if self._dismissed_at is not None:
