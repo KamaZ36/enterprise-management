@@ -1,14 +1,14 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from myasnaya_derevnya.modules.auth.application.interactors.create import (
-    CreateUserInteractor,
-)
-from myasnaya_derevnya.modules.auth.application.interactors.create_employee_credential import (
-    CreateEmployeeCredentialInteractor,
-)
 from myasnaya_derevnya.modules.auth.application.interactors.login.password import (
     LoginByPasswordInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.create_employee_credential import (
+    CreateEmployeeCredentialInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.create_user import (
+    CreateUserInteractor,
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base import (
     CredentialRepository,

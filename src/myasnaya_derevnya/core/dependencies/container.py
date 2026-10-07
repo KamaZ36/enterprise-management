@@ -6,6 +6,9 @@ from myasnaya_derevnya.modules.auth.infrastructure.dependencies import AuthDepPr
 from myasnaya_derevnya.modules.business.infrastructure.dependencies import (
     BusinessDepProvider,
 )
+from myasnaya_derevnya.modules.catalog.infrastructure.dependencies import (
+    CatalogDepProvider,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.dependencies import (
     InventoryDepProvider,
 )
@@ -18,4 +21,5 @@ container = make_async_container(
     StaffDepProvider(),
     InventoryDepProvider(),
     BusinessDepProvider(),
+    CatalogDepProvider(),
 )

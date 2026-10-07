@@ -19,6 +19,12 @@ from myasnaya_derevnya.modules.business.infrastructure.tables import (  # noqa: 
     ORG_UNIT_CLOSURE_TABLE,
     ORG_UNITS_TABLE,
 )
+from myasnaya_derevnya.modules.catalog.infrastructure.tables import (  # noqa: F401
+    CATEGORIES_TABLE,
+    NOMENCLATURES_TABLE,
+    PRICE_LISTS_TABLE,
+    PRICES_TABLE,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     WAREHOUSES_TABLE,  # noqa: F401
 )

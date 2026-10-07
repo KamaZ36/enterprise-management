@@ -83,4 +83,13 @@ class Nomenclature:
         return self._unit
 
     @property
-    def 
+    def type_(self) -> NomenclatureType:
+        return self._type
+
+    @property
+    def category_id(self) -> UUID:
+        return self._category_id
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
