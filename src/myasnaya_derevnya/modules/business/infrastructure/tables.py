@@ -14,6 +14,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from myasnaya_derevnya.core.database import metadata
 
+DATABASE_SCHEMA = "business"
+
 COMPANIES_TABLE = Table(
     "companies",
     metadata,
@@ -36,7 +38,7 @@ COMPANIES_TABLE = Table(
     Column("attributes", JSONB, nullable=False, server_default="{}"),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
-    schema="business",
+    schema=DATABASE_SCHEMA,
 )
 
 ORG_UNITS_TABLE = Table(
@@ -62,7 +64,7 @@ ORG_UNITS_TABLE = Table(
     UniqueConstraint("code", name="uq_org_units_code"),
     Index("ix_org_units_parent_id", "parent_id"),
     Index("ix_org_units_type", "type"),
-    schema="business",
+    schema=DATABASE_SCHEMA,
 )
 
 ORG_UNIT_CLOSURE_TABLE = Table(
@@ -82,5 +84,5 @@ ORG_UNIT_CLOSURE_TABLE = Table(
     ),
     Column("depth", Integer, nullable=False),
     Index("ix_org_unit_closure_descendant", "descendant_id"),
-    schema="business",
+    schema=DATABASE_SCHEMA,
 )
