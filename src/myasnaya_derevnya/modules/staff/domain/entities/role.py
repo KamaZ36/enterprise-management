@@ -42,6 +42,8 @@ class Role:
         description: str | None,
         is_system: bool,
         is_assignable: bool,
+        permission_codes: frozenset[str],
+        grantable_role_ids: frozenset[UUID],
         is_wildcard: bool = False,
     ) -> Role:
         return cls(
@@ -53,8 +55,8 @@ class Role:
             is_system=is_system,
             is_assignable=is_assignable,
             is_wildcard=is_wildcard,
-            permission_codes=frozenset(),
-            grantable_role_ids=frozenset(),
+            permission_codes=permission_codes,
+            grantable_role_ids=grantable_role_ids,
             created_at=get_datetime_utc(),
             updated_at=get_datetime_utc(),
         )

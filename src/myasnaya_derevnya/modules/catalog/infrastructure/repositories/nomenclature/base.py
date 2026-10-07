@@ -6,13 +6,13 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import Nomen
 
 class NomenclatureRepository(ABC):
     @abstractmethod
-    def add(self, nomenclature: Nomenclature) -> None:
+    async def add(self, nomenclature: Nomenclature) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def save(self, nomenclature: Nomenclature) -> None:
+    async def save(self, nomenclature: Nomenclature) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_id(self, nomenclature_id: UUID) -> Nomenclature | None:
+    async def get_by_id(self, nomenclature_id: UUID) -> Nomenclature | None:
         raise NotImplementedError

@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from myasnaya_derevnya.modules.auth.application.interactors.create import (
-    CreateUserInteractor,
-)
-from myasnaya_derevnya.modules.auth.application.interactors.create_employee_credential import (
+from myasnaya_derevnya.modules.auth.application.interactors.system.create_employee_credential import (
     CreateEmployeeCredentialCommand,
     CreateEmployeeCredentialInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.create_user import (
+    CreateUserInteractor,
 )
 
 

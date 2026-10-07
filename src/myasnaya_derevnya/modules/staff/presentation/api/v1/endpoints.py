@@ -16,9 +16,9 @@ from myasnaya_derevnya.modules.staff.application.interactors.create_employee imp
     CreateEmployeeCommand,
     CreateEmployeeInteractor,
 )
-from myasnaya_derevnya.modules.staff.application.interactors.create_role import (
-    CreateEmployeeRoleCommand,
-    CreateEmployeeRoleInteractor,
+from myasnaya_derevnya.modules.staff.application.interactors.role.create import (
+    CreateRoleCommand,
+    CreateRoleInteractor,
 )
 from myasnaya_derevnya.modules.staff.presentation.api.v1.schemas import (
     AssignRoleCommandSchema,
@@ -51,10 +51,10 @@ async def create_credential_for_employee(
 
 @router.post("/roles", description="Создать роль сотрудника")
 async def create_employee_role(
-    request: Request, command: CreateEmployeeRoleCommand
+    request: Request, command: CreateRoleCommand
 ) -> JSONResponse:
     async with container(context={Request: request}) as context:
-        interactor = await context.get(CreateEmployeeRoleInteractor)
+        interactor = await context.get(CreateRoleInteractor)
         role_id = await interactor(command)
 
     return JSONResponse(status_code=201, content={"role_id": str(role_id)})
@@ -67,7 +67,8 @@ async def assign_role(
     command = AssignRoleCommand(
         employee_id=employee_id,
         role_id=data.role_id,
-        target_location_id=data.target_location_id,
+        org_unit_id=data.org_unit_id,
+        include_descendants=data.include_descendants,
     )
 
     async with container(context={Request: request}) as context:
