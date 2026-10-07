@@ -14,6 +14,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from myasnaya_derevnya.core.database import metadata
 
+DATABASE_SCHEMA = "catalog"
+
 CATEGORIES_TABLE = Table(
     "categories",
     metadata,
@@ -29,6 +31,7 @@ CATEGORIES_TABLE = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
     Index("ix_categories_parent_id", "parent_id"),
+    schema=DATABASE_SCHEMA,
 )
 
 
@@ -52,6 +55,7 @@ NOMENCLATURES_TABLE = Table(
     Column("updated_at", DateTime(timezone=True), nullable=False),
     Index("ix_nomenclatures_category_id", "category_id"),
     Index("ix_nomenclatures_type", "type"),
+    schema=DATABASE_SCHEMA,
 )
 
 
@@ -63,6 +67,7 @@ PRICE_LISTS_TABLE = Table(
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
+    schema=DATABASE_SCHEMA,
 )
 
 
@@ -92,4 +97,5 @@ PRICES_TABLE = Table(
     CheckConstraint("value >= 0", name="ck_prices_value_non_negative"),
     Index("ix_prices_nomenclature_id", "nomenclature_id"),
     Index("ix_prices_price_list_id", "price_list_id"),
+    schema=DATABASE_SCHEMA,
 )

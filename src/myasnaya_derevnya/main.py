@@ -15,6 +15,7 @@ from myasnaya_derevnya.core.errors import (
     UnauthorizedError,
     ValidationError,
 )
+from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import login_router
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
@@ -58,7 +59,7 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
+    await bootstrap_system()
     yield
 
 
