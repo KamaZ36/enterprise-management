@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, select, update
+from sqlalchemy import RowMapping, exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,6 +43,14 @@ class SQLAlchemyCategoryRepository(CategoryRepository):
             return None
 
         return self._to_entity(row)
+
+    async def check_exists_by_id(self, category_id: UUID) -> bool:
+        stmt = select(exists().where(CATEGORIES_TABLE.c.id == category_id))
+        return bool((await self._session.execute(stmt)).scalar())
+
+    async def check_exists_by_name(self, category_name: str) -> bool:
+        stmt = select(exists().where(CATEGORIES_TABLE.c.name == category_name))
+        return bool((await self._session.execute(stmt)).scalar())
 
     def _to_entity(self, row: RowMapping) -> Category:
         return Category(

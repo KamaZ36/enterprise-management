@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, select, update
+from sqlalchemy import RowMapping, exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,6 +42,10 @@ class SQLAlchemyPriceListRepository(PriceListRepository):
             return None
 
         return self._to_entity(row)
+
+    async def check_exists_by_name(self, price_list_name: str) -> bool:
+        stmt = select(exists().where(PRICE_LISTS_TABLE.c.name == price_list_name))
+        return bool((await self._session.execute(stmt)).scalar())
 
     def _to_entity(self, row: RowMapping) -> PriceList:
         return PriceList(
