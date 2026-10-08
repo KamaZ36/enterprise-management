@@ -16,3 +16,7 @@ class PriceListRepository(ABC):
     @abstractmethod
     async def get_by_id(self, price_list_id: UUID) -> PriceList | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def check_exists_by_name(self, price_list_name: str) -> bool:
+        raise NotImplementedError

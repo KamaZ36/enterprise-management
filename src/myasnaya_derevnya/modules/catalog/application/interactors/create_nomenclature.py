@@ -4,12 +4,17 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
+from myasnaya_derevnya.modules.catalog.application.errors import CategoryNotFound
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
     NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.domain.permissions import CREATE_NOMENCLATURE
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base import (
+    CategoryRepository,
+)
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.base import (
     NomenclatureRepository,
 )
@@ -32,23 +37,30 @@ class CreateNomenclatureInteractor:
         self,
         identity_provider: IdentityProvider,
         nomenclature_repository: NomenclatureRepository,
+        category_repository: CategoryRepository,
         transaction_manager: TransactionManager,
+        business_api: BusinessAPI,
         access_serivce: AccessService,
     ) -> None:
         self._identity_provider = identity_provider
         self._nomenclature_repository = nomenclature_repository
+        self._category_repository = category_repository
         self._transaction_manager = transaction_manager
+        self._business_api = business_api
         self._access_service = access_serivce
 
     async def __call__(self, command: CreateNomenclatureCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
-        org_unit_id_context = await self._identity_provider.get_current_org_unit_id()
+        root_org_unit_id = await self._business_api.get_root_unit_id()
         if not await self._access_service.can(
             user_id=current_user_id,
             permission=CREATE_NOMENCLATURE,
-            org_unit_id=org_unit_id_context,
+            org_unit_id=root_org_unit_id,
         ):
             raise ForbiddenError()
+
+        if not await self._category_repository.check_exists_by_id(command.category_id):
+            raise CategoryNotFound(command.category_id)
 
         nomenclature = Nomenclature.create(
             sku=command.sku,

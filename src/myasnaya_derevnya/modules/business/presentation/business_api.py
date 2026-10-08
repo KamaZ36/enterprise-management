@@ -11,3 +11,6 @@ class BusinessAPI:
 
     async def org_unit_ancestors_of(self, org_unit_id: UUID) -> frozenset[UUID]:
         return await self._org_unit_repository.ancestors_of(org_unit_id)
+
+    async def get_root_unit_id(self) -> UUID:
+        return await self._org_unit_repository.get_root_id()

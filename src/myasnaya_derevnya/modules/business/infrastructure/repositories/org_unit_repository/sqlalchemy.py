@@ -135,6 +135,11 @@ class SQLAlchemyOrgUnitRepository(OrgUnitRepository):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_root_id(self) -> UUID:
+        stmt = select(ORG_UNITS_TABLE.c.id).where(ORG_UNITS_TABLE.c.parent_id.is_(None))
+        result = await self._session.execute(stmt)
+        return result.scalar_one()
+
     def _to_entity(self, row: RowMapping) -> OrgUnit:
         return OrgUnit(
             id=row["id"],
