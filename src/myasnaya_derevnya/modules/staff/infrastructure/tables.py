@@ -10,6 +10,7 @@ from sqlalchemy import (
     String,
     Table,
     func,
+    text,
 )
 
 from myasnaya_derevnya.core.database import metadata
@@ -122,6 +123,21 @@ ROLE_ASSIGNMENTS_TABLE = Table(
         nullable=True,
     ),
     Column("granted_at", DateTime(timezone=True), nullable=False),
+    Index(
+        "uq_role_assignments_active_scoped",
+        "user_id",
+        "role_id",
+        "org_unit_id",
+        unique=True,
+        postgresql_where=text("status = 'active' AND org_unit_id IS NOT NULL"),
+    ),
+    Index(
+        "uq_role_assignments_active_global",
+        "user_id",
+        "role_id",
+        unique=True,
+        postgresql_where=text("status = 'active' AND org_unit_id IS NULL"),
+    ),
     Index("ix_role_assignments_user_active", "user_id", "status"),
     Index("ix_role_assignments_org_unit", "org_unit_id"),
     schema="staff",
