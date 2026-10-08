@@ -17,29 +17,10 @@ class AccessPolicy:
         ancestors_of_target: frozenset[UUID],
     ) -> bool:
         for ra in assignments:
-            role = ra.role
-
-            if role.is_wildcard:
-                return True
-
-            if permission.code not in role.permission_codes:
+            if not self._covers(ra.assignment, target_org_unit_id, ancestors_of_target):
                 continue
-
-            if ra.assignment.org_unit_id is None:
+            if ra.role.is_wildcard or permission.code in ra.role.permission_codes:
                 return True
-
-            if target_org_unit_id is None:
-                continue
-
-            if ra.assignment.org_unit_id == target_org_unit_id:
-                return True
-
-            if (
-                ra.assignment.include_descendants
-                and ra.assignment.org_unit_id in ancestors_of_target
-            ):
-                return True
-
         return False
 
     def can_assign(
@@ -52,54 +33,45 @@ class AccessPolicy:
         if not target_role.is_assignable:
             return False
 
+        covering = [
+            ra
+            for ra in actor_assignments
+            if self._covers(ra.assignment, target_org_unit_id, ancestors_of_target)
+        ]
+        if not covering:
+            return False
+
         if not self.can(
-            permission=ASSIGN_ROLES,
-            target_org_unit_id=target_org_unit_id,
-            assignments=actor_assignments,
-            ancestors_of_target=ancestors_of_target,
+            ASSIGN_ROLES, target_org_unit_id, covering, ancestors_of_target
         ):
             return False
 
-        actor_is_wildcard = any(ra.role.is_wildcard for ra in actor_assignments)
-
-        if target_role.is_system and not actor_is_wildcard:
-            return False
-
-        if actor_is_wildcard:
+        if any(ra.role.is_wildcard for ra in covering):
             return True
 
-        grantable: set[UUID] = set()
-        for ra in actor_assignments:
-            grantable |= ra.role.grantable_role_ids
+        if target_role.is_system:
+            return False
 
+        grantable: set[UUID] = set()
+        for ra in covering:
+            grantable |= ra.role.grantable_role_ids
         if target_role.id not in grantable:
             return False
 
-        actor_max_level = self._max_level_in_scope(
-            assignments=actor_assignments,
-            target_org_unit_id=target_org_unit_id,
-            ancestors_of_target=ancestors_of_target,
-        )
-
+        actor_max_level = max(ra.role.level for ra in covering)
         return target_role.level < actor_max_level
 
-    def _max_level_in_scope(
-        self,
-        assignments: list[ResolvedAssignment],
-        target_org_unit_id: UUID,
+    @staticmethod
+    def _covers(
+        assignment,
+        target_org_unit_id: UUID | None,
         ancestors_of_target: frozenset[UUID],
-    ) -> int:
-        max_level = 0
-        for ra in assignments:
-            assignment = ra.assignment
-            covers = (
-                assignment.org_unit_id is None
-                or assignment.org_unit_id == target_org_unit_id
-                or (
-                    assignment.include_descendants
-                    and assignment.org_unit_id in ancestors_of_target
-                )
-            )
-            if covers:
-                max_level = max(max_level, ra.role.level)
-        return max_level
+    ) -> bool:
+        scope = assignment.org_unit_id
+        if scope is None:
+            return True
+        if target_org_unit_id is None:
+            return False
+        if scope == target_org_unit_id:
+            return True
+        return assignment.include_descendants and scope in ancestors_of_target
