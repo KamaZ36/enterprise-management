@@ -40,9 +40,9 @@ class GetEmployeeByIdInteractor:
         ):
             raise ForbiddenError()
 
-        employeee = await self._employee_repository.get_by_id(command.employee_id)
+        employee = await self._employee_repository.get_by_id(command.employee_id)
 
-        if employeee is None:
+        if employee is None:
             raise EmployeeNotFound()
 
-        return employeee
+        return employee

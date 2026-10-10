@@ -18,9 +18,7 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.base import (
     NomenclatureRepository,
 )
-from myasnaya_derevnya.modules.staff.application.services.access_service import (
-    AccessService,
-)
+from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,19 +38,19 @@ class CreateNomenclatureInteractor:
         category_repository: CategoryRepository,
         transaction_manager: TransactionManager,
         business_api: BusinessAPI,
-        access_serivce: AccessService,
+        staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._nomenclature_repository = nomenclature_repository
         self._category_repository = category_repository
         self._transaction_manager = transaction_manager
         self._business_api = business_api
-        self._access_service = access_serivce
+        self._staff_api = staff_api
 
     async def __call__(self, command: CreateNomenclatureCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
         root_org_unit_id = await self._business_api.get_root_unit_id()
-        if not await self._access_service.can(
+        if not await self._staff_api.can(
             user_id=current_user_id,
             permission=CREATE_NOMENCLATURE,
             org_unit_id=root_org_unit_id,

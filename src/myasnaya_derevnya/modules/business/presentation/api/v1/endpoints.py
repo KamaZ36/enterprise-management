@@ -13,7 +13,7 @@ from myasnaya_derevnya.modules.business.presentation.api.v1.schemas import (
 router = APIRouter(prefix="/api", tags=["Структурные подразделения"])
 
 
-@router.post("/org-unit", description="Создать структуруню единицу")
+@router.post("/org-unit", description="Создать структурную единицу")
 async def create_org_unit(request: Request, data: CreateOrgUnitSchema) -> JSONResponse:
     command = CreateOrgUnitCommand(
         parent_id=data.parent_id,

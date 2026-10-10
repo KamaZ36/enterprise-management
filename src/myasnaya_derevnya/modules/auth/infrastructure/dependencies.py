@@ -4,6 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.modules.auth.application.interactors.login.password import (
     LoginByPasswordInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.interactors.logout import (
+    LogoutInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.system.create_employee_credential import (
     CreateEmployeeCredentialInteractor,
 )
@@ -35,7 +38,7 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.sql
     SQLAlchemyUserSessionRepository,
 )
 from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
-from myasnaya_derevnya.modules.auth.services.password_serivce import PasswordService
+from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 
 class AuthDepProvider(Provider):
@@ -65,6 +68,8 @@ class AuthDepProvider(Provider):
     password_service = provide(PasswordService, scope=Scope.REQUEST)
 
     # INTERACTORS
+
+    logout_interactor = provide(LogoutInteractor, scope=Scope.REQUEST)
 
     login_by_password_interactor = provide(
         LoginByPasswordInteractor, scope=Scope.REQUEST

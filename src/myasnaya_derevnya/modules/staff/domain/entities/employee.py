@@ -34,7 +34,6 @@ class Employee:
     def create(
         cls,
         user_id: UUID,
-        org_unit_id: UUID,
         first_name: str,
         last_name: str,
         middle_name: str | None,

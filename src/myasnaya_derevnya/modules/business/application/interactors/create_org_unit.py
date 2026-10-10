@@ -13,9 +13,7 @@ from myasnaya_derevnya.modules.business.domain.permissions import ORG_UNIT_CREAT
 from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_repository.base import (
     OrgUnitRepository,
 )
-from myasnaya_derevnya.modules.staff.application.services.access_service import (
-    AccessService,
-)
+from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,18 +32,18 @@ class CreateOrgUnitInteractor:
         identity_provider: IdentityProvider,
         org_unit_repository: OrgUnitRepository,
         transaction_manager: TransactionManager,
-        access_service: AccessService,
+        staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._org_unit_repository = org_unit_repository
         self._transaction_manager = transaction_manager
-        self._access_service = access_service
+        self._staff_api = staff_api
 
     async def __call__(self, command: CreateOrgUnitCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
         root_org_unit_id = await self._org_unit_repository.get_root_id()
 
-        if not await self._access_service.can(
+        if not await self._staff_api.can(
             user_id=current_user_id,
             permission=ORG_UNIT_CREATE,
             org_unit_id=root_org_unit_id,
