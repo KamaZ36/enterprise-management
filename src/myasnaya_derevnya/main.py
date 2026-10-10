@@ -17,8 +17,11 @@ from myasnaya_derevnya.core.errors import (
 )
 from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import login_router
-from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
-    router as inventory_router,
+from myasnaya_derevnya.modules.business.presentation.api.v1 import (
+    router as business_router,
+)
+from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
+    router as catalog_router,
 )
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import router as staff_router
 
@@ -66,7 +69,8 @@ async def lifespan(app: FastAPI):
 def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
     app.include_router(staff_router)
-    app.include_router(inventory_router)
+    app.include_router(business_router)
+    app.include_router(catalog_router)
 
 
 def create_app() -> FastAPI:

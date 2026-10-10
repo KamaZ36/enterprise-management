@@ -10,9 +10,6 @@ from myasnaya_derevnya.modules.staff.application.interactors.create_credential i
 from myasnaya_derevnya.modules.staff.application.interactors.create_employee import (
     CreateEmployeeInteractor,
 )
-from myasnaya_derevnya.modules.staff.application.interactors.create_role import (
-    CreateEmployeeRoleInteractor,
-)
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
@@ -66,10 +63,6 @@ class StaffDepProvider(Provider):
 
     create_credentials_interactor = provide(
         CreateCredentialEmployeeInteractor, scope=Scope.REQUEST
-    )
-
-    create_employee_role_interactor = provide(
-        CreateEmployeeRoleInteractor, scope=Scope.REQUEST
     )
 
     assign_role_interactor = provide(AssignRoleInteractor, scope=Scope.REQUEST)

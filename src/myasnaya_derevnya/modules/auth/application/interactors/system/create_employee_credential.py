@@ -56,11 +56,10 @@ class CreateEmployeeCredentialInteractor:
             identifier=command.username,
         )
 
-        password_hash = self._password_service.hash_password(command.password)
         user_credential = UserCredential.create(
             user_id=user.id,
             credential_type=UserCredentialType.PASSWORD,
-            secret=password_hash,
+            secret=command.password,
         )
 
         await self._identity_repository.add(user_identity)

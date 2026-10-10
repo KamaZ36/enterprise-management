@@ -35,7 +35,7 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
                 org_unit_id=assignment.org_unit_id,
                 include_descendants=assignment.include_descendants,
                 status=assignment.status.value,
-                granted_by_user_id=assignment.granted_by_user_id,
+                granted_by=assignment.granted_by,
                 created_at=assignment.created_at,
             )
         )
@@ -133,7 +133,7 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
             org_unit_id=row["org_unit_id"],
             include_descendants=row["include_descendants"],
             status=RoleAssignmentStatus(row["status"]),
-            granted_by_user_id=row["granted_by_user_id"],
+            granted_by=row["granted_by"],
             created_at=row["created_at"],
         )
 

@@ -22,6 +22,10 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import
     UserRepository,
 )
 from myasnaya_derevnya.modules.auth.services.password_serivce import PasswordService
+from myasnaya_derevnya.modules.business.domain.entities.org_unit import OrgUnit
+from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_repository.base import (
+    OrgUnitRepository,
+)
 from myasnaya_derevnya.modules.staff.domain.entities.role import Role
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignment,
@@ -47,14 +51,21 @@ async def bootstrap_system() -> None:
         user_credential_repository = await context.get(CredentialRepository)
         user_identity_repository = await context.get(UserIdentityRepository)
 
+        org_unit_repository = await context.get(OrgUnitRepository)
+
         role_repository = await context.get(RoleRepository)
         role_assignment_repository = await context.get(RoleAssignmentRepository)
 
         transaction_manager = await context.get(TransactionManager)
         password_service = await context.get(PasswordService)
 
-        user_identity = None
-        role = None
+        root_org_unit_id = await org_unit_repository.get_root_id()
+        if root_org_unit_id is None:
+            root_org_unit = OrgUnit.create_root(
+                code="ROOT_UNIT", name="Структурные подразделения"
+            )
+            await org_unit_repository.add(root_org_unit)
+            root_org_unit_id = root_org_unit.id
 
         role = await role_repository.get_by_code(role_code)
         if role is None:
@@ -62,7 +73,7 @@ async def bootstrap_system() -> None:
                 code=role_code,
                 name=role_name,
                 level=200,
-                description="Роль Супер-Админа",
+                description="Супер-Админ",
                 is_system=True,
                 is_assignable=False,
                 is_wildcard=True,
@@ -92,14 +103,22 @@ async def bootstrap_system() -> None:
             await user_identity_repository.add(user_identity)
             await user_credential_repository.add(user_credential)
 
-        role_assignment = RoleAssignment.create(
+        existing = await role_assignment_repository.load_active_for_user(
             user_id=user_identity.user_id,
-            role_id=role.id,
-            org_unit_id=None,
-            include_descendants=True,
-            granted_by_user_id=user_identity.user_id,
         )
-        await role_assignment_repository.add(role_assignment)
+        already_assigned = any(
+            ra.role.id == role.id and ra.assignment.org_unit_id == root_org_unit_id
+            for ra in existing
+        )
+        if not already_assigned:
+            role_assignment = RoleAssignment.create(
+                user_id=user_identity.user_id,
+                role_id=role.id,
+                org_unit_id=root_org_unit_id,
+                include_descendants=True,
+                granted_by=user_identity.user_id,
+            )
+            await role_assignment_repository.add(role_assignment)
 
         await transaction_manager.commit()
         print("\nСистема успешно инициализирована! Настройки применены.")

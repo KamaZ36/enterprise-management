@@ -79,7 +79,7 @@ class AssignRoleInteractor:
             role_id=role.id,
             org_unit_id=command.org_unit_id,
             include_descendants=command.include_descendants,
-            granted_by_user_id=current_user_id,
+            granted_by=current_user_id,
         )
 
         await self._role_assignment_repository.add(assigned_role)

@@ -19,7 +19,7 @@ class RoleAssignment:
         org_unit_id: UUID | None,  # None = вся компания
         include_descendants: bool,
         status: RoleAssignmentStatus,
-        granted_by_user_id: UUID | None,
+        granted_by: UUID | None,
         created_at: datetime,
     ) -> None:
         self._id = id_
@@ -28,7 +28,7 @@ class RoleAssignment:
         self._org_unit_id = org_unit_id
         self._include_descendants = include_descendants
         self._status = status
-        self._granted_by_user_id = granted_by_user_id
+        self._granted_by = granted_by
         self._created_at = created_at
 
     @classmethod
@@ -38,7 +38,7 @@ class RoleAssignment:
         role_id: UUID,
         org_unit_id: UUID | None,
         include_descendants: bool,
-        granted_by_user_id: UUID,
+        granted_by: UUID,
     ) -> RoleAssignment:
         return cls(
             id_=uuid7(),
@@ -47,7 +47,7 @@ class RoleAssignment:
             org_unit_id=org_unit_id,
             include_descendants=include_descendants,
             status=RoleAssignmentStatus.ACTIVE,
-            granted_by_user_id=granted_by_user_id,
+            granted_by=granted_by,
             created_at=get_datetime_utc(),
         )
 
@@ -76,8 +76,8 @@ class RoleAssignment:
         return self._status
 
     @property
-    def granted_by_user_id(self) -> UUID | None:
-        return self._granted_by_user_id
+    def granted_by(self) -> UUID | None:
+        return self._granted_by
 
     @property
     def created_at(self) -> datetime:

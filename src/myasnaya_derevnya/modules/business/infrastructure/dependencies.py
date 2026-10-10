@@ -1,6 +1,9 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.business.application.interactors.create_org_unit import (
+    CreateOrgUnitInteractor,
+)
 from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_repository.base import (
     OrgUnitRepository,
 )
@@ -24,3 +27,7 @@ class BusinessDepProvider(Provider):
         self, org_unit_repository: OrgUnitRepository
     ) -> BusinessAPI:
         return BusinessAPI(org_unit_repository=org_unit_repository)
+
+    # INTERACTORS
+
+    create_org_unit_interactor = provide(CreateOrgUnitInteractor, scope=Scope.REQUEST)
