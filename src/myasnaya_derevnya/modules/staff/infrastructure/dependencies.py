@@ -10,6 +10,15 @@ from myasnaya_derevnya.modules.staff.application.interactors.create_credential i
 from myasnaya_derevnya.modules.staff.application.interactors.create_employee import (
     CreateEmployeeInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.get_employee_by_id import (
+    GetEmployeeByIdInteractor,
+)
+from myasnaya_derevnya.modules.staff.application.interactors.list_employees import (
+    ListEmployeesInteractor,
+)
+from myasnaya_derevnya.modules.staff.application.interactors.revoke_role import (
+    RevokeRoleInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.role.create import (
     CreateRoleInteractor,
 )
@@ -74,3 +83,11 @@ class StaffDepProvider(Provider):
     assign_role_interactor = provide(AssignRoleInteractor, scope=Scope.REQUEST)
 
     create_role_interactor = provide(CreateRoleInteractor, scope=Scope.REQUEST)
+
+    revoke_role_interactor = provide(RevokeRoleInteractor, scope=Scope.REQUEST)
+
+    get_employee_by_id_interactor = provide(
+        GetEmployeeByIdInteractor, scope=Scope.REQUEST
+    )
+
+    list_employees_interactor = provide(ListEmployeesInteractor, scope=Scope.REQUEST)

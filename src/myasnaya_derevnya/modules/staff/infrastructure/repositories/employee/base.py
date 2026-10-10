@@ -14,5 +14,10 @@ class EmployeeRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def list(self, *, limit: int, offset: int) -> tuple[list[Employee], int]:
+        """Страница сотрудников и их общее количество."""
+        raise NotImplementedError
+
+    @abstractmethod
     async def save(self, employee: Employee) -> None:
         raise NotImplementedError

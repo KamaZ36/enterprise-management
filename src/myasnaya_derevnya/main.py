@@ -8,6 +8,7 @@ from fastapi.security import APIKeyHeader
 
 from myasnaya_derevnya.core.errors import (
     AppError,
+    ConflictError,
     DomainError,
     ForbiddenError,
     NotFoundError,
@@ -16,7 +17,10 @@ from myasnaya_derevnya.core.errors import (
     ValidationError,
 )
 from myasnaya_derevnya.core.seed import bootstrap_system
-from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import login_router
+from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import (
+    login_router,
+    logout_router,
+)
 from myasnaya_derevnya.modules.business.presentation.api.v1 import (
     router as business_router,
 )
@@ -30,6 +34,7 @@ STATUS_BY_CATEGORY: dict[type[AppError], int] = {
     UnauthorizedError: 401,
     ForbiddenError: 403,
     NotFoundError: 404,
+    ConflictError: 409,
 }
 
 
@@ -68,6 +73,7 @@ async def lifespan(app: FastAPI):
 
 def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
+    app.include_router(logout_router)
     app.include_router(staff_router)
     app.include_router(business_router)
     app.include_router(catalog_router)
