@@ -6,7 +6,7 @@ from myasnaya_derevnya.core.errors import ConflictError, NotFoundError
 # CATEGORY
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class CategoryNotFound(NotFoundError):
     category_id: UUID
 
@@ -14,7 +14,7 @@ class CategoryNotFound(NotFoundError):
         return f"Категория {self.category_id} не найдена."
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class CategoryAlreadyExists(ConflictError):
     category_name: str
 
@@ -25,7 +25,7 @@ class CategoryAlreadyExists(ConflictError):
 # PRICE LIST
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class PriceListAlreadyExists(ConflictError):
     price_list_name: str
 

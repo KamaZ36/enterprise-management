@@ -67,7 +67,6 @@ def test_create_app_exposes_endpoints() -> None:
 
 
 def test_auth_endpoints_are_exposed() -> None:
-    """Регресс: интерактор есть и зарегистрирован, но эндпоинт забыли подключить."""
     paths = create_app().openapi()["paths"]
 
     assert "/api/login/password" in paths
@@ -95,8 +94,28 @@ def test_read_endpoints_document_response_schema() -> None:
     assert "200" in responses
 
 
+def test_inventory_read_endpoints_document_response_schema() -> None:
+    spec = create_app().openapi()
+    paths = spec["paths"]
+
+    balances = paths["/api/inventory/warehouses/{warehouse_id}/balances"]["get"]
+    balance = paths[
+        "/api/inventory/warehouses/{warehouse_id}/balances/{nomenclature_id}"
+    ]["get"]
+
+    assert balances["responses"]["200"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/BalanceListSchema"
+    }
+    assert balance["responses"]["200"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/BalanceSchema"
+    }
+    assert (
+        "average_unit_cost"
+        in spec["components"]["schemas"]["BalanceSchema"]["properties"]
+    )
+
+
 async def test_every_endpoint_interactor_is_registered() -> None:
-    """Регресс: интерактор, который эндпоинт резолвит, но забыт в DI-провайдере."""
     targets: list[tuple[str, str, type]] = []
     for path in _presentation_modules():
         module = importlib.import_module(_module_name(path))

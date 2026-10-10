@@ -6,8 +6,12 @@ from myasnaya_derevnya.modules.business.application.interactors.create_org_unit 
     CreateOrgUnitCommand,
     CreateOrgUnitInteractor,
 )
+from myasnaya_derevnya.modules.business.application.interactors.list_org_units import (
+    ListOrgUnitsInteractor,
+)
 from myasnaya_derevnya.modules.business.presentation.api.v1.schemas import (
     CreateOrgUnitSchema,
+    OrgUnitSchema,
 )
 
 router = APIRouter(prefix="/api", tags=["Структурные подразделения"])
@@ -29,3 +33,16 @@ async def create_org_unit(request: Request, data: CreateOrgUnitSchema) -> JSONRe
         org_unit_id = await interactor(command)
 
     return JSONResponse(status_code=201, content={"org_unit_id": str(org_unit_id)})
+
+
+@router.get(
+    "/org-unit",
+    response_model=list[OrgUnitSchema],
+    description="Список организационных единиц",
+)
+async def list_org_units(request: Request) -> list[OrgUnitSchema]:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListOrgUnitsInteractor)
+        items = await interactor()
+
+    return [OrgUnitSchema.from_dto(item) for item in items]

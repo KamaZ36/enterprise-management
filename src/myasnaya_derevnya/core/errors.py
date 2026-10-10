@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ProjectError(Exception):
     """Базовый класс ошибок всего проекта"""
 
@@ -9,7 +9,7 @@ class ProjectError(Exception):
         super().__init__(self.__str__())
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class AppError(ProjectError):
     """Базовая ошибка прикладного слоя"""
 
@@ -17,7 +17,7 @@ class AppError(ProjectError):
         return "Ошибка приложения"
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class DomainError(ProjectError):
     """Базовая ошибка доменного слоя"""
 
@@ -25,23 +25,23 @@ class DomainError(ProjectError):
         return "Ошибка доменного слоя"
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class UnauthorizedError(AppError): ...
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ForbiddenError(AppError): ...
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ValidationError(AppError): ...
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class NotFoundError(AppError): ...
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ConflictError(AppError):
     """Конфликт состояния: объект с такими данными уже существует"""
 
@@ -49,7 +49,7 @@ class ConflictError(AppError):
         return "Конфликт: объект с такими данными уже существует"
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class UniqueViolationError(ConflictError):
     """Нарушено уникальное ограничение в базе данных"""
 

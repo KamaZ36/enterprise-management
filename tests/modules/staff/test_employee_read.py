@@ -201,7 +201,6 @@ def _row(**overrides: object) -> dict:
 
 
 def test_row_without_phone_number_is_mapped() -> None:
-    """Регресс: NULL в phone_number ронял маппинг строки в сущность."""
     repository = SQLAlchemyEmployeeRepository.__new__(SQLAlchemyEmployeeRepository)
 
     employee = repository._to_entity(_row(phone_number=None))
