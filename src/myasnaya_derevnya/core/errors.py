@@ -39,3 +39,22 @@ class ValidationError(AppError): ...
 
 @dataclass(frozen=True, slots=True, eq=False)
 class NotFoundError(AppError): ...
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class ConflictError(AppError):
+    """Конфликт состояния: объект с такими данными уже существует"""
+
+    def __str__(self) -> str:
+        return "Конфликт: объект с такими данными уже существует"
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class UniqueViolationError(ConflictError):
+    """Нарушено уникальное ограничение в базе данных"""
+
+    constraint: str | None = None
+
+    def __str__(self) -> str:
+        name = self.constraint or "неизвестное ограничение"
+        return f"Нарушено ограничение уникальности: {name}"

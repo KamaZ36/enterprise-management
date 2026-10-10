@@ -17,7 +17,6 @@ dependencies = [
     "httpx>=0.28.1",
     "phonenumbers>=9.0.40",
     "pydantic-settings>=2.15.0",
-    "ruff>=0.16.10",
     "sqlalchemy[asyncio]>=2.1.1",
     "uvicorn>=0.54.0",
 ]
@@ -28,3 +27,17 @@ myasnaya-derevnya = "myasnaya_derevnya:main"
 [build-system]
 requires = ["uv_build>=0.12.21,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.17.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "db: тесты, требующие запущенного PostgreSQL",
+]

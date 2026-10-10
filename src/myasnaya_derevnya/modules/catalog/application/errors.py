@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from myasnaya_derevnya.core.errors import DomainError, NotFoundError
+from myasnaya_derevnya.core.errors import ConflictError, NotFoundError
 
 # CATEGORY
 
@@ -15,7 +15,7 @@ class CategoryNotFound(NotFoundError):
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class CategoryAlreadyExists(DomainError):
+class CategoryAlreadyExists(ConflictError):
     category_name: str
 
     def __str__(self) -> str:
@@ -26,7 +26,7 @@ class CategoryAlreadyExists(DomainError):
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class PriceListAlreadyExists(DomainError):
+class PriceListAlreadyExists(ConflictError):
     price_list_name: str
 
     def __str__(self) -> str:

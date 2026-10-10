@@ -19,7 +19,11 @@ class DatabaseProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def get_session(self) -> AsyncGenerator[AsyncSession]:
         async with async_session_maker() as session:
-            yield session
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
 
     @provide(scope=Scope.REQUEST)
     async def get_transaction_manager(

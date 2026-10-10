@@ -13,3 +13,11 @@ class RoleNotFound(NotFoundError):
 
     def __str__(self) -> str:
         return f"Роль {self.role_id} не найдена."
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class RoleAssignmentNotFound(NotFoundError):
+    assignment_id: UUID
+
+    def __str__(self) -> str:
+        return f"Назначение роли {self.assignment_id} не найдено."

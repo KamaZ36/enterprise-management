@@ -82,3 +82,10 @@ class RoleAssignment:
     @property
     def created_at(self) -> datetime:
         return self._created_at
+
+    @property
+    def is_active(self) -> bool:
+        return self._status is RoleAssignmentStatus.ACTIVE
+
+    def revoke(self) -> None:
+        self._status = RoleAssignmentStatus.REVOKED
