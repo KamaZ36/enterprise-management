@@ -1,4 +1,15 @@
+from dataclasses import dataclass
+from uuid import UUID
+
 from myasnaya_derevnya.core.errors import NotFoundError
 
 
 class EmployeeNotFound(NotFoundError): ...
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class RoleNotFound(NotFoundError):
+    role_id: UUID
+
+    def __str__(self) -> str:
+        return f"Роль {self.role_id} не найдена."

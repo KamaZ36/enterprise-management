@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
+from myasnaya_derevnya.modules.auth.application.errors import UserNotFound
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
     UserCredential,
     UserCredentialType,
@@ -10,7 +11,6 @@ from myasnaya_derevnya.modules.auth.domain.entities.identity import (
     UserIdentity,
     UserIdentityType,
 )
-from myasnaya_derevnya.modules.auth.domain.errors import UserNotFound
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base import (
     CredentialRepository,
 )
@@ -20,7 +20,7 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
-from myasnaya_derevnya.modules.auth.services.password_serivce import PasswordService
+from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +48,7 @@ class CreateEmployeeCredentialInteractor:
     async def __call__(self, command: CreateEmployeeCredentialCommand) -> None:
         user = await self._user_repository.get_by_id(user_id=command.user_id)
         if user is None:
-            raise UserNotFound()
+            raise UserNotFound(command.user_id)
 
         user_identity = UserIdentity.create(
             user_id=user.id,
@@ -56,10 +56,12 @@ class CreateEmployeeCredentialInteractor:
             identifier=command.username,
         )
 
+        password_hash = self._password_service.hash(command.password)
+
         user_credential = UserCredential.create(
             user_id=user.id,
             credential_type=UserCredentialType.PASSWORD,
-            secret=command.password,
+            secret=password_hash,
         )
 
         await self._identity_repository.add(user_identity)

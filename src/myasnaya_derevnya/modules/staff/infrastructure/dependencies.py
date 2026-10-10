@@ -10,6 +10,9 @@ from myasnaya_derevnya.modules.staff.application.interactors.create_credential i
 from myasnaya_derevnya.modules.staff.application.interactors.create_employee import (
     CreateEmployeeInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.role.create import (
+    CreateRoleInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
@@ -34,9 +37,12 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment.sqlalchemy import (
     SQLAlchemyRoleAssignmentRepository,
 )
+from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 class StaffDepProvider(Provider):
+    staff_api = provide(StaffAPI, scope=Scope.REQUEST)
+
     # REPOSITORIES
     @provide(scope=Scope.REQUEST)
     def get_role_repository(self, session: AsyncSession) -> RoleRepository:
@@ -56,7 +62,7 @@ class StaffDepProvider(Provider):
 
     access_policy = provide(AccessPolicy, scope=Scope.REQUEST)
 
-    acess_service = provide(AccessService, scope=Scope.REQUEST)
+    access_service = provide(AccessService, scope=Scope.REQUEST)
 
     # INTERACTORS
     create_employee_interactor = provide(CreateEmployeeInteractor, scope=Scope.REQUEST)
@@ -66,3 +72,5 @@ class StaffDepProvider(Provider):
     )
 
     assign_role_interactor = provide(AssignRoleInteractor, scope=Scope.REQUEST)
+
+    create_role_interactor = provide(CreateRoleInteractor, scope=Scope.REQUEST)

@@ -77,7 +77,7 @@ def create_app() -> FastAPI:
     api_key_scheme = APIKeyHeader(name="Authorization", auto_error=False)
     app = FastAPI(lifespan=lifespan, dependencies=[Depends(api_key_scheme)])
 
-    app.add_exception_handler(AppError, api_exception_handler)
+    app.add_exception_handler(ProjectError, api_exception_handler)
 
     app.add_middleware(
         CORSMiddleware,

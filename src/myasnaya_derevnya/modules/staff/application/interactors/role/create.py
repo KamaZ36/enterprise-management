@@ -4,6 +4,7 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
@@ -33,17 +34,22 @@ class CreateRoleInteractor:
         identity_provider: IdentityProvider,
         role_repository: RoleRepository,
         transaction_manager: TransactionManager,
+        business_api: BusinessAPI,
         access_service: AccessService,
     ) -> None:
         self._identity_provider = identity_provider
         self._role_repository = role_repository
         self._transaction_manager = transaction_manager
+        self._business_api = business_api
         self._access_service = access_service
 
     async def __call__(self, command: CreateRoleCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
+        root_org_unit_id = await self._business_api.get_root_unit_id()
         if not await self._access_service.can(
-            user_id=current_user_id, permission=MANAGE_ROLES, org_unit_id=None
+            user_id=current_user_id,
+            permission=MANAGE_ROLES,
+            org_unit_id=root_org_unit_id,
         ):
             raise ForbiddenError()
 

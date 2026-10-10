@@ -63,7 +63,6 @@ class CreateEmployeeInteractor:
 
         employee = Employee.create(
             user_id=user_id,
-            org_unit_id=root_org_unit_id,
             first_name=command.first_name,
             last_name=command.last_name,
             middle_name=command.middle_name,

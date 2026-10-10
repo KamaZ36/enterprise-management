@@ -4,14 +4,16 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
-from myasnaya_derevnya.modules.auth.domain.errors import RoleNotFound
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignment,
 )
-from myasnaya_derevnya.modules.staff.domain.errors import EmployeeNotFound
+from myasnaya_derevnya.modules.staff.domain.errors import (
+    EmployeeNotFound,
+    RoleNotFound,
+)
 from myasnaya_derevnya.modules.staff.domain.permissions import MANAGE_ROLES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
     EmployeeRepository,
@@ -60,7 +62,7 @@ class AssignRoleInteractor:
 
         role = await self._role_repository.get_by_id(role_id=command.role_id)
         if role is None:
-            raise RoleNotFound()
+            raise RoleNotFound(command.role_id)
 
         if not await self._access_service.can_assign(
             actor_user_id=current_user_id,

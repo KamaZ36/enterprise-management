@@ -61,7 +61,7 @@ class CatalogDepProvider(Provider):
 
     # INTERACTOR
 
-    create_nomenclature_intreactor = provide(
+    create_nomenclature_interactor = provide(
         CreateNomenclatureInteractor, scope=Scope.REQUEST
     )
     create_category_interactor = provide(CreateCategoryInteractor, scope=Scope.REQUEST)
