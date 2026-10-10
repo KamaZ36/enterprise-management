@@ -5,7 +5,6 @@ from fastapi import Request
 from myasnaya_derevnya.core.errors import UnauthorizedError
 from myasnaya_derevnya.core.identity_provider import (
     IdentityProvider,
-    OrgUnitIdGetter,
     SessionIdGetter,
 )
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
@@ -36,37 +35,13 @@ class HTTPSessionIDGetter(SessionIdGetter):
             return None
 
 
-class HTTPOrgUnitIdGetter(OrgUnitIdGetter):
-    def __init__(self, request: Request) -> None:
-        self._request = request
-
-    async def get(self) -> UUID | None:
-        header_val = self._request.headers.get("X-Context-Org-Unit-Id")
-        if header_val:
-            try:
-                return UUID(header_val)
-            except ValueError:
-                pass
-
-        # path_params = self._request.path_params
-        # if "org_unit_id" in path_params:
-        #     try:
-        #         return UUID(str(path_params["org_unit_id"]))
-        #     except ValueError:
-        #         pass
-
-        return None
-
-
 class HTTPIdentityProvider(IdentityProvider):
     def __init__(
         self,
         session_id_getter: SessionIdGetter,
-        org_unit_id_getter: OrgUnitIdGetter,
         session_repository: UserSessionRepository,
     ) -> None:
         self._session_id_getter = session_id_getter
-        self._org_unit_id_getter = org_unit_id_getter
         self._session_repository = session_repository
         self._active_session: UserSession | None = None
 
@@ -98,7 +73,3 @@ class HTTPIdentityProvider(IdentityProvider):
     async def get_current_session_id(self) -> UUID:
         session = await self._get_active_session()
         return session.id
-
-    async def get_current_org_unit_id(self) -> UUID | None:
-        await self._get_active_session()
-        return await self._org_unit_id_getter.get()

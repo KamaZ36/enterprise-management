@@ -34,5 +34,5 @@ class OrgUnitRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_root_id(self) -> UUID:
+    async def get_root_id(self) -> UUID | None:
         raise NotImplementedError

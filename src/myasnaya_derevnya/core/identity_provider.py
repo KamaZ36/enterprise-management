@@ -8,12 +8,6 @@ class SessionIdGetter(ABC):
         raise NotImplementedError()
 
 
-class OrgUnitIdGetter(ABC):
-    @abstractmethod
-    async def get(self) -> UUID | None:
-        raise NotImplementedError
-
-
 class IdentityProvider(ABC):
     @abstractmethod
     async def get_current_user_id(self) -> UUID:
@@ -22,7 +16,3 @@ class IdentityProvider(ABC):
     @abstractmethod
     async def get_current_session_id(self) -> UUID:
         raise NotImplementedError()
-
-    @abstractmethod
-    async def get_current_org_unit_id(self) -> UUID | None:
-        raise NotImplementedError

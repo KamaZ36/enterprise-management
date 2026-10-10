@@ -10,7 +10,6 @@ class Employee:
         self,
         id: UUID,
         user_id: UUID,
-        org_unit_id: UUID,
         first_name: str,
         last_name: str,
         middle_name: str | None,
@@ -22,7 +21,6 @@ class Employee:
     ) -> None:
         self._id = id
         self._user_id = user_id
-        self._org_unit_id = org_unit_id
         self._first_name = first_name
         self._last_name = last_name
         self._middle_name = middle_name
@@ -47,7 +45,6 @@ class Employee:
         return cls(
             id=uuid7(),
             user_id=user_id,
-            org_unit_id=org_unit_id,
             first_name=first_name,
             last_name=last_name,
             middle_name=middle_name,
@@ -65,10 +62,6 @@ class Employee:
     @property
     def user_id(self) -> UUID:
         return self._user_id
-
-    @property
-    def org_unit_id(self) -> UUID:
-        return self._org_unit_id
 
     @property
     def first_name(self) -> str:

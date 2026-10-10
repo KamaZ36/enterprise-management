@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -19,10 +20,10 @@ DATABASE_SCHEMA = "business"
 COMPANIES_TABLE = Table(
     "companies",
     metadata,
-    Column("id", UUID(as_uuid=True), primary_key=True),
+    Column("id", UUID, primary_key=True),
     Column(
         "org_unit_id",
-        UUID(as_uuid=True),
+        UUID,
         ForeignKey("business.org_units.id", ondelete="RESTRICT"),
         nullable=False,
         unique=True,
@@ -36,18 +37,26 @@ COMPANIES_TABLE = Table(
     Column("timezone", String(64), nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("attributes", JSONB, nullable=False, server_default="{}"),
-    Column("created_at", DateTime(timezone=True), nullable=False),
-    Column("updated_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    ),
     schema=DATABASE_SCHEMA,
 )
 
 ORG_UNITS_TABLE = Table(
     "org_units",
     metadata,
-    Column("id", UUID(as_uuid=True), primary_key=True),
+    Column("id", UUID, primary_key=True),
     Column(
         "parent_id",
-        UUID(as_uuid=True),
+        UUID,
         ForeignKey("business.org_units.id", ondelete="RESTRICT"),
         nullable=True,
     ),
@@ -59,8 +68,16 @@ ORG_UNITS_TABLE = Table(
     Column("timezone", String(64), nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column("attributes", JSONB, nullable=False, server_default="{}"),
-    Column("created_at", DateTime(timezone=True), nullable=False),
-    Column("updated_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    ),
     UniqueConstraint("code", name="uq_org_units_code"),
     Index("ix_org_units_parent_id", "parent_id"),
     Index("ix_org_units_type", "type"),
@@ -72,13 +89,13 @@ ORG_UNIT_CLOSURE_TABLE = Table(
     metadata,
     Column(
         "ancestor_id",
-        UUID(as_uuid=True),
+        UUID,
         ForeignKey("business.org_units.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
         "descendant_id",
-        UUID(as_uuid=True),
+        UUID,
         ForeignKey("business.org_units.id", ondelete="CASCADE"),
         primary_key=True,
     ),

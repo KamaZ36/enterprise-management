@@ -25,9 +25,6 @@ from myasnaya_derevnya.modules.catalog.infrastructure.tables import (  # noqa: F
     PRICE_LISTS_TABLE,
     PRICES_TABLE,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
-    WAREHOUSES_TABLE,  # noqa: F401
-)
 from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
     EMPLOYEES_TABLE,
     ROLE_ASSIGNMENTS_TABLE,

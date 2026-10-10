@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -28,8 +29,16 @@ CATEGORIES_TABLE = Table(
     ),
     Column("name", String(128), nullable=False),
     Column("is_active", Boolean, nullable=False, server_default="true"),
-    Column("created_at", DateTime(timezone=True), nullable=False),
-    Column("updated_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    ),
     Index("ix_categories_parent_id", "parent_id"),
     schema=DATABASE_SCHEMA,
 )
@@ -51,8 +60,16 @@ NOMENCLATURES_TABLE = Table(
     ),
     Column("gtin", String(14), nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),
-    Column("created_at", DateTime(timezone=True), nullable=False),
-    Column("updated_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    ),
     Index("ix_nomenclatures_category_id", "category_id"),
     Index("ix_nomenclatures_type", "type"),
     schema=DATABASE_SCHEMA,
@@ -65,8 +82,16 @@ PRICE_LISTS_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("name", String(128), nullable=False, unique=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),
-    Column("created_at", DateTime(timezone=True), nullable=False),
-    Column("updated_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    ),
     schema=DATABASE_SCHEMA,
 )
 
@@ -88,13 +113,19 @@ PRICES_TABLE = Table(
         nullable=False,
     ),
     Column("value", BigInteger, nullable=False),
-    Column("updated_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "updated_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    ),
     UniqueConstraint(
         "nomenclature_id",
         "price_list_id",
         name="uq_prices_nomenclature_price_list",
     ),
-    CheckConstraint("value >= 0", name="ck_prices_value_non_negative"),
+    CheckConstraint("value >= 0", name="value_non_negative"),
     Index("ix_prices_nomenclature_id", "nomenclature_id"),
     Index("ix_prices_price_list_id", "price_list_id"),
     schema=DATABASE_SCHEMA,

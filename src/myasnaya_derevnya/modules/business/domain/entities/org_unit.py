@@ -11,9 +11,8 @@ from myasnaya_derevnya.utils import get_datetime_utc
 class OrgUnitType(StrEnum):
     ROOT = "root"
     PRODUCTION = "production"
-    CAFE_GROUP = "cafe_group"
+    GROUP = "group"
     CAFE = "cafe"
-    SHOP_GROUP = "shop_group"
     SHOP = "shop"
     DEPARTMENT = "department"
 
