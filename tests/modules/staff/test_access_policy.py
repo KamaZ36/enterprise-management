@@ -83,7 +83,6 @@ def test_global_assignment_covers_target_without_org_unit() -> None:
 
 
 def test_scoped_assignment_does_not_cover_target_without_org_unit() -> None:
-    """Регресс: create_role проверял право на None и был недоступен скоуп-админу."""
     root = uuid4()
     role = make_role(is_wildcard=True)
     assignments = [make_assignment(role, org_unit_id=root)]

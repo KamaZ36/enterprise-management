@@ -1,3 +1,4 @@
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
@@ -34,10 +35,14 @@ from myasnaya_derevnya.modules.staff.application.interactors.role.create import 
     CreateRoleCommand,
     CreateRoleInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.role.list_roles import (
+    ListRolesInteractor,
+)
 from myasnaya_derevnya.modules.staff.presentation.api.v1.schemas import (
     AssignRoleCommandSchema,
     EmployeeListSchema,
     EmployeeSchema,
+    RoleSchema,
 )
 
 router = APIRouter(prefix="/api/employees", tags=["Сотрудники"])
@@ -108,8 +113,8 @@ async def revoke_role(request: Request, assignment_id: UUID) -> JSONResponse:
 @router.get("", response_model=EmployeeListSchema, description="Список сотрудников")
 async def list_employees(
     request: Request,
-    limit: int = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
-    offset: int = Query(0, ge=0),
+    limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> EmployeeListSchema:
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListEmployeesInteractor)
@@ -121,6 +126,19 @@ async def list_employees(
         limit=page.limit,
         offset=page.offset,
     )
+
+
+@router.get(
+    "/roles",
+    response_model=list[RoleSchema],
+    description="Список ролей",
+)
+async def list_roles(request: Request) -> list[RoleSchema]:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListRolesInteractor)
+        items = await interactor()
+
+    return [RoleSchema.from_dto(item) for item in items]
 
 
 @router.get(

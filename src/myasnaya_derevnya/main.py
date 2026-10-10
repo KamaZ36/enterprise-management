@@ -27,6 +27,9 @@ from myasnaya_derevnya.modules.business.presentation.api.v1 import (
 from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
     router as catalog_router,
 )
+from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
+    router as inventory_router,
+)
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import router as staff_router
 
 STATUS_BY_CATEGORY: dict[type[AppError], int] = {
@@ -77,6 +80,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(staff_router)
     app.include_router(business_router)
     app.include_router(catalog_router)
+    app.include_router(inventory_router)
 
 
 def create_app() -> FastAPI:

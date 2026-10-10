@@ -22,11 +22,20 @@ from myasnaya_derevnya.modules.staff.application.interactors.revoke_role import 
 from myasnaya_derevnya.modules.staff.application.interactors.role.create import (
     CreateRoleInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.role.list_roles import (
+    ListRolesInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
 from myasnaya_derevnya.modules.staff.domain.services.policy_of_access import (
     AccessPolicy,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.readers.role.base import (
+    RoleReader,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.readers.role.sqlalchemy import (
+    SQLAlchemyRoleReader,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
     EmployeeRepository,
@@ -67,6 +76,12 @@ class StaffDepProvider(Provider):
     def get_employee_repository(self, session: AsyncSession) -> EmployeeRepository:
         return SQLAlchemyEmployeeRepository(session)
 
+    # READERS
+
+    @provide(scope=Scope.REQUEST)
+    def get_role_reader(self, session: AsyncSession) -> RoleReader:
+        return SQLAlchemyRoleReader(session)
+
     # SERVICES
 
     access_policy = provide(AccessPolicy, scope=Scope.REQUEST)
@@ -91,3 +106,5 @@ class StaffDepProvider(Provider):
     )
 
     list_employees_interactor = provide(ListEmployeesInteractor, scope=Scope.REQUEST)
+
+    list_roles_interactor = provide(ListRolesInteractor, scope=Scope.REQUEST)

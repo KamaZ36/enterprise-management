@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from myasnaya_derevnya.modules.staff.application.dto import RoleListItem
 from myasnaya_derevnya.modules.staff.domain.entities.employee import Employee
 
 
@@ -45,3 +46,25 @@ class EmployeeListSchema(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class RoleSchema(BaseModel):
+    id: UUID
+    code: str
+    name: str
+    level: int
+    is_system: bool
+    is_assignable: bool
+    is_wildcard: bool
+
+    @classmethod
+    def from_dto(cls, item: RoleListItem) -> RoleSchema:
+        return cls(
+            id=item.id,
+            code=item.code,
+            name=item.name,
+            level=item.level,
+            is_system=item.is_system,
+            is_assignable=item.is_assignable,
+            is_wildcard=item.is_wildcard,
+        )

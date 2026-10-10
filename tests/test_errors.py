@@ -67,7 +67,6 @@ async def test_unexpected_error_does_not_leak_details() -> None:
 
 
 def test_project_error_is_registered_in_app() -> None:
-    """Регресс: DomainError не попадал в хендлер и отдавал 500."""
     app = create_app()
 
     assert ProjectError in app.exception_handlers

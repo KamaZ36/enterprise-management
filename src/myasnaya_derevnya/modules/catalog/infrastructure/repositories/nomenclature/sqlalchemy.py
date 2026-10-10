@@ -55,6 +55,22 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
 
         return self._to_entity(row)
 
+    async def get_types(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
+        """Коды типов номенклатуры.
+
+        Остаётся в репозитории, а не у читателя: эти данные нужны не для
+        показа, а для проверки бизнес-правила при проведении документа.
+        """
+        if not nomenclature_ids:
+            return {}
+
+        stmt = select(NOMENCLATURES_TABLE.c.id, NOMENCLATURES_TABLE.c.type).where(
+            NOMENCLATURES_TABLE.c.id.in_(nomenclature_ids)
+        )
+        rows = (await self._session.execute(stmt)).all()
+
+        return {row[0]: row[1] for row in rows}
+
     def _to_entity(self, row: RowMapping) -> Nomenclature:
         return Nomenclature(
             id=row["id"],

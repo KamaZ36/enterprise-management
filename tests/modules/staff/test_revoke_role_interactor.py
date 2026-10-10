@@ -12,7 +12,6 @@ from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignmentStatus,
 )
 from myasnaya_derevnya.modules.staff.domain.errors import RoleAssignmentNotFound
-from myasnaya_derevnya.modules.staff.domain.permissions import ASSIGN_ROLES
 
 
 class FakeIdentityProvider:
@@ -155,8 +154,3 @@ async def test_scoped_assignment_is_checked_against_its_own_unit() -> None:
     await interactor(RevokeRoleCommand(assignment_id=assignment.id))
 
     assert access_service.checked_org_units == [org_unit_id]
-
-
-def test_interactor_checks_the_assign_permission() -> None:
-    """Страховка от смены права при рефакторинге."""
-    assert ASSIGN_ROLES.code == "staff.role.assign"

@@ -2,8 +2,10 @@ from collections.abc import AsyncGenerator
 
 import httpx
 from dishka import Provider, Scope, provide
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.database.conflicts import conflict_error
 from myasnaya_derevnya.core.database.connection import async_session_maker
 from myasnaya_derevnya.core.database.transaction_manager.base import (
     TransactionManager,
@@ -21,6 +23,12 @@ class DatabaseProvider(Provider):
         async with async_session_maker() as session:
             try:
                 yield session
+            except IntegrityError as exc:
+                # Нарушение ограничения приходит уже на execute, а не только на
+                # коммите, поэтому переводим его в конфликт здесь — иначе
+                # дубликат вернул бы клиенту 500.
+                await session.rollback()
+                raise conflict_error(exc) from exc
             except Exception:
                 await session.rollback()
                 raise

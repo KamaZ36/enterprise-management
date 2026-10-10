@@ -14,3 +14,6 @@ class BusinessAPI:
 
     async def get_root_unit_id(self) -> UUID:
         return await self._org_unit_repository.get_root_id()
+
+    async def org_unit_exists(self, org_unit_id: UUID) -> bool:
+        return await self._org_unit_repository.get_by_id(org_unit_id) is not None
