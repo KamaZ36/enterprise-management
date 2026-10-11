@@ -10,11 +10,20 @@ from myasnaya_derevnya.modules.staff.application.interactors.create_credential i
 from myasnaya_derevnya.modules.staff.application.interactors.create_employee import (
     CreateEmployeeInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.get_current_user import (
+    GetCurrentUserInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.get_employee_by_id import (
     GetEmployeeByIdInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.list_employee_roles import (
+    ListEmployeeRolesInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.list_employees import (
     ListEmployeesInteractor,
+)
+from myasnaya_derevnya.modules.staff.application.interactors.list_permissions import (
+    ListPermissionsInteractor,
 )
 from myasnaya_derevnya.modules.staff.application.interactors.revoke_role import (
     RevokeRoleInteractor,
@@ -22,14 +31,26 @@ from myasnaya_derevnya.modules.staff.application.interactors.revoke_role import 
 from myasnaya_derevnya.modules.staff.application.interactors.role.create import (
     CreateRoleInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.role.delete import (
+    DeleteRoleInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.role.list_roles import (
     ListRolesInteractor,
+)
+from myasnaya_derevnya.modules.staff.application.interactors.update_employee import (
+    UpdateEmployeeInteractor,
 )
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
 from myasnaya_derevnya.modules.staff.domain.services.policy_of_access import (
     AccessPolicy,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.readers.employee_role.base import (
+    EmployeeRoleReader,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.readers.employee_role.sqlalchemy import (
+    SQLAlchemyEmployeeRoleReader,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.readers.role.base import (
     RoleReader,
@@ -76,20 +97,24 @@ class StaffDepProvider(Provider):
     def get_employee_repository(self, session: AsyncSession) -> EmployeeRepository:
         return SQLAlchemyEmployeeRepository(session)
 
-    # READERS
+    @provide(scope=Scope.REQUEST)
+    def get_employee_role_reader(self, session: AsyncSession) -> EmployeeRoleReader:
+        return SQLAlchemyEmployeeRoleReader(session)
 
+    # READERS
     @provide(scope=Scope.REQUEST)
     def get_role_reader(self, session: AsyncSession) -> RoleReader:
         return SQLAlchemyRoleReader(session)
 
     # SERVICES
-
     access_policy = provide(AccessPolicy, scope=Scope.REQUEST)
 
     access_service = provide(AccessService, scope=Scope.REQUEST)
 
     # INTERACTORS
     create_employee_interactor = provide(CreateEmployeeInteractor, scope=Scope.REQUEST)
+
+    update_employee_interactor = provide(UpdateEmployeeInteractor, scope=Scope.REQUEST)
 
     create_credentials_interactor = provide(
         CreateCredentialEmployeeInteractor, scope=Scope.REQUEST
@@ -107,4 +132,16 @@ class StaffDepProvider(Provider):
 
     list_employees_interactor = provide(ListEmployeesInteractor, scope=Scope.REQUEST)
 
+    list_employee_roles_interactor = provide(
+        ListEmployeeRolesInteractor, scope=Scope.REQUEST
+    )
+
+    get_current_user_interactor = provide(GetCurrentUserInteractor, scope=Scope.REQUEST)
+
+    list_permissions_interactor = provide(
+        ListPermissionsInteractor, scope=Scope.REQUEST
+    )
+
     list_roles_interactor = provide(ListRolesInteractor, scope=Scope.REQUEST)
+
+    delete_role_interactor = provide(DeleteRoleInteractor, scope=Scope.REQUEST)

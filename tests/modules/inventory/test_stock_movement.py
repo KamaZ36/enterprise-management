@@ -70,7 +70,6 @@ def test_negative_quantity_is_rejected() -> None:
 
 
 def test_posting_reference_is_stored() -> None:
-    """Проводка ссылается на проведение, а не на документ: у типа своя таблица."""
     posting_id = uuid4()
     movement = StockMovement.create(
         occurred_at=get_datetime_utc(),

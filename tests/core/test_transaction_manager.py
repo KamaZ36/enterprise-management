@@ -61,7 +61,6 @@ async def test_unique_violation_becomes_conflict_with_constraint_name() -> None:
 
 
 async def test_constraint_name_is_read_from_wrapped_driver_error() -> None:
-    """asyncpg-исключение бывает завёрнуто драйвером SQLAlchemy."""
     driver_error = FakeDriverError(sqlstate="23505", constraint_name="uq_users_login")
     wrapper = FakeDriverError()
     wrapper.__cause__ = driver_error

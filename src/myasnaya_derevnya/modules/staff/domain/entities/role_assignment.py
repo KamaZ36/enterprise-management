@@ -16,7 +16,7 @@ class RoleAssignment:
         id_: UUID,
         user_id: UUID,
         role_id: UUID,
-        org_unit_id: UUID | None,  # None = вся компания
+        org_unit_id: UUID | None,
         include_descendants: bool,
         status: RoleAssignmentStatus,
         granted_by: UUID | None,

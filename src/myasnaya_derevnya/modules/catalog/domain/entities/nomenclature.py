@@ -10,9 +10,9 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 
 class NomenclatureType(StrEnum):
-    RAW_MATERIAL = "raw_material"  # Сырье (мясо, специи, соль)
-    SEMI_FINISHED = "semi_finished"  # Полуфабрикат (фарш, тесто)
-    FINISHED_GOOD = "finished_good"  # Готовая продукция (колбаса, бургер)
+    RAW_MATERIAL = "raw_material"
+    SEMI_FINISHED = "semi_finished"
+    FINISHED_GOOD = "finished_good"
 
 
 class UnitOfMeasurement(StrEnum):
@@ -33,6 +33,7 @@ class Nomenclature:
         type_: NomenclatureType,
         category_id: UUID,
         created_at: datetime,
+        is_active: bool = True,
     ) -> None:
         self._id = id
         self._sku = sku
@@ -41,6 +42,7 @@ class Nomenclature:
         self._type = type_
         self._category_id = category_id
         self._created_at = created_at
+        self._is_active = is_active
 
     @classmethod
     def create(
@@ -93,3 +95,27 @@ class Nomenclature:
     @property
     def created_at(self) -> datetime:
         return self._created_at
+
+    @property
+    def is_active(self) -> bool:
+        return self._is_active
+
+    def rename(self, name: str) -> None:
+        if not name.strip():
+            raise EmptyNameError()
+        self._name = name.strip()
+
+    def change_category(self, category_id: UUID) -> None:
+        self._category_id = category_id
+
+    def change_unit(self, unit: UnitOfMeasurement) -> None:
+        self._unit = unit
+
+    def change_type(self, type_: NomenclatureType) -> None:
+        self._type = type_
+
+    def deactivate(self) -> None:
+        self._is_active = False
+
+    def activate(self) -> None:
+        self._is_active = True

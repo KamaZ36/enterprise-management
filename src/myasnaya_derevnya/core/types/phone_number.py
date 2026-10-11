@@ -8,8 +8,9 @@ class InvalidPhoneNumber(ValueError): ...
 
 @dataclass(frozen=True, slots=True)
 class PhoneNumber:
-    value: str  # E.164
+    value: str
 
+    # E.164
     @classmethod
     def parse(cls, raw: str, default_region: str | None = "RU") -> PhoneNumber:
         cleaned = "".join(raw.split()).strip()

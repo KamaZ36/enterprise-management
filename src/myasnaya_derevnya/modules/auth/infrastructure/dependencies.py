@@ -64,11 +64,9 @@ class AuthDepProvider(Provider):
         return SQLAlchemyUserIdentityRepository(session)
 
     # SERVICES
-
     password_service = provide(PasswordService, scope=Scope.REQUEST)
 
     # INTERACTORS
-
     logout_interactor = provide(LogoutInteractor, scope=Scope.REQUEST)
 
     login_by_password_interactor = provide(

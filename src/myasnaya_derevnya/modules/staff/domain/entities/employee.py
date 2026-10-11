@@ -98,6 +98,26 @@ class Employee:
     def is_active(self) -> bool:
         return self._dismissed_at is None
 
+    def rename(
+        self,
+        *,
+        first_name: str,
+        last_name: str,
+        middle_name: str | None,
+    ) -> None:
+        self._first_name = first_name
+        self._last_name = last_name
+        self._middle_name = middle_name
+
+    def change_position(self, position: str) -> None:
+        self._position = position
+
+    def change_phone(self, phone_number: PhoneNumber | None) -> None:
+        self._phone_number = phone_number
+
+    def restore(self) -> None:
+        self._dismissed_at = None
+
     def dismiss(self, at: datetime) -> None:
         if self._dismissed_at is not None:
             return

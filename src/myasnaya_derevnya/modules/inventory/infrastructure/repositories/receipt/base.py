@@ -11,7 +11,6 @@ class ReceiptRepository(ABC):
 
     @abstractmethod
     async def save(self, receipt: Receipt) -> None:
-        """Сохраняет шапку. Строки после создания неизменяемы."""
         raise NotImplementedError
 
     @abstractmethod

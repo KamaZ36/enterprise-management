@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from myasnaya_derevnya.core.errors import NotFoundError
+from myasnaya_derevnya.core.errors import ConflictError, NotFoundError
 
 
 class EmployeeNotFound(NotFoundError): ...
@@ -21,3 +21,23 @@ class RoleAssignmentNotFound(NotFoundError):
 
     def __str__(self) -> str:
         return f"Назначение роли {self.assignment_id} не найдено."
+
+
+@dataclass(slots=True, eq=False)
+class RoleIsSystemError(ConflictError):
+    code: str
+
+    def __str__(self) -> str:
+        return f"Системную роль «{self.code}» удалить нельзя"
+
+
+@dataclass(slots=True, eq=False)
+class RoleInUseError(ConflictError):
+    code: str
+    assignments: int
+
+    def __str__(self) -> str:
+        return (
+            f"Роль «{self.code}» назначена сотрудникам ({self.assignments}) — "
+            "сначала отзовите её"
+        )

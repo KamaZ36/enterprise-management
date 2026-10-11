@@ -1,5 +1,3 @@
-"""Юнит-тесты интерактора списка номенклатуры: права, фильтры, пагинация."""
-
 from uuid import UUID, uuid4
 
 import pytest
@@ -7,7 +5,6 @@ import pytest
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.modules.catalog.application.dto import NomenclatureListItem
 from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclatures import (
-    MAX_LIMIT,
     ListNomenclaturesInteractor,
     ListNomenclaturesQuery,
 )
@@ -64,6 +61,7 @@ def make_item(sku: str = "SKU-1") -> NomenclatureListItem:
         unit=UnitOfMeasurement.KG,
         category_id=uuid4(),
         category_name="Мясо",
+        is_active=True,
     )
 
 
@@ -132,13 +130,13 @@ async def test_filters_are_passed_to_reader() -> None:
     ]
 
 
-async def test_limits_are_clamped() -> None:
+async def test_window_is_passed_to_reader() -> None:
     interactor, reader, _ = build()
 
-    await interactor(ListNomenclaturesQuery(limit=1000, offset=-5))
+    await interactor(ListNomenclaturesQuery(limit=50, offset=10))
 
-    assert reader.calls[0]["limit"] == MAX_LIMIT
-    assert reader.calls[0]["offset"] == 0
+    assert reader.calls[0]["limit"] == 50
+    assert reader.calls[0]["offset"] == 10
 
 
 async def test_blank_search_becomes_none() -> None:

@@ -9,8 +9,6 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
 
 @dataclass(frozen=True, slots=True)
 class NomenclatureListItem:
-    """Строка списка номенклатуры: плоские данные для интерфейса."""
-
     id: UUID
     sku: str
     name: str
@@ -18,12 +16,11 @@ class NomenclatureListItem:
     unit: UnitOfMeasurement
     category_id: UUID
     category_name: str
+    is_active: bool
 
 
 @dataclass(frozen=True, slots=True)
 class CategoryListItem:
-    """Строка справочника категорий: список отдаётся целиком."""
-
     id: UUID
     name: str
     parent_id: UUID | None

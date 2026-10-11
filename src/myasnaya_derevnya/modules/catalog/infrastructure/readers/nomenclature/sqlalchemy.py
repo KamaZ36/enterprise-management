@@ -35,8 +35,6 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
             search=search, type_code=type_code, category_id=category_id
         )
 
-        # Категория присоединяется только в выборке: на количество она не влияет,
-        # потому что ссылка обязательная.
         total = await self._session.scalar(
             select(func.count()).select_from(NOMENCLATURES_TABLE).where(*conditions)
         )
@@ -49,6 +47,7 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 NOMENCLATURES_TABLE.c.type,
                 NOMENCLATURES_TABLE.c.unit,
                 NOMENCLATURES_TABLE.c.category_id,
+                NOMENCLATURES_TABLE.c.is_active,
                 CATEGORIES_TABLE.c.name.label("category_name"),
             )
             .join(
@@ -97,4 +96,5 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
             unit=UnitOfMeasurement(row["unit"]),
             category_id=row["category_id"],
             category_name=row["category_name"],
+            is_active=row["is_active"],
         )

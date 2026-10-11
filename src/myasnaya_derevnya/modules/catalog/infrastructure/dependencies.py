@@ -19,6 +19,12 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_categories i
 from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclatures import (
     ListNomenclaturesInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclature import (
+    UpdateNomenclatureInteractor,
+)
+from myasnaya_derevnya.modules.catalog.domain.services.nomenclature_changes import (
+    NomenclatureChangesPolicy,
+)
 from myasnaya_derevnya.modules.catalog.infrastructure.readers.category.base import (
     CategoryReader,
 )
@@ -79,7 +85,6 @@ class CatalogDepProvider(Provider):
         return SQLAlchemyPriceRepository(session)
 
     # READERS
-
     @provide(scope=Scope.REQUEST)
     def get_nomenclature_reader(self, session: AsyncSession) -> NomenclatureReader:
         return SQLAlchemyNomenclatureReader(session)
@@ -89,7 +94,6 @@ class CatalogDepProvider(Provider):
         return SQLAlchemyCategoryReader(session)
 
     # FACADE
-
     @provide(scope=Scope.REQUEST)
     def get_catalog_api(
         self, nomenclature_repository: NomenclatureRepository
@@ -97,12 +101,19 @@ class CatalogDepProvider(Provider):
         return CatalogAPI(nomenclature_repository=nomenclature_repository)
 
     # INTERACTOR
-
     create_nomenclature_interactor = provide(
         CreateNomenclatureInteractor, scope=Scope.REQUEST
     )
     list_nomenclatures_interactor = provide(
         ListNomenclaturesInteractor, scope=Scope.REQUEST
+    )
+
+    update_nomenclature_interactor = provide(
+        UpdateNomenclatureInteractor, scope=Scope.REQUEST
+    )
+
+    nomenclature_changes_policy = provide(
+        NomenclatureChangesPolicy, scope=Scope.REQUEST
     )
     list_categories_interactor = provide(ListCategoriesInteractor, scope=Scope.REQUEST)
     create_category_interactor = provide(CreateCategoryInteractor, scope=Scope.REQUEST)

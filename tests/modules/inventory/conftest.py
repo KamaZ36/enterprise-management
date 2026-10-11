@@ -1,5 +1,3 @@
-"""Фикстуры тестов складского модуля."""
-
 from collections.abc import Callable, Coroutine
 from uuid import UUID, uuid4
 

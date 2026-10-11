@@ -1,5 +1,3 @@
-"""Общее для интеграционных тестов модулей: маркеры данных и очистка базы."""
-
 from sqlalchemy import text
 
 from myasnaya_derevnya.core.database.connection import async_session_maker
@@ -21,11 +19,6 @@ INVENTORY_TABLES = (
 
 
 async def clean_database() -> None:
-    """Убирает за собой: складские таблицы целиком, каталожные — только свои.
-
-    Каталожные строки помечены префиксом, потому что справочник может быть
-    заполнен и вручную, а тесты не должны его затирать.
-    """
     async with async_session_maker() as session:
         await session.execute(text(f"TRUNCATE {', '.join(INVENTORY_TABLES)} CASCADE"))
         await session.execute(

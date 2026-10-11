@@ -49,7 +49,6 @@ def test_new_write_off_is_draft() -> None:
 
 
 def test_line_has_no_cost() -> None:
-    """У списания себестоимость определит проведение по средней."""
     line = make_line()
 
     assert line.quantity == Decimal(3)

@@ -1,20 +1,16 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from myasnaya_derevnya.core.errors import DomainError
+from myasnaya_derevnya.core.errors import ConflictError, DomainError
 
 
 @dataclass(slots=True, eq=False)
 class CatalogDomainError(DomainError):
-    """Базовое исключение для всех нарушений бизнес-правил в модуле Catalog."""
-
     def __str__(self) -> str:
         return "Ошибка модуля Catalog"
 
 
 # НОМЕНКЛАТУРА И КАТЕГОРИИ
-
-
 @dataclass(slots=True, eq=False)
 class EmptyNameError(CatalogDomainError):
     def __str__(self) -> str:
@@ -44,9 +40,19 @@ class CategoryCannotBeParentOfItselfError(CatalogDomainError):
 
 
 # ЦЕНЫ
-
-
 @dataclass(slots=True, eq=False)
 class NegativePriceValueError(CatalogDomainError):
     def __str__(self) -> str:
         return "Цена не может быть отрицательной"
+
+
+@dataclass(slots=True, eq=False)
+class NomenclatureInUseError(ConflictError):
+    nomenclature_id: UUID
+    field: str
+
+    def __str__(self) -> str:
+        return (
+            f"Нельзя изменить «{self.field}»: по номенклатуре "
+            f"{self.nomenclature_id} уже двигались остатки"
+        )

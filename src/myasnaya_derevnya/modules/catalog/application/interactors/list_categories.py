@@ -22,8 +22,6 @@ class ListCategoriesQuery:
 
 
 class ListCategoriesInteractor:
-    """Справочник категорий: нужен интерфейсу для выбора и дерева."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

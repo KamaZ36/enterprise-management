@@ -10,8 +10,6 @@ from myasnaya_derevnya.modules.staff.infrastructure.readers.role.base import Rol
 
 
 class ListRolesInteractor:
-    """Справочник ролей: без него нельзя назначить роль сотруднику."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

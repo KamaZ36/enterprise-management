@@ -39,6 +39,7 @@ class SQLAlchemyWarehouseRepository(WarehouseRepository):
             .where(WAREHOUSES_TABLE.c.id == warehouse.id)
             .values(
                 name=warehouse.name,
+                type=warehouse.type.value,
                 is_active=warehouse.is_active,
                 updated_at=warehouse.updated_at,
             )

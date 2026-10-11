@@ -1,5 +1,3 @@
-"""Юнит-тесты интерактора списка категорий."""
-
 from uuid import UUID, uuid4
 
 import pytest

@@ -17,8 +17,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.b
 
 
 class PostingPreconditions:
-    """Проверки, общие для проведения любого документа."""
-
     def __init__(
         self,
         warehouse_repository: WarehouseRepository,

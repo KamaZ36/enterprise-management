@@ -19,7 +19,6 @@ from myasnaya_derevnya.core.database import metadata
 
 DATABASE_SCHEMA = "inventory"
 
-# Количество — шесть знаков после запятой: граммы, миллилитры.
 QUANTITY = Numeric(18, 6)
 
 
@@ -27,8 +26,6 @@ WAREHOUSES_TABLE = Table(
     "warehouses",
     metadata,
     Column("id", UUID, primary_key=True),
-    # Орг-единица из модуля business: кросс-модульных FK в проекте нет,
-    # существование проверяется приложением.
     Column("org_unit_id", UUID, nullable=False),
     Column("code", String(64), nullable=False),
     Column("name", String(255), nullable=False),
@@ -89,8 +86,6 @@ STOCK_POSTINGS_TABLE = Table(
         server_default=func.now(),
     ),
     Column("posted_by", UUID, nullable=True),
-    # Документы живут в своих таблицах, поэтому ссылка полиморфная. Зато
-    # уникальность пары гарантирует, что документ проведён ровно один раз.
     UniqueConstraint("document_type", "document_id", name="uq_stock_postings_document"),
     Index("ix_stock_postings_warehouse_posted_at", "warehouse_id", "posted_at"),
     schema=DATABASE_SCHEMA,
@@ -236,8 +231,6 @@ STOCK_MOVEMENTS_TABLE = Table(
     ),
     Column("created_by", UUID, nullable=True),
     CheckConstraint("quantity <> 0", name="quantity_non_zero"),
-    # Знак суммы обязан совпадать со знаком количества: приход не может быть
-    # отрицательным, расход — положительным.
     CheckConstraint(
         "(quantity > 0 AND total_cost >= 0) OR (quantity < 0 AND total_cost <= 0)",
         name="sign_consistent",

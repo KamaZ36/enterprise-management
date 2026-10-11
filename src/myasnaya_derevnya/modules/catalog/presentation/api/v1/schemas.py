@@ -12,9 +12,8 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     UnitOfMeasurement,
 )
 
+
 # NOMENCLATURE
-
-
 class CreateNomenclatureSchema(BaseModel):
     sku: str
     name: str
@@ -31,6 +30,7 @@ class NomenclatureSchema(BaseModel):
     unit: UnitOfMeasurement
     category_id: UUID
     category_name: str
+    is_active: bool
 
     @classmethod
     def from_dto(cls, item: NomenclatureListItem) -> NomenclatureSchema:
@@ -42,6 +42,7 @@ class NomenclatureSchema(BaseModel):
             unit=item.unit,
             category_id=item.category_id,
             category_name=item.category_name,
+            is_active=item.is_active,
         )
 
 
@@ -53,6 +54,12 @@ class NomenclatureListSchema(BaseModel):
 
 
 # CATEGORY
+class UpdateNomenclatureSchema(BaseModel):
+    name: str | None = None
+    category_id: UUID | None = None
+    unit: UnitOfMeasurement | None = None
+    type: NomenclatureType | None = None
+    is_active: bool | None = None
 
 
 class CreateCategorySchema(BaseModel):
@@ -71,15 +78,11 @@ class CategorySchema(BaseModel):
 
 
 # PRICE LIST
-
-
 class CreatePriceListSchema(BaseModel):
     name: str
 
 
 # PRICE
-
-
 class CreatePriceSchema(BaseModel):
     nomenclature_id: UUID
     price: Decimal

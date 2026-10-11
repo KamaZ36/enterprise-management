@@ -39,8 +39,6 @@ class PostWriteOffCommand:
 
 
 class PostWriteOffInteractor:
-    """Проведение списания: себестоимость считает журнал по средней."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,
@@ -117,7 +115,6 @@ class PostWriteOffInteractor:
         await self._transaction_manager.commit()
 
     async def _resolve_lots(self, write_off) -> list[UUID | None]:
-        """Списание только находит существующие партии."""
         lot_ids: list[UUID | None] = []
 
         for line in write_off.lines:

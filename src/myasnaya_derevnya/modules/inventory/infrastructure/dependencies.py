@@ -1,6 +1,9 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.catalog.domain.services.nomenclature_changes import (
+    NomenclatureUsage,
+)
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
     CreateReceiptInteractor,
@@ -11,8 +14,20 @@ from myasnaya_derevnya.modules.inventory.application.interactors.create_warehous
 from myasnaya_derevnya.modules.inventory.application.interactors.create_write_off import (
     CreateWriteOffInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.get_receipt import (
+    GetReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.get_write_off import (
+    GetWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.list_receipts import (
+    ListReceiptsInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.list_warehouses import (
     ListWarehousesInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.list_write_offs import (
+    ListWriteOffsInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
     PostReceiptInteractor,
@@ -23,6 +38,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.post_write_off 
 from myasnaya_derevnya.modules.inventory.application.interactors.read_balances import (
     GetBalanceInteractor,
     ListBalancesInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.update_warehouse import (
+    UpdateWarehouseInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.services.lot_resolver import (
     LotResolver,
@@ -39,6 +57,21 @@ from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
 )
 from myasnaya_derevnya.modules.inventory.domain.services.warehouse_purpose import (
     WarehousePurposePolicy,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.adapters.nomenclature_usage import (
+    InventoryNomenclatureUsage,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base import (
+    ReceiptReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.sqlalchemy import (
+    SQLAlchemyReceiptReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.base import (
+    WriteOffReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.sqlalchemy import (
+    SQLAlchemyWriteOffReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.base import (
     ReceiptRepository,
@@ -93,7 +126,6 @@ from myasnaya_derevnya.modules.inventory.presentation.inventory_api import Inven
 
 class InventoryDepProvider(Provider):
     # REPOSITORIES
-
     @provide(scope=Scope.REQUEST)
     def get_warehouse_repository(self, session: AsyncSession) -> WarehouseRepository:
         return SQLAlchemyWarehouseRepository(session)
@@ -134,8 +166,23 @@ class InventoryDepProvider(Provider):
     ) -> StockLotBalanceRepository:
         return SQLAlchemyStockLotBalanceRepository(session)
 
-    # DOMAIN SERVICES
+    @provide(scope=Scope.REQUEST)
+    def get_nomenclature_usage(
+        self, movement_repository: StockMovementRepository
+    ) -> NomenclatureUsage:
+        return InventoryNomenclatureUsage(movement_repository)
 
+    # READERS
+
+    @provide(scope=Scope.REQUEST)
+    def get_receipt_reader(self, session: AsyncSession) -> ReceiptReader:
+        return SQLAlchemyReceiptReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_write_off_reader(self, session: AsyncSession) -> WriteOffReader:
+        return SQLAlchemyWriteOffReader(session)
+
+    # DOMAIN SERVICES
     @provide(scope=Scope.REQUEST)
     def get_cost_policy(self) -> CostPolicy:
         return MovingAverageCostPolicy()
@@ -143,7 +190,6 @@ class InventoryDepProvider(Provider):
     purpose_policy = provide(WarehousePurposePolicy, scope=Scope.REQUEST)
 
     # APPLICATION SERVICES
-
     @provide(scope=Scope.REQUEST)
     def get_lot_resolver(self, lot_repository: StockLotRepository) -> LotResolver:
         return LotResolver(lot_repository=lot_repository)
@@ -179,7 +225,9 @@ class InventoryDepProvider(Provider):
         )
 
     # INTERACTORS
-
+    update_warehouse_interactor = provide(
+        UpdateWarehouseInteractor, scope=Scope.REQUEST
+    )
     create_warehouse_interactor = provide(
         CreateWarehouseInteractor, scope=Scope.REQUEST
     )
@@ -190,9 +238,12 @@ class InventoryDepProvider(Provider):
     post_write_off_interactor = provide(PostWriteOffInteractor, scope=Scope.REQUEST)
     get_balance_interactor = provide(GetBalanceInteractor, scope=Scope.REQUEST)
     list_balances_interactor = provide(ListBalancesInteractor, scope=Scope.REQUEST)
+    list_receipts_interactor = provide(ListReceiptsInteractor, scope=Scope.REQUEST)
+    get_receipt_interactor = provide(GetReceiptInteractor, scope=Scope.REQUEST)
+    list_write_offs_interactor = provide(ListWriteOffsInteractor, scope=Scope.REQUEST)
+    get_write_off_interactor = provide(GetWriteOffInteractor, scope=Scope.REQUEST)
 
     # FACADE
-
     @provide(scope=Scope.REQUEST)
     def get_inventory_api(
         self,

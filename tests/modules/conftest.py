@@ -1,8 +1,3 @@
-"""Фикстуры интеграционных тестов: настоящая база и фабрики справочников.
-
-Отдельная БД `myasnaya_derevnya_test` задаётся в tests/conftest.py.
-"""
-
 from collections.abc import AsyncIterator, Callable, Coroutine
 from uuid import UUID, uuid4
 
@@ -31,21 +26,18 @@ async def db_session() -> AsyncIterator[AsyncSession]:
     try:
         async with async_session_maker() as probe:
             await probe.execute(text("select 1"))
-    except Exception as exc:  # noqa: BLE001 - любая причина недоступности БД
+    except Exception as exc:  # noqa: BLE001
         pytest.skip(f"PostgreSQL недоступен: {exc}")
 
     async with async_session_maker() as session:
         yield session
 
     await clean_database()
-    # Каждый тест получает свой event loop, поэтому пул соединений нельзя
-    # оставлять живым до следующего теста.
     await engine.dispose()
 
 
 @pytest.fixture
 async def make_nomenclature(db_session: AsyncSession) -> Callable[..., Coroutine]:
-    """Создаёт номенклатуру. Имя и SKU можно задать, иначе они уникальны."""
 
     categories = SQLAlchemyCategoryRepository(db_session)
     nomenclatures = SQLAlchemyNomenclatureRepository(db_session)

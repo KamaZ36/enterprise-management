@@ -1,5 +1,3 @@
-"""Тесты чтения остатков: права на количество и на стоимость различаются."""
-
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -31,6 +29,16 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
 from myasnaya_derevnya.utils import get_datetime_utc
 
 
+class FakeCatalogAPI:
+    def __init__(self, names: dict[UUID, str] | None = None) -> None:
+        self.names = names or {}
+        self.calls: list[set[UUID]] = []
+
+    async def nomenclature_names(self, nomenclature_ids) -> dict[UUID, str]:
+        self.calls.append(set(nomenclature_ids))
+        return {key: self.names[key] for key in nomenclature_ids if key in self.names}
+
+
 class FakeIdentityProvider:
     async def get_current_user_id(self) -> UUID:
         return uuid4()
@@ -40,8 +48,6 @@ class FakeIdentityProvider:
 
 
 class FakeStaffAPI:
-    """Права настраиваются по коду, чтобы различать остаток и себестоимость."""
-
     def __init__(self, denied: set[str] | None = None) -> None:
         self._denied = denied or set()
 
@@ -95,6 +101,7 @@ def build_get_interactor(
         identity_provider=FakeIdentityProvider(),
         warehouse_repository=FakeWarehouseRepository(warehouse),
         balance_repository=FakeStockBalanceRepository(balance),
+        catalog_api=FakeCatalogAPI(),
         staff_api=FakeStaffAPI(denied),
     )
 
@@ -158,6 +165,7 @@ async def test_list_balances_wraps_each_balance_in_view() -> None:
         balance_repository=FakeStockBalanceRepository(
             make_balance(warehouse.id, nomenclature_id)
         ),
+        catalog_api=FakeCatalogAPI(),
         staff_api=FakeStaffAPI(),
     )
 
@@ -166,3 +174,21 @@ async def test_list_balances_wraps_each_balance_in_view() -> None:
     assert len(views) == 1
     assert isinstance(views[0], BalanceView)
     assert views[0].cost_visible is True
+
+
+async def test_list_balances_carries_nomenclature_name() -> None:
+    warehouse = make_warehouse()
+    nomenclature_id = uuid4()
+    interactor = ListBalancesInteractor(
+        identity_provider=FakeIdentityProvider(),
+        warehouse_repository=FakeWarehouseRepository(warehouse),
+        balance_repository=FakeStockBalanceRepository(
+            make_balance(warehouse.id, nomenclature_id)
+        ),
+        catalog_api=FakeCatalogAPI({nomenclature_id: "Говядина лопатка"}),
+        staff_api=FakeStaffAPI(),
+    )
+
+    views = await interactor(ListBalancesQuery(warehouse.id))
+
+    assert views[0].nomenclature_name == "Говядина лопатка"

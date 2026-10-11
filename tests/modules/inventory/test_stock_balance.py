@@ -44,8 +44,8 @@ def test_receive_sets_quantity_and_value() -> None:
 def test_receive_twice_gives_weighted_average() -> None:
     balance = make_balance()
 
-    balance.receive(Decimal(10), Money(kopecks=450000))  # 10 кг по 450
-    balance.receive(Decimal(5), Money(kopecks=240000))  # 5 кг по 480
+    balance.receive(Decimal(10), Money(kopecks=450000))
+    balance.receive(Decimal(5), Money(kopecks=240000))
 
     assert balance.quantity == Decimal(15)
     assert balance.total_value.kopecks == 690000
@@ -59,17 +59,12 @@ def test_issue_uses_average_cost() -> None:
 
     cost = balance.issue(Decimal(3), POLICY)
 
-    assert cost.kopecks == 138000  # 3 кг по 460
+    assert cost.kopecks == 138000
     assert balance.quantity == Decimal(12)
     assert balance.total_value.kopecks == 552000
 
 
 def test_full_issue_takes_whole_remainder() -> None:
-    """3 единицы за 100 копеек: средняя не делится нацело.
-
-    Если бы каждое списание считалось как round(qty * avg), на складе
-    навсегда остался бы «висячий» копеечный хвост.
-    """
     balance = make_balance()
     balance.receive(Decimal(3), Money(kopecks=100))
 

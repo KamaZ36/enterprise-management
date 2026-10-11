@@ -1,0 +1,74 @@
+from dataclasses import dataclass
+from datetime import date, datetime
+from decimal import Decimal
+from uuid import UUID
+
+
+@dataclass(frozen=True, slots=True)
+class ReceiptListItem:
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    supplier_name: str | None
+    supplier_document_number: str | None
+    line_count: int
+    total_kopecks: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReceiptLineItem:
+    id: UUID
+    nomenclature_id: UUID
+    quantity: Decimal
+    unit_cost: Decimal
+    total_kopecks: int
+    lot_code: str | None
+    expires_at: date | None
+    nomenclature_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ReceiptDetail:
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    supplier_name: str | None
+    supplier_document_number: str | None
+    comment: str | None
+    lines: list[ReceiptLineItem]
+
+
+@dataclass(frozen=True, slots=True)
+class WriteOffListItem:
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    reason: str | None
+    line_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class WriteOffLineItem:
+    id: UUID
+    nomenclature_id: UUID
+    quantity: Decimal
+    lot_code: str | None
+    nomenclature_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class WriteOffDetail:
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    reason: str | None
+    comment: str | None
+    lines: list[WriteOffLineItem]

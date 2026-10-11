@@ -62,6 +62,18 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
 
         return self._to_assignment(row)
 
+    async def count_active_for_role(self, role_id: UUID) -> int:
+        total = await self._session.scalar(
+            select(func.count())
+            .select_from(ROLE_ASSIGNMENTS_TABLE)
+            .where(
+                ROLE_ASSIGNMENTS_TABLE.c.role_id == role_id,
+                ROLE_ASSIGNMENTS_TABLE.c.status == RoleAssignmentStatus.ACTIVE.value,
+            )
+        )
+
+        return total or 0
+
     async def load_active_for_user(
         self,
         user_id: UUID,

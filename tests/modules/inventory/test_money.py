@@ -21,7 +21,6 @@ def test_from_rubles_negative_rounds_away_from_zero() -> None:
 
 
 def test_from_quantity_and_unit_cost() -> None:
-    # 2.5 кг по 199.90 = 499.75
     money = Money.from_quantity_and_unit_cost(Decimal("2.5"), Decimal("199.90"))
 
     assert money.kopecks == 49975

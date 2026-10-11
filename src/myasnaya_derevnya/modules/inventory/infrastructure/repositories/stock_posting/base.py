@@ -6,8 +6,6 @@ from myasnaya_derevnya.modules.inventory.domain.entities.stock_posting import (
 
 
 class StockPostingRepository(ABC):
-    """Журнал проведений: только добавление."""
-
     @abstractmethod
     async def add(self, posting: StockPosting) -> None:
         raise NotImplementedError

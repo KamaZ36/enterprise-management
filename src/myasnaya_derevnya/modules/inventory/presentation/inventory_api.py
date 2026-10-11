@@ -28,8 +28,6 @@ class ReceiptLine:
 
 
 class InventoryAPI:
-    """Публичный интерфейс складского модуля для других модулей."""
-
     def __init__(
         self,
         create_receipt_interactor: CreateReceiptInteractor,
@@ -50,7 +48,6 @@ class InventoryAPI:
         supplier_document_number: str | None = None,
         comment: str | None = None,
     ) -> UUID:
-        """Создаёт и сразу проводит поступление. Возвращает id поступления."""
         receipt_id = await self._create_receipt_interactor(
             CreateReceiptCommand(
                 warehouse_id=warehouse_id,

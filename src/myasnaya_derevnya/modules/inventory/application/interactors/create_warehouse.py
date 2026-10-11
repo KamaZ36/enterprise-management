@@ -54,8 +54,6 @@ class CreateWarehouseInteractor:
         if not allowed:
             raise ForbiddenError()
 
-        # Кросс-модульных FK нет, поэтому существование орг-единицы проверяет
-        # приложение.
         if not await self._business_api.org_unit_exists(command.org_unit_id):
             raise OrgUnitNotFoundError(command.org_unit_id)
 

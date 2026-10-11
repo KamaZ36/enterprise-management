@@ -1,5 +1,3 @@
-"""Вспомогательные объекты тестов: настоящие репозитории, заглушки для прав."""
-
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -79,6 +77,14 @@ class FakeIdentityProvider:
         return self._user_id
 
 
+class FakeBusinessAPI:
+    def __init__(self, root_unit_id: UUID) -> None:
+        self._root_unit_id = root_unit_id
+
+    async def get_root_unit_id(self) -> UUID:
+        return self._root_unit_id
+
+
 class FakeStaffAPI:
     def __init__(self, allowed: bool = True) -> None:
         self.allowed = allowed
@@ -103,7 +109,6 @@ class InventoryInteractors:
 def build_interactors(
     session: AsyncSession, *, allowed: bool = True
 ) -> InventoryInteractors:
-    """Собирает граф модуля вручную: настоящие репозитории, заглушки прав."""
     identity = FakeIdentityProvider(uuid4())
     staff_api = FakeStaffAPI(allowed=allowed)
     transaction_manager = SQLAlchemyTransactionManager(session)
@@ -168,7 +173,6 @@ def build_interactors(
 async def movement_totals(
     session: AsyncSession, warehouse_id: UUID, nomenclature_id: UUID
 ) -> tuple[Decimal, int]:
-    """Сумма проводок — эталон, с которым сверяется баланс."""
     row = (
         await session.execute(
             text(

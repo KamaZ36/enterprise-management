@@ -11,16 +11,13 @@ from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature.base 
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
-DEFAULT_LIMIT = 20
-MAX_LIMIT = 100
-
 
 @dataclass(frozen=True, slots=True)
 class ListNomenclaturesQuery:
     search: str | None = None
     type_code: str | None = None
     category_id: UUID | None = None
-    limit: int = DEFAULT_LIMIT
+    limit: int = 20
     offset: int = 0
 
     def normalized(self) -> ListNomenclaturesQuery:
@@ -30,8 +27,8 @@ class ListNomenclaturesQuery:
             search=search or None,
             type_code=self.type_code,
             category_id=self.category_id,
-            limit=min(max(self.limit, 1), MAX_LIMIT),
-            offset=max(self.offset, 0),
+            limit=self.limit,
+            offset=self.offset,
         )
 
 
@@ -44,8 +41,6 @@ class NomenclaturePage:
 
 
 class ListNomenclaturesInteractor:
-    """Список номенклатуры для интерфейса: читает через читателя, не через домен."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

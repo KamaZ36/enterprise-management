@@ -8,9 +8,6 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
     NomenclatureNotAllowedInWarehouseError,
 )
 
-# Коды типов номенклатуры приходят из модуля catalog — это его публичные
-# значения (raw_material / semi_finished / finished_good). Сравнение идёт по
-# коду, чтобы складской модуль не зависел от доменных типов каталога.
 ALLOWED_NOMENCLATURE_TYPES: dict[WarehouseType, frozenset[str]] = {
     WarehouseType.RAW: frozenset({"raw_material"}),
     WarehouseType.PRODUCTION: frozenset({"raw_material", "semi_finished"}),
@@ -20,8 +17,6 @@ ALLOWED_NOMENCLATURE_TYPES: dict[WarehouseType, frozenset[str]] = {
 
 
 class WarehousePurposePolicy:
-    """Что допустимо хранить на складе данного назначения."""
-
     def allows(
         self, warehouse_type: WarehouseType, nomenclature_type_code: str
     ) -> bool:

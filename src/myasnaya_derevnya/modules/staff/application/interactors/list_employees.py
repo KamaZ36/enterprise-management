@@ -12,20 +12,11 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base i
     EmployeeRepository,
 )
 
-DEFAULT_LIMIT = 20
-MAX_LIMIT = 100
-
 
 @dataclass(frozen=True, slots=True)
 class ListEmployeesQuery:
-    limit: int = DEFAULT_LIMIT
+    limit: int = 20
     offset: int = 0
-
-    def normalized(self) -> ListEmployeesQuery:
-        return ListEmployeesQuery(
-            limit=min(max(self.limit, 1), MAX_LIMIT),
-            offset=max(self.offset, 0),
-        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +41,7 @@ class ListEmployeesInteractor:
         self._business_api = business_api
 
     async def __call__(self, query: ListEmployeesQuery) -> EmployeePage:
-        page = query.normalized()
+        page = query
 
         current_user_id = await self._identity_provider.get_current_user_id()
         root_org_unit_id = await self._business_api.get_root_unit_id()

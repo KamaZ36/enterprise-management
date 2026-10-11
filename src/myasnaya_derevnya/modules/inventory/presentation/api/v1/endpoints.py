@@ -20,8 +20,24 @@ from myasnaya_derevnya.modules.inventory.application.interactors.create_write_of
     CreateWriteOffCommand,
     CreateWriteOffInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.get_receipt import (
+    GetReceiptInteractor,
+    GetReceiptQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.get_write_off import (
+    GetWriteOffInteractor,
+    GetWriteOffQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.list_receipts import (
+    ListReceiptsInteractor,
+    ListReceiptsQuery,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.list_warehouses import (
     ListWarehousesInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.list_write_offs import (
+    ListWriteOffsInteractor,
+    ListWriteOffsQuery,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
     PostReceiptCommand,
@@ -37,15 +53,26 @@ from myasnaya_derevnya.modules.inventory.application.interactors.read_balances i
     ListBalancesInteractor,
     ListBalancesQuery,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.update_warehouse import (
+    UpdateWarehouseCommand,
+    UpdateWarehouseInteractor,
+)
 from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     BalanceListSchema,
     BalanceSchema,
     CreateReceiptSchema,
     CreateWarehouseSchema,
     CreateWriteOffSchema,
+    ReceiptDetailSchema,
     ReceiptLineSchema,
+    ReceiptListItemSchema,
+    ReceiptListSchema,
+    UpdateWarehouseSchema,
     WarehouseSchema,
+    WriteOffDetailSchema,
     WriteOffLineSchema,
+    WriteOffListItemSchema,
+    WriteOffListSchema,
 )
 
 router = APIRouter(prefix="/api/inventory", tags=["Склад"])
@@ -190,3 +217,100 @@ async def get_balance(
         view = await interactor(query)
 
     return BalanceSchema.from_view(view)
+
+
+@router.get(
+    "/receipts",
+    response_model=ReceiptListSchema,
+    description="Журнал поступлений",
+)
+async def list_receipts(
+    request: Request,
+    warehouse_id: UUID | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> ReceiptListSchema:
+    query = ListReceiptsQuery(warehouse_id=warehouse_id, limit=limit, offset=offset)
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListReceiptsInteractor)
+        page = await interactor(query)
+
+    return ReceiptListSchema(
+        items=[ReceiptListItemSchema.from_dto(item) for item in page.items],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
+@router.get(
+    "/receipts/{receipt_id}",
+    response_model=ReceiptDetailSchema,
+    description="Карточка поступления",
+)
+async def get_receipt(request: Request, receipt_id: UUID) -> ReceiptDetailSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetReceiptInteractor)
+        detail = await interactor(GetReceiptQuery(receipt_id=receipt_id))
+
+    return ReceiptDetailSchema.from_dto(detail)
+
+
+@router.get(
+    "/write-offs",
+    response_model=WriteOffListSchema,
+    description="Журнал списаний",
+)
+async def list_write_offs(
+    request: Request,
+    warehouse_id: UUID | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> WriteOffListSchema:
+    query = ListWriteOffsQuery(warehouse_id=warehouse_id, limit=limit, offset=offset)
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListWriteOffsInteractor)
+        page = await interactor(query)
+
+    return WriteOffListSchema(
+        items=[WriteOffListItemSchema.from_dto(item) for item in page.items],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
+@router.get(
+    "/write-offs/{write_off_id}",
+    response_model=WriteOffDetailSchema,
+    description="Карточка списания",
+)
+async def get_write_off(request: Request, write_off_id: UUID) -> WriteOffDetailSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetWriteOffInteractor)
+        detail = await interactor(GetWriteOffQuery(write_off_id=write_off_id))
+
+    return WriteOffDetailSchema.from_dto(detail)
+
+
+@router.patch(
+    "/warehouses/{warehouse_id}",
+    description="Изменить склад",
+)
+async def update_warehouse(
+    request: Request, warehouse_id: UUID, data: UpdateWarehouseSchema
+) -> JSONResponse:
+    command = UpdateWarehouseCommand(
+        warehouse_id=warehouse_id,
+        name=data.name,
+        type_=data.type,
+        is_active=data.is_active,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateWarehouseInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok!"})

@@ -1,5 +1,3 @@
-"""Интеграционные тесты проведения документов на настоящем PostgreSQL."""
-
 import asyncio
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -67,7 +65,6 @@ async def receive(
     lot_code: str | None = None,
     expires_at: date | None = None,
 ) -> UUID:
-    """Создаёт и сразу проводит поступление."""
     interactors = build_interactors(db_session)
     receipt_id = await interactors.create_receipt(
         CreateReceiptCommand(
@@ -160,7 +157,6 @@ async def test_moving_average_across_two_receipts(
         db_session, warehouse.id, nomenclature.id
     )
 
-    # средняя: (450000 + 240000) / 15 = 46000 копеек за кг
     assert balance.quantity == Decimal(12)
     assert balance.total_value.kopecks == 552000
     assert movements_cost == 552000
@@ -170,7 +166,6 @@ async def test_moving_average_across_two_receipts(
 async def test_full_write_off_leaves_no_residue(
     db_session: AsyncSession, make_warehouse, make_nomenclature
 ) -> None:
-    """3 единицы за 100 копеек: средняя нацело не делится."""
     warehouse = await make_warehouse()
     nomenclature = await make_nomenclature()
 
@@ -213,7 +208,6 @@ async def test_write_off_beyond_stock_is_rejected(
     with pytest.raises(InsufficientStockError):
         await interactors.post_write_off(PostWriteOffCommand(write_off_id=write_off_id))
 
-    # В приложении откат делает провайдер сессии; здесь сессия наша, откатываем вручную.
     await db_session.rollback()
 
     balance = await balance_of(db_session, warehouse.id, nomenclature.id)
@@ -251,15 +245,10 @@ async def test_document_is_posted_only_once(
 async def test_double_posting_is_blocked_by_database(
     db_session: AsyncSession, make_warehouse, make_nomenclature
 ) -> None:
-    """Даже если проверку статуса обойти, уникальность пары не даст провести дважды.
-
-    Так выглядел бы гонка: два запроса одновременно увидели черновик.
-    """
     warehouse = await make_warehouse()
     nomenclature = await make_nomenclature()
     receipt_id = await receive(db_session, warehouse.id, nomenclature.id, "5", "100")
 
-    # Имитируем гонку: статус снова черновик, хотя проведение уже существует.
     await db_session.execute(
         text("update inventory.receipts set status = 'draft' where id = :id"),
         {"id": receipt_id},
@@ -346,7 +335,6 @@ async def test_unknown_nomenclature_is_rejected(
 async def test_write_off_of_unknown_lot_is_rejected(
     db_session: AsyncSession, make_warehouse, make_nomenclature
 ) -> None:
-    """Списание не заводит партии: списать то, чего не было, нельзя."""
     warehouse = await make_warehouse()
     meat = await make_nomenclature()
     await receive(db_session, warehouse.id, meat.id, "5", "100")
@@ -414,7 +402,6 @@ async def test_lot_balances_are_tracked(
     assert lot_rows[0].expires_at == date(2026, 10, 20)
     assert lot_balance.quantity == Decimal(5)
 
-    # Всего на складе 13, но в партии L-001 только 5: списать 6 нельзя
     with pytest.raises(InsufficientLotStockError):
         await write_off(db_session, warehouse.id, meat.id, "6", lot_code="L-001")
 
@@ -427,12 +414,6 @@ async def test_lot_balances_are_tracked(
 async def test_balance_row_is_locked_during_posting(
     db_session: AsyncSession, make_warehouse, make_nomenclature
 ) -> None:
-    """Строка баланса обязана быть под FOR UPDATE.
-
-    Проверка «два параллельных прихода» сама по себе этого не доказывает: без
-    блокировки транзакции могут разойтись по времени. Поэтому проверяем саму
-    блокировку — вторая транзакция не должна получить ту же строку.
-    """
     warehouse = await make_warehouse()
     nomenclature = await make_nomenclature()
     repository = SQLAlchemyStockBalanceRepository(db_session)
@@ -440,7 +421,6 @@ async def test_balance_row_is_locked_during_posting(
     await repository.lock_many([(warehouse.id, nomenclature.id)])
     await db_session.commit()
 
-    # Вторая транзакция этой же сессии держит строку до конца теста.
     await repository.lock_many([(warehouse.id, nomenclature.id)])
 
     async with async_session_maker() as other:
@@ -461,11 +441,6 @@ async def test_balance_row_is_locked_during_posting(
 async def test_concurrent_receipts_are_not_lost(
     db_session: AsyncSession, make_warehouse, make_nomenclature
 ) -> None:
-    """Два параллельных прихода на одну пару дают правильный итог.
-
-    Строку баланса создаём заранее: иначе обе транзакции сериализуются на
-    вставке и потеря обновления не воспроизведётся.
-    """
     warehouse = await make_warehouse()
     nomenclature = await make_nomenclature()
     await receive(db_session, warehouse.id, nomenclature.id, "1", "1")

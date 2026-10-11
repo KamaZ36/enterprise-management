@@ -1,0 +1,30 @@
+{
+  "name": "@md/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@element-plus/nuxt": "^1.1.5",
+    "@md/api-client": "workspace:*",
+    "@md/money": "workspace:*",
+    "dayjs": "^1.11.13",
+    "element-plus": "^2.14.7",
+    "lodash-unified": "^1.0.3",
+    "nuxt": "^4.6.1",
+    "openapi-fetch": "^0.17.0",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.13"
+  }
+}

@@ -21,6 +21,8 @@ class SQLAlchemyOrgUnitReader(OrgUnitReader):
             ORG_UNITS_TABLE.c.code,
             ORG_UNITS_TABLE.c.name,
             ORG_UNITS_TABLE.c.is_active,
+            ORG_UNITS_TABLE.c.address,
+            ORG_UNITS_TABLE.c.phone_number,
         ).order_by(ORG_UNITS_TABLE.c.name.asc(), ORG_UNITS_TABLE.c.code.asc())
 
         rows = (await self._session.execute(stmt)).mappings().all()
@@ -35,4 +37,6 @@ class SQLAlchemyOrgUnitReader(OrgUnitReader):
             code=row["code"],
             name=row["name"],
             is_active=row["is_active"],
+            address=row["address"],
+            phone_number=row["phone_number"],
         )

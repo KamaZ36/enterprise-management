@@ -36,8 +36,6 @@ class PostReceiptCommand:
 
 
 class PostReceiptInteractor:
-    """Проведение поступления: стоимость берётся из строк документа."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,
@@ -114,7 +112,6 @@ class PostReceiptInteractor:
         await self._transaction_manager.commit()
 
     async def _resolve_lots(self, receipt) -> list[UUID | None]:
-        """Поступление может завести партию, если её ещё нет."""
         lot_ids: list[UUID | None] = []
 
         for line in receipt.lines:

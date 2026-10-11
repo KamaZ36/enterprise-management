@@ -9,8 +9,6 @@ from myasnaya_derevnya.modules.staff.application.interactors.get_employee_by_id 
     GetEmployeeByIdQuery,
 )
 from myasnaya_derevnya.modules.staff.application.interactors.list_employees import (
-    DEFAULT_LIMIT,
-    MAX_LIMIT,
     ListEmployeesInteractor,
     ListEmployeesQuery,
 )
@@ -101,8 +99,6 @@ def build_list_interactor(
 
 
 # --- get by id --------------------------------------------------------------
-
-
 async def test_get_employee_returns_entity() -> None:
     employee = make_employee()
     interactor, _, _ = build_get_interactor([employee])
@@ -140,8 +136,6 @@ async def test_get_unknown_employee_raises_not_found() -> None:
 
 
 # --- list -------------------------------------------------------------------
-
-
 async def test_list_returns_page_with_total() -> None:
     employees = [make_employee() for _ in range(3)]
     interactor, repository, _ = build_list_interactor(employees)
@@ -155,12 +149,12 @@ async def test_list_returns_page_with_total() -> None:
     assert repository.list_calls == [(2, 1)]
 
 
-async def test_list_limits_are_clamped() -> None:
+async def test_list_window_is_passed_to_repository() -> None:
     interactor, repository, _ = build_list_interactor([])
 
-    await interactor(ListEmployeesQuery(limit=1000, offset=-5))
+    await interactor(ListEmployeesQuery(limit=50, offset=10))
 
-    assert repository.list_calls == [(MAX_LIMIT, 0)]
+    assert repository.list_calls == [(50, 10)]
 
 
 async def test_list_defaults_are_used() -> None:
@@ -168,7 +162,7 @@ async def test_list_defaults_are_used() -> None:
 
     await interactor(ListEmployeesQuery())
 
-    assert repository.list_calls == [(DEFAULT_LIMIT, 0)]
+    assert repository.list_calls == [(20, 0)]
 
 
 async def test_list_is_forbidden_without_permission() -> None:
@@ -181,8 +175,6 @@ async def test_list_is_forbidden_without_permission() -> None:
 
 
 # --- маппинг строки БД ------------------------------------------------------
-
-
 def _row(**overrides: object) -> dict:
     row = {
         "id": uuid4(),

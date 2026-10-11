@@ -22,6 +22,8 @@ class OrgUnitSchema(BaseModel):
     code: str
     name: str
     is_active: bool
+    address: str | None
+    phone_number: str | None
 
     @classmethod
     def from_dto(cls, item: OrgUnitListItem) -> OrgUnitSchema:
@@ -32,4 +34,6 @@ class OrgUnitSchema(BaseModel):
             code=item.code,
             name=item.name,
             is_active=item.is_active,
+            address=item.address,
+            phone_number=item.phone_number,
         )

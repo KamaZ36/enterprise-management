@@ -23,6 +23,10 @@ class RoleAssignmentRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def count_active_for_role(self, role_id: UUID) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
     async def load_active_for_user(
         self,
         user_id: UUID,

@@ -25,7 +25,6 @@ def test_verify_rejects_wrong_password() -> None:
 
 
 def test_verify_rejects_garbage_hash() -> None:
-    """Плейнтекст в колонке secret не должен приводить к исключению."""
     service = PasswordService()
 
     assert service.verify(PASSWORD, PASSWORD) is False

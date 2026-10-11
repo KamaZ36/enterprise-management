@@ -7,12 +7,6 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 @dataclass(frozen=True, slots=True)
 class StockPosting:
-    """Событие проведения: якорь, к которому привязаны проводки.
-
-    Документы живут в своих таблицах, поэтому общей ссылки на них нет.
-    Уникальность пары (тип, документ) не даёт провести документ дважды.
-    """
-
     id: UUID
     document_type: str
     document_id: UUID

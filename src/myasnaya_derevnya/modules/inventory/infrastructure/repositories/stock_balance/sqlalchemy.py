@@ -2,7 +2,7 @@ from collections.abc import Iterable, Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import RowMapping, select, tuple_
+from sqlalchemy import RowMapping, exists, select, tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,9 +32,6 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
         if not unique:
             return {}
 
-        # Строки баланса может ещё не быть: создаём её, ничего не перезаписывая,
-        # и только потом блокируем. Без этого параллельные приходы на новую
-        # пару (склад, номенклатура) оба вставили бы строку.
         await self._session.execute(
             pg_insert(STOCK_BALANCES_TABLE)
             .values(
@@ -97,6 +94,16 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
                 },
             )
         )
+
+    async def has_any_for_warehouse(self, warehouse_id: UUID) -> bool:
+        stmt = select(
+            exists().where(
+                STOCK_BALANCES_TABLE.c.warehouse_id == warehouse_id,
+                STOCK_BALANCES_TABLE.c.quantity != 0,
+            )
+        )
+
+        return bool(await self._session.scalar(stmt))
 
     async def get(
         self, warehouse_id: UUID, nomenclature_id: UUID

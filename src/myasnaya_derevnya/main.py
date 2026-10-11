@@ -30,7 +30,12 @@ from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
 )
-from myasnaya_derevnya.modules.staff.presentation.api.v1 import router as staff_router
+from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
+    access_router,
+)
+from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
+    router as staff_router,
+)
 
 STATUS_BY_CATEGORY: dict[type[AppError], int] = {
     ValidationError: 422,
@@ -77,6 +82,7 @@ async def lifespan(app: FastAPI):
 def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
     app.include_router(logout_router)
+    app.include_router(access_router)
     app.include_router(staff_router)
     app.include_router(business_router)
     app.include_router(catalog_router)
@@ -92,9 +98,9 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_credentials=True,  # Разрешить передавать куки и заголовки авторизации
-        allow_methods=["*"],  # Разрешить все HTTP методы (GET, POST, PUT, DELETE...)
-        allow_headers=["*"],  # Разрешить все заголовки
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     include_routers(app)

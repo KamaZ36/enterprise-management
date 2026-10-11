@@ -53,8 +53,6 @@ def make_assignment(
 
 
 # --- can -------------------------------------------------------------------
-
-
 def test_role_grants_only_its_own_permission_codes() -> None:
     root = uuid4()
     role = make_role(permission_codes=frozenset({MANAGE_ROLES.code}))
@@ -124,8 +122,6 @@ def test_unrelated_scope_is_not_covered() -> None:
 
 
 # --- can_assign ------------------------------------------------------------
-
-
 def test_cannot_assign_non_assignable_role() -> None:
     root = uuid4()
     actor_role = make_role(level=100, is_wildcard=True)

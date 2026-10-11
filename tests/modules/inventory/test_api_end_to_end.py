@@ -1,5 +1,3 @@
-"""Сквозной тест складского модуля: HTTP, DI, права и настоящая база."""
-
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID, uuid4
@@ -128,7 +126,6 @@ async def test_full_receipt_flow_through_api(
     assert listed.status_code == 200
     assert warehouse_id in [item["id"] for item in listed.json()]
 
-    # /roles объявлен раньше /{employee_id}: иначе «roles» разбирался бы как UUID.
     roles = await client.get("/api/employees/roles")
     assert roles.status_code == 200, roles.text
     assert any(item["code"] == settings.admin_role_code for item in roles.json())
@@ -223,6 +220,5 @@ async def test_write_off_uses_average_cost_through_api(
     )
     payload = balance.json()
     assert Decimal(payload["quantity"]) == Decimal(6)
-    # 4 кг по средней 500 = 2000 рублей
     assert payload["total_value_kopecks"] == 300000
     assert Decimal(payload["average_unit_cost"]) == Decimal(500)

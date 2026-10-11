@@ -8,8 +8,6 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 class ListWarehousesInteractor:
-    """Склады, доступные пользователю: фильтр по правам на орг-единицу."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

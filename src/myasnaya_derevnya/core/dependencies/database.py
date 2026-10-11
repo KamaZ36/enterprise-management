@@ -17,16 +17,12 @@ from myasnaya_derevnya.core.database.transaction_manager.sqlalchemy import (
 
 class DatabaseProvider(Provider):
     # POSTGRESQL
-
     @provide(scope=Scope.REQUEST)
     async def get_session(self) -> AsyncGenerator[AsyncSession]:
         async with async_session_maker() as session:
             try:
                 yield session
             except IntegrityError as exc:
-                # Нарушение ограничения приходит уже на execute, а не только на
-                # коммите, поэтому переводим его в конфликт здесь — иначе
-                # дубликат вернул бы клиенту 500.
                 await session.rollback()
                 raise conflict_error(exc) from exc
             except Exception:
@@ -40,7 +36,6 @@ class DatabaseProvider(Provider):
         return SQLAlchemyTransactionManager(session)
 
     # HTTP
-
     @provide(scope=Scope.APP)
     def get_http_client(self) -> httpx.AsyncClient:
         return httpx.AsyncClient()

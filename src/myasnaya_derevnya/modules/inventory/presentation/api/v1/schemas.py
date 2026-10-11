@@ -4,6 +4,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from myasnaya_derevnya.modules.inventory.application.dto import (
+    ReceiptDetail,
+    ReceiptListItem,
+    WriteOffDetail,
+    WriteOffListItem,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.read_balances import (
     BalanceView,
 )
@@ -18,6 +24,12 @@ class CreateWarehouseSchema(BaseModel):
     code: str
     name: str
     type: WarehouseType
+
+
+class UpdateWarehouseSchema(BaseModel):
+    name: str | None = None
+    type: WarehouseType | None = None
+    is_active: bool | None = None
 
 
 class ReceiptLineSchema(BaseModel):
@@ -74,6 +86,7 @@ class WarehouseSchema(BaseModel):
 class BalanceSchema(BaseModel):
     warehouse_id: UUID
     nomenclature_id: UUID
+    nomenclature_name: str | None = None
     quantity: Decimal
     average_unit_cost: Decimal | None = Field(
         default=None,
@@ -91,6 +104,7 @@ class BalanceSchema(BaseModel):
         return cls(
             warehouse_id=balance.warehouse_id,
             nomenclature_id=balance.nomenclature_id,
+            nomenclature_name=view.nomenclature_name,
             quantity=balance.quantity,
             average_unit_cost=(
                 balance.average_unit_cost if view.cost_visible else None
@@ -104,3 +118,157 @@ class BalanceSchema(BaseModel):
 class BalanceListSchema(BaseModel):
     items: list[BalanceSchema]
     total: int
+
+
+class ReceiptListItemSchema(BaseModel):
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    supplier_name: str | None
+    supplier_document_number: str | None
+    line_count: int
+    total_kopecks: int
+
+    @classmethod
+    def from_dto(cls, item: ReceiptListItem) -> ReceiptListItemSchema:
+        return cls(
+            id=item.id,
+            warehouse_id=item.warehouse_id,
+            status=item.status,
+            occurred_at=item.occurred_at,
+            posted_at=item.posted_at,
+            supplier_name=item.supplier_name,
+            supplier_document_number=item.supplier_document_number,
+            line_count=item.line_count,
+            total_kopecks=item.total_kopecks,
+        )
+
+
+class ReceiptLineViewSchema(BaseModel):
+    id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None
+    quantity: Decimal
+    unit_cost: Decimal
+    total_kopecks: int
+    lot_code: str | None
+    expires_at: date | None
+
+    @classmethod
+    def from_dto(cls, item) -> ReceiptLineViewSchema:
+        return cls(
+            id=item.id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            quantity=item.quantity,
+            unit_cost=item.unit_cost,
+            total_kopecks=item.total_kopecks,
+            lot_code=item.lot_code,
+            expires_at=item.expires_at,
+        )
+
+
+class ReceiptListSchema(BaseModel):
+    items: list[ReceiptListItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class ReceiptDetailSchema(BaseModel):
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    supplier_name: str | None
+    supplier_document_number: str | None
+    comment: str | None
+    lines: list[ReceiptLineViewSchema]
+
+    @classmethod
+    def from_dto(cls, detail: ReceiptDetail) -> ReceiptDetailSchema:
+        return cls(
+            id=detail.id,
+            warehouse_id=detail.warehouse_id,
+            status=detail.status,
+            occurred_at=detail.occurred_at,
+            posted_at=detail.posted_at,
+            supplier_name=detail.supplier_name,
+            supplier_document_number=detail.supplier_document_number,
+            comment=detail.comment,
+            lines=[ReceiptLineViewSchema.from_dto(line) for line in detail.lines],
+        )
+
+
+class WriteOffListItemSchema(BaseModel):
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    reason: str | None
+    line_count: int
+
+    @classmethod
+    def from_dto(cls, item: WriteOffListItem) -> WriteOffListItemSchema:
+        return cls(
+            id=item.id,
+            warehouse_id=item.warehouse_id,
+            status=item.status,
+            occurred_at=item.occurred_at,
+            posted_at=item.posted_at,
+            reason=item.reason,
+            line_count=item.line_count,
+        )
+
+
+class WriteOffLineViewSchema(BaseModel):
+    id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None
+    quantity: Decimal
+    lot_code: str | None
+
+    @classmethod
+    def from_dto(cls, item) -> WriteOffLineViewSchema:
+        return cls(
+            id=item.id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            quantity=item.quantity,
+            lot_code=item.lot_code,
+        )
+
+
+class WriteOffListSchema(BaseModel):
+    items: list[WriteOffListItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class WriteOffDetailSchema(BaseModel):
+    id: UUID
+    warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    reason: str | None
+    comment: str | None
+    lines: list[WriteOffLineViewSchema]
+
+    @classmethod
+    def from_dto(cls, detail: WriteOffDetail) -> WriteOffDetailSchema:
+        return cls(
+            id=detail.id,
+            warehouse_id=detail.warehouse_id,
+            status=detail.status,
+            occurred_at=detail.occurred_at,
+            posted_at=detail.posted_at,
+            reason=detail.reason,
+            comment=detail.comment,
+            lines=[WriteOffLineViewSchema.from_dto(line) for line in detail.lines],
+        )

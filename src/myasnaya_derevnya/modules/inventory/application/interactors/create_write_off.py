@@ -33,8 +33,6 @@ class CreateWriteOffCommand:
 
 
 class CreateWriteOffInteractor:
-    """Создаёт черновик списания: просрочка, брак, недостача."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

@@ -3,8 +3,6 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, eq=False)
 class Permission:
-    """Право доступа"""
-
     code: str
     description: str = ""
 

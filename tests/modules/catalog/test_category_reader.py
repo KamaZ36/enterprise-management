@@ -1,5 +1,3 @@
-"""Интеграционные тесты читателя категорий на настоящем PostgreSQL."""
-
 from uuid import uuid4
 
 import pytest
@@ -59,7 +57,6 @@ async def test_search_is_case_insensitive_and_escapes_wildcards(
     literal = await reader.list(search=f"% {marker}")
 
     assert [item.name for item in upper] == [f"{TEST_PREFIX}Скидка 50% {marker}"]
-    # Знак процента — литеральный символ: «любые символы» совпали бы с обеими
     assert [item.name for item in literal] == [f"{TEST_PREFIX}Скидка 50% {marker}"]
 
 

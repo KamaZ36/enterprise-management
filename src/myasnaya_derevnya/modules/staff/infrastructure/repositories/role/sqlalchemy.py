@@ -67,6 +67,11 @@ class SQLAlchemyRoleRepository(RoleRepository):
         await self._insert_permissions(role)
         await self._insert_grant_rules(role)
 
+    async def delete(self, role_id: UUID) -> None:
+        await self._session.execute(
+            delete(ROLES_TABLE).where(ROLES_TABLE.c.id == role_id)
+        )
+
     async def get_by_id(self, role_id: UUID) -> Role | None:
         stmt = self._base_select().where(ROLES_TABLE.c.id == role_id)
 

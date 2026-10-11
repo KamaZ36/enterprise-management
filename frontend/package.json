@@ -1,0 +1,10 @@
+{
+  "name": "myasnaya-derevnya-frontend",
+  "private": true,
+  "scripts": {
+    "dev:admin": "pnpm --filter @md/admin dev",
+    "build:admin": "pnpm --filter @md/admin build",
+    "test": "pnpm -r test",
+    "api:types": "node scripts/generate-api-types.mjs"
+  }
+}

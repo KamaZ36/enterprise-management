@@ -1,5 +1,3 @@
-"""Юнит-тесты интерактора списка орг-единиц."""
-
 from uuid import UUID, uuid4
 
 import pytest
@@ -85,7 +83,6 @@ async def test_checks_permission_at_root() -> None:
 
 
 async def test_empty_structure_returns_empty_list() -> None:
-    """Если дерева ещё нет, показывать нечего и проверять нечего."""
     reader = FakeOrgUnitReader()
     staff_api = FakeStaffAPI()
     interactor = ListOrgUnitsInteractor(
@@ -111,6 +108,8 @@ async def test_returns_reader_items() -> None:
             code="ROOT",
             name="Компания",
             is_active=True,
+            address=None,
+            phone_number=None,
         )
     ]
 

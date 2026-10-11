@@ -18,8 +18,6 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 @dataclass(frozen=True, slots=True)
 class ReceiptLine:
-    """Строка поступления: сколько привезли и по какой цене."""
-
     id: UUID
     nomenclature_id: UUID
     quantity: Decimal
@@ -55,8 +53,6 @@ class ReceiptLine:
 
 
 class Receipt:
-    """Поступление от поставщика: партию можно завести, если её ещё нет."""
-
     def __init__(
         self,
         id: UUID,

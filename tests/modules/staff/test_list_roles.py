@@ -1,5 +1,3 @@
-"""Юнит-тесты интерактора списка ролей."""
-
 from uuid import UUID, uuid4
 
 import pytest
@@ -99,6 +97,7 @@ async def test_returns_reader_items() -> None:
             is_system=True,
             is_assignable=False,
             is_wildcard=True,
+            permission_codes=frozenset({"nomenclature.read"}),
         )
     ]
 

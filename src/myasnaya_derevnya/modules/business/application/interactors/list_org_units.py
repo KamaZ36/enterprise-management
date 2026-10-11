@@ -12,8 +12,6 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 class ListOrgUnitsInteractor:
-    """Оргструктура для интерфейса: нужна для выбора склада и разрезов отчётов."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,
@@ -31,7 +29,6 @@ class ListOrgUnitsInteractor:
 
         root_org_unit_id = await self._org_unit_repository.get_root_id()
         if root_org_unit_id is None:
-            # Структуры ещё нет — показывать нечего и нечего защищать.
             return []
 
         allowed = await self._staff_api.can(

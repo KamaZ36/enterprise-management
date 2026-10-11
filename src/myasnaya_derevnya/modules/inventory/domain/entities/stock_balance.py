@@ -13,12 +13,6 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 
 class StockBalance:
-    """Текущий остаток и его стоимость по паре (склад, номенклатура).
-
-    Источник истины — количество и общая стоимость; средняя себестоимость
-    единицы вычисляется из них и не служит основанием для расчётов.
-    """
-
     def __init__(
         self,
         warehouse_id: UUID,
@@ -70,7 +64,6 @@ class StockBalance:
         return self._updated_at
 
     def receive(self, quantity: Decimal, cost: Money) -> None:
-        """Приход: количество и фактическая сумма закупки."""
         if quantity <= 0:
             raise EmptyMovementError()
         if cost.is_negative:
@@ -81,7 +74,6 @@ class StockBalance:
         self._updated_at = get_datetime_utc()
 
     def issue(self, quantity: Decimal, policy: CostPolicy) -> Money:
-        """Расход: возвращает себестоимость списываемого количества."""
         if quantity <= 0:
             raise EmptyMovementError()
         if quantity > self._quantity:
@@ -102,7 +94,6 @@ class StockBalance:
         self._total_value = self._total_value - cost
 
         if self._quantity == 0:
-            # Пустой склад не должен хранить копеечный остаток.
             self._total_value = Money.zero()
 
         self._updated_at = get_datetime_utc()

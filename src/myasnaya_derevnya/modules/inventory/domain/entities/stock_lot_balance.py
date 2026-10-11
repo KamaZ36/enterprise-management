@@ -8,8 +8,6 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
 
 
 class StockLotBalance:
-    """Остаток по партии: только количество, без стоимости."""
-
     def __init__(
         self,
         warehouse_id: UUID,

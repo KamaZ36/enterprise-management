@@ -14,7 +14,6 @@ class StockLotBalanceRepository(ABC):
     async def lock_many(
         self, keys: Iterable[LotBalanceKey]
     ) -> dict[LotBalanceKey, StockLotBalance]:
-        """Партионные остатки по ключам, с созданием отсутствующих и блокировкой."""
         raise NotImplementedError
 
     @abstractmethod

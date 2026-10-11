@@ -7,19 +7,13 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 
 class WarehouseType(StrEnum):
-    RAW = "raw"  # сырьё
-    PRODUCTION = "production"  # цех, полуфабрикаты
-    FINISHED = "finished"  # готовая продукция
-    SHOP = "shop"  # склад точки: кафе, магазин
+    RAW = "raw"
+    PRODUCTION = "production"
+    FINISHED = "finished"
+    SHOP = "shop"
 
 
 class Warehouse:
-    """Место хранения внутри орг-единицы.
-
-    У одного производства может быть склад сырья и склад готовой продукции;
-    остатки и себестоимость считаются по каждому отдельно.
-    """
-
     def __init__(
         self,
         id: UUID,
@@ -103,6 +97,14 @@ class Warehouse:
         self._name = name
         self._updated_at = get_datetime_utc()
 
+    def change_type(self, type_: WarehouseType) -> None:
+        self._type = type_
+        self._updated_at = get_datetime_utc()
+
     def deactivate(self) -> None:
         self._is_active = False
+        self._updated_at = get_datetime_utc()
+
+    def activate(self) -> None:
+        self._is_active = True
         self._updated_at = get_datetime_utc()

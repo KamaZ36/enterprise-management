@@ -24,19 +24,16 @@ from myasnaya_derevnya.modules.business.presentation.business_api import Busines
 
 class BusinessDepProvider(Provider):
     # REPOSITORIES
-
     @provide(scope=Scope.REQUEST)
     def get_org_unit_repository(self, session: AsyncSession) -> OrgUnitRepository:
         return SQLAlchemyOrgUnitRepository(session)
 
     # READERS
-
     @provide(scope=Scope.REQUEST)
     def get_org_unit_reader(self, session: AsyncSession) -> OrgUnitReader:
         return SQLAlchemyOrgUnitReader(session)
 
     # OTHER
-
     @provide(scope=Scope.REQUEST)
     def get_business_api_facade(
         self, org_unit_repository: OrgUnitRepository
@@ -44,6 +41,5 @@ class BusinessDepProvider(Provider):
         return BusinessAPI(org_unit_repository=org_unit_repository)
 
     # INTERACTORS
-
     create_org_unit_interactor = provide(CreateOrgUnitInteractor, scope=Scope.REQUEST)
     list_org_units_interactor = provide(ListOrgUnitsInteractor, scope=Scope.REQUEST)

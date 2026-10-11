@@ -1,0 +1,11 @@
+node_modules/
+.nuxt/
+.output/
+dist/
+*.tsbuildinfo
+.env
+.DS_Store
+.pnpm-store/
+.pnpm-home/
+openapi.json
+.ff-home/

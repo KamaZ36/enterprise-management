@@ -9,11 +9,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_lot.b
 
 
 class LotResolver:
-    """Разбор партий по коду.
-
-    Поступление может завести партию, списание — только найти существующую.
-    """
-
     def __init__(self, lot_repository: StockLotRepository) -> None:
         self._lot_repository = lot_repository
 

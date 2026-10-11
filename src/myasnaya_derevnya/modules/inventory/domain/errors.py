@@ -7,16 +7,12 @@ from myasnaya_derevnya.core.errors import ConflictError, DomainError, NotFoundEr
 
 @dataclass(slots=True, eq=False)
 class InventoryDomainError(DomainError):
-    """Базовое нарушение бизнес-правил складского учёта"""
-
     def __str__(self) -> str:
         return "Ошибка складского учёта"
 
 
 @dataclass(slots=True, eq=False)
 class InsufficientStockError(InventoryDomainError):
-    """Нельзя списать больше, чем есть на складе"""
-
     warehouse_id: UUID
     nomenclature_id: UUID
     available: Decimal
@@ -31,8 +27,6 @@ class InsufficientStockError(InventoryDomainError):
 
 @dataclass(slots=True, eq=False)
 class InsufficientLotStockError(InventoryDomainError):
-    """Нельзя списать из партии больше, чем в ней есть"""
-
     lot_id: UUID
     available: Decimal
     requested: Decimal
@@ -46,16 +40,12 @@ class InsufficientLotStockError(InventoryDomainError):
 
 @dataclass(slots=True, eq=False)
 class EmptyMovementError(InventoryDomainError):
-    """Проводка с нулевым количеством не имеет смысла"""
-
     def __str__(self) -> str:
         return "Количество движения не может быть нулевым"
 
 
 @dataclass(slots=True, eq=False)
 class NegativeCostError(InventoryDomainError):
-    """Себестоимость не может быть отрицательной"""
-
     def __str__(self) -> str:
         return "Сумма не может быть отрицательной"
 
@@ -86,8 +76,6 @@ class WriteOffNotFoundError(NotFoundError):
 
 @dataclass(slots=True, eq=False)
 class StockLotNotFoundError(NotFoundError):
-    """Партия, на которую ссылается документ, не найдена."""
-
     nomenclature_id: UUID
     lot_code: str
 
@@ -97,8 +85,6 @@ class StockLotNotFoundError(NotFoundError):
 
 @dataclass(slots=True, eq=False)
 class NomenclatureNotFoundError(NotFoundError):
-    """Номенклатура из строки документа не найдена в каталоге"""
-
     nomenclature_id: UUID
 
     def __str__(self) -> str:
@@ -123,8 +109,6 @@ class WarehouseCodeAlreadyExistsError(ConflictError):
 
 @dataclass(slots=True, eq=False)
 class WarehouseInactiveError(InventoryDomainError):
-    """Нельзя двигать остатки по закрытому складу"""
-
     warehouse_id: UUID
 
     def __str__(self) -> str:
@@ -133,8 +117,6 @@ class WarehouseInactiveError(InventoryDomainError):
 
 @dataclass(slots=True, eq=False)
 class DocumentAlreadyPostedError(ConflictError):
-    """Повторное проведение документа запрещено"""
-
     document_id: UUID
 
     def __str__(self) -> str:
@@ -151,8 +133,6 @@ class EmptyFieldError(InventoryDomainError):
 
 @dataclass(slots=True, eq=False)
 class TimezoneRequiredError(InventoryDomainError):
-    """Даты учёта обязаны иметь часовой пояс."""
-
     field: str
 
     def __str__(self) -> str:
@@ -161,8 +141,6 @@ class TimezoneRequiredError(InventoryDomainError):
 
 @dataclass(slots=True, eq=False)
 class EmptyDocumentError(InventoryDomainError):
-    """Проводить документ без строк нельзя"""
-
     document_id: UUID
 
     def __str__(self) -> str:
@@ -171,8 +149,6 @@ class EmptyDocumentError(InventoryDomainError):
 
 @dataclass(slots=True, eq=False)
 class NomenclatureNotAllowedInWarehouseError(InventoryDomainError):
-    """Номенклатуру нельзя хранить на складе такого назначения"""
-
     warehouse_id: UUID
     nomenclature_id: UUID
     warehouse_type: str
@@ -182,4 +158,15 @@ class NomenclatureNotAllowedInWarehouseError(InventoryDomainError):
         return (
             f"Номенклатура типа '{self.nomenclature_type}' не может храниться "
             f"на складе типа '{self.warehouse_type}'"
+        )
+
+
+@dataclass(slots=True, eq=False)
+class WarehouseInUseError(ConflictError):
+    warehouse_id: UUID
+
+    def __str__(self) -> str:
+        return (
+            f"Нельзя изменить назначение склада {self.warehouse_id}: "
+            "на нём есть остатки"
         )

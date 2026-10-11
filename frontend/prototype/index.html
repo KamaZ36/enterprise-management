@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Мясная деревня — рабочее место</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.14.7/dist/index.css" />
+    <style>
+      :root {
+        --md-border: #e4e7ed;
+      }
+      html,
+      body,
+      #app {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: #f5f6f8;
+        font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+        color: #1f2329;
+      }
+      .shell {
+        min-height: 100vh;
+      }
+      .aside {
+        background: #fff;
+        border-right: 1px solid var(--md-border);
+      }
+      .brand {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 18px 16px;
+      }
+      .brand__mark {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #7f1d1d;
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .brand__title {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .brand__subtitle {
+        color: #909399;
+        font-size: 11px;
+      }
+      .header {
+        background: #fff;
+        border-bottom: 1px solid var(--md-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .header__title {
+        font-weight: 600;
+      }
+      .page {
+        padding: 20px 24px 32px;
+      }
+      .page__title {
+        margin: 0 0 4px;
+        font-size: 22px;
+        font-weight: 600;
+      }
+      .page__subtitle {
+        margin: 0 0 20px;
+        color: #6b7280;
+        font-size: 13px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .pager {
+        margin-top: 18px;
+        justify-content: flex-end;
+      }
+      .link {
+        color: #7f1d1d;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .mono {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 12px;
+        color: #909399;
+      }
+      .login {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(140deg, #1f2329 0%, #3f1d1d 100%);
+      }
+      .login__card {
+        width: 380px;
+        border-radius: 14px;
+      }
+      .login__brand {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .login__hint {
+        margin: 4px 0 20px;
+        color: #909399;
+        font-size: 13px;
+      }
+      .login__submit {
+        width: 100%;
+      }
+      [v-cloak] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <div v-if="screen === 'login'" class="login">
+        <el-card class="login__card" shadow="never">
+          <div class="login__brand">Мясная деревня</div>
+          <p class="login__hint">Вход для сотрудников</p>
+          <el-form label-position="top" @submit.prevent="signIn">
+            <el-form-item label="Логин">
+              <el-input v-model="form.username" size="large" />
+            </el-form-item>
+            <el-form-item label="Пароль">
+              <el-input
+                v-model="form.password"
+                type="password"
+                size="large"
+                show-password
+                @keyup.enter="signIn"
+              />
+            </el-form-item>
+            <el-alert
+              v-if="error"
+              :title="error"
+              type="error"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 16px"
+            />
+            <el-button
+              type="primary"
+              size="large"
+              class="login__submit"
+              :loading="pending"
+              @click="signIn"
+              >Войти</el-button
+            >
+          </el-form>
+        </el-card>
+      </div>
+
+      <el-container v-else class="shell">
+        <el-aside width="236px" class="aside">
+          <div class="brand">
+            <div class="brand__mark">МД</div>
+            <div>
+              <div class="brand__title">Мясная деревня</div>
+              <div class="brand__subtitle">рабочее место</div>
+            </div>
+          </div>
+          <el-menu :default-active="screen" @select="open">
+            <el-menu-item index="employees">Сотрудники</el-menu-item>
+            <el-menu-item index="nomenclatures">Номенклатура</el-menu-item>
+            <el-menu-item index="warehouses">Склады</el-menu-item>
+          </el-menu>
+        </el-aside>
+
+        <el-container>
+          <el-header class="header">
+            <span class="header__title">{{ titles[screen] }}</span>
+            <el-button text @click="signOut">Выйти</el-button>
+          </el-header>
+
+          <el-main style="padding: 0">
+            <div v-if="screen === 'employees'" class="page">
+              <h1 class="page__title">Сотрудники</h1>
+              <p class="page__subtitle">Всего в системе: {{ total }}</p>
+              <div class="toolbar">
+                <el-button :loading="pending" @click="loadEmployees">Обновить</el-button>
+              </div>
+              <el-alert
+                v-if="error"
+                :title="error"
+                type="error"
+                :closable="false"
+                show-icon
+                style="margin-bottom: 16px"
+              />
+              <el-table v-loading="pending" :data="employees" stripe border>
+                <el-table-column label="ФИО" min-width="260">
+                  <template #default="{ row }">
+                    <span class="link" @click="openCard(row.id)">{{ fullName(row) }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="position" label="Должность" min-width="200" />
+                <el-table-column label="Телефон" width="190">
+                  <template #default="{ row }">{{ row.phone_number || "—" }}</template>
+                </el-table-column>
+                <el-table-column label="Принят" width="140">
+                  <template #default="{ row }">{{ formatDate(row.hired_at) }}</template>
+                </el-table-column>
+                <el-table-column label="Статус" width="130">
+                  <template #default="{ row }">
+                    <el-tag :type="row.is_active ? 'success' : 'info'" effect="light">
+                      {{ row.is_active ? "работает" : "уволен" }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <template #empty>
+                  <el-empty description="Сотрудников пока нет" />
+                </template>
+              </el-table>
+              <el-pagination
+                class="pager"
+                layout="prev, pager, next, total"
+                :page-size="pageSize"
+                :total="total"
+                :current-page="page"
+                @current-change="changePage"
+              />
+            </div>
+
+            <div v-else-if="screen === 'card'" class="page">
+              <el-button text @click="open('employees')" style="margin-bottom: 8px"
+                >← К списку сотрудников</el-button
+              >
+              <h1 class="page__title">{{ card ? fullName(card) : "Карточка" }}</h1>
+              <p class="page__subtitle">{{ card ? card.position : "" }}</p>
+              <el-descriptions v-if="card" :column="2" border>
+                <el-descriptions-item label="Статус">
+                  <el-tag :type="card.is_active ? 'success' : 'info'" effect="light">
+                    {{ card.is_active ? "работает" : "уволен" }}
+                  </el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="Телефон">{{
+                  card.phone_number || "—"
+                }}</el-descriptions-item>
+                <el-descriptions-item label="Принят">{{
+                  formatDate(card.hired_at)
+                }}</el-descriptions-item>
+                <el-descriptions-item label="Уволен">{{
+                  formatDate(card.dismissed_at)
+                }}</el-descriptions-item>
+                <el-descriptions-item label="Пользователь"
+                  ><span class="mono">{{ card.user_id }}</span></el-descriptions-item
+                >
+                <el-descriptions-item label="Сотрудник"
+                  ><span class="mono">{{ card.id }}</span></el-descriptions-item
+                >
+              </el-descriptions>
+              <el-alert
+                style="margin-top: 16px; max-width: 720px"
+                type="info"
+                :closable="false"
+                show-icon
+                title="Роли и назначения"
+                description="Пока не показываются: в API нет чтения назначений ролей — есть только назначить и отозвать."
+              />
+            </div>
+
+            <div v-else-if="screen === 'nomenclatures'" class="page">
+              <h1 class="page__title">Номенклатура</h1>
+              <p class="page__subtitle">Найдено: {{ total }}</p>
+              <div class="toolbar">
+                <el-input
+                  v-model="search"
+                  placeholder="Название или артикул"
+                  clearable
+                  style="max-width: 320px"
+                  @keyup.enter="applySearch"
+                  @clear="applySearch"
+                />
+                <el-button type="primary" @click="applySearch">Найти</el-button>
+              </div>
+              <el-table v-loading="pending" :data="nomenclatures" stripe border>
+                <el-table-column prop="sku" label="Артикул" width="180" />
+                <el-table-column prop="name" label="Название" min-width="260" />
+                <el-table-column label="Тип" width="190">
+                  <template #default="{ row }">{{ typeLabel(row.type) }}</template>
+                </el-table-column>
+                <el-table-column label="Ед." width="90">
+                  <template #default="{ row }">{{ unitLabel(row.unit) }}</template>
+                </el-table-column>
+                <el-table-column prop="category_name" label="Категория" min-width="200" />
+                <template #empty>
+                  <el-empty description="Номенклатуры пока нет" />
+                </template>
+              </el-table>
+            </div>
+
+            <div v-else class="page">
+              <h1 class="page__title">Склады</h1>
+              <p class="page__subtitle">Показаны склады, на которые есть право просмотра</p>
+              <el-table v-loading="pending" :data="warehouses" stripe border>
+                <el-table-column prop="code" label="Код" width="200" />
+                <el-table-column prop="name" label="Название" min-width="240" />
+                <el-table-column label="Тип" width="200">
+                  <template #default="{ row }">{{ warehouseLabel(row.type) }}</template>
+                </el-table-column>
+                <el-table-column label="Статус" width="130">
+                  <template #default="{ row }">
+                    <el-tag :type="row.is_active ? 'success' : 'info'" effect="light">
+                      {{ row.is_active ? "активен" : "закрыт" }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <template #empty>
+                  <el-empty description="Складов пока нет" />
+                </template>
+              </el-table>
+            </div>
+          </el-main>
+        </el-container>
+      </el-container>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.43/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.14.7/dist/index.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.14.7/dist/locale/ru.min.js"></script>
+    <script>
+      const { createApp, ref, reactive, onMounted } = Vue;
+      const API = "http://127.0.0.1:8000";
+      const TOKEN_KEY = "md.prototype.session";
+
+      const NOMENCLATURE_TYPES = {
+        raw_material: "Сырьё",
+        semi_finished: "Полуфабрикат",
+        finished_good: "Готовая продукция",
+      };
+      const UNITS = { kg: "кг", g: "г", pcs: "шт", l: "л", m: "м" };
+      const WAREHOUSE_TYPES = {
+        raw: "Склад сырья",
+        production: "Производство",
+        finished: "Готовая продукция",
+        shop: "Магазин",
+      };
+
+      createApp({
+        setup() {
+          const screen = ref("employees");
+          const titles = {
+            employees: "Сотрудники",
+            card: "Карточка сотрудника",
+            nomenclatures: "Номенклатура",
+            warehouses: "Склады",
+          };
+
+          const session = ref(null);
+          const form = reactive({ username: "admin", password: "" });
+          const error = ref("");
+          const pending = ref(false);
+
+          const employees = ref([]);
+          const nomenclatures = ref([]);
+          const warehouses = ref([]);
+          const card = ref(null);
+          const total = ref(0);
+          const page = ref(1);
+          const pageSize = 20;
+          const search = ref("");
+          const applied = ref("");
+
+          async function request(path, options = {}) {
+            const response = await fetch(API + path, {
+              ...options,
+              headers: {
+                "Content-Type": "application/json",
+                ...(session.value ? { Authorization: "Bearer " + session.value } : {}),
+                ...(options.headers || {}),
+              },
+            });
+
+            if (!response.ok) {
+              const reason =
+                response.status === 401
+                  ? "Сессия истекла — войдите заново"
+                  : response.status === 403
+                    ? "Нет права на это действие"
+                    : "Ошибка запроса: " + response.status;
+              throw new Error(reason);
+            }
+
+            return response.json();
+          }
+
+          async function signIn() {
+            error.value = "";
+            pending.value = true;
+            try {
+              const data = await request("/api/login/password", {
+                method: "POST",
+                body: JSON.stringify({
+                  username: form.username.trim(),
+                  password: form.password,
+                }),
+              });
+              session.value = data.session;
+              localStorage.setItem(TOKEN_KEY, data.session);
+              await open("employees");
+            } catch (cause) {
+              error.value = cause.message;
+            } finally {
+              pending.value = false;
+            }
+          }
+
+          async function signOut() {
+            try {
+              await request("/api/logout", { method: "POST" });
+            } catch {
+              /* выходим в любом случае */
+            }
+            session.value = null;
+            localStorage.removeItem(TOKEN_KEY);
+            screen.value = "login";
+          }
+
+          async function open(target) {
+            error.value = "";
+            pending.value = true;
+            try {
+              if (target === "employees") {
+                await loadEmployees();
+              } else if (target === "nomenclatures") {
+                await loadNomenclatures();
+              } else if (target === "warehouses") {
+                warehouses.value = await request("/api/inventory/warehouses");
+              }
+              screen.value = target;
+            } catch (cause) {
+              error.value = cause.message;
+            } finally {
+              pending.value = false;
+            }
+          }
+
+          async function loadEmployees() {
+            const data = await request(
+              `/api/employees?limit=${pageSize}&offset=${(page.value - 1) * pageSize}`,
+            );
+            employees.value = data.items;
+            total.value = data.total;
+          }
+
+          async function loadNomenclatures() {
+            const query = applied.value ? `&search=${encodeURIComponent(applied.value)}` : "";
+            const data = await request(
+              `/api/nomenclatures?limit=${pageSize}&offset=${(page.value - 1) * pageSize}${query}`,
+            );
+            nomenclatures.value = data.items;
+            total.value = data.total;
+          }
+
+          function changePage(next) {
+            page.value = next;
+            if (screen.value === "nomenclatures") {
+              open("nomenclatures");
+            } else {
+              open("employees");
+            }
+          }
+
+          function applySearch() {
+            applied.value = search.value.trim();
+            page.value = 1;
+            open("nomenclatures");
+          }
+
+          async function openCard(id) {
+            pending.value = true;
+            try {
+              card.value = await request(`/api/employees/${id}`);
+              screen.value = "card";
+            } catch (cause) {
+              error.value = cause.message;
+            } finally {
+              pending.value = false;
+            }
+          }
+
+          function fullName(person) {
+            return [person.last_name, person.first_name, person.middle_name]
+              .filter(Boolean)
+              .join(" ");
+          }
+
+          function formatDate(value) {
+            if (!value) return "—";
+            return new Intl.DateTimeFormat("ru-RU").format(new Date(value));
+          }
+
+          function typeLabel(code) {
+            return NOMENCLATURE_TYPES[code] || code;
+          }
+          function unitLabel(code) {
+            return UNITS[code] || code;
+          }
+          function warehouseLabel(code) {
+            return WAREHOUSE_TYPES[code] || code;
+          }
+
+          onMounted(async () => {
+            const fromUrl = new URLSearchParams(location.search).get("session");
+            const stored = fromUrl || localStorage.getItem(TOKEN_KEY);
+
+            if (!stored) {
+              screen.value = "login";
+              return;
+            }
+
+            session.value = stored;
+            localStorage.setItem(TOKEN_KEY, stored);
+            try {
+              await open("employees");
+            } catch {
+              session.value = null;
+              localStorage.removeItem(TOKEN_KEY);
+              screen.value = "login";
+            }
+          });
+
+          return {
+            screen,
+            titles,
+            form,
+            error,
+            pending,
+            employees,
+            nomenclatures,
+            warehouses,
+            card,
+            total,
+            page,
+            pageSize,
+            search,
+            signIn,
+            signOut,
+            open,
+            loadEmployees,
+            changePage,
+            applySearch,
+            openCard,
+            fullName,
+            formatDate,
+            typeLabel,
+            unitLabel,
+            warehouseLabel,
+          };
+        },
+      })
+        .use(ElementPlus, { locale: ElementPlusLocaleRu })
+        .mount("#app");
+    </script>
+  </body>
+</html>

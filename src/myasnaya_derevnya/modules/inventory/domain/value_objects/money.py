@@ -6,8 +6,6 @@ KOPEKS_PER_RUBLE = Decimal(100)
 
 @dataclass(frozen=True, slots=True)
 class Money:
-    """Денежная сумма в копейках: сложение и вычитание точные."""
-
     kopecks: int
 
     @classmethod

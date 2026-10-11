@@ -41,8 +41,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_posti
 
 
 class StockLedger:
-    """Единственная точка записи в остатки и журнал проводок."""
-
     def __init__(
         self,
         posting_repository: StockPostingRepository,
@@ -67,8 +65,6 @@ class StockLedger:
         occurred_at: datetime,
         posted_by: UUID | None = None,
     ) -> AsyncIterator[StockPostingHandle]:
-        # Запись проведения создаётся сразу: уникальность пары (тип, документ)
-        # в базе не даст провести один документ дважды.
         posting = StockPosting.create(
             document_type=document_type,
             document_id=document_id,
@@ -78,9 +74,6 @@ class StockLedger:
         try:
             await self._posting_repository.add(posting)
         except IntegrityError as exc:
-            # Ограничение уникальности — источник истины для «проведён ровно
-            # один раз»; переводим его в понятную ошибку. Транзакция после
-            # этого откатывается провайдером сессии.
             raise DocumentAlreadyPostedError(document_id) from exc
 
         handle = StockPostingHandle(
@@ -98,12 +91,6 @@ class StockLedger:
 
 
 class StockPostingHandle:
-    """Операции одного проведения.
-
-    Блокировки объявляются заранее и берутся пачкой в отсортированном
-    порядке: ленивая блокировка в порядке строк документа даёт дедлоки.
-    """
-
     def __init__(
         self,
         posting: StockPosting,

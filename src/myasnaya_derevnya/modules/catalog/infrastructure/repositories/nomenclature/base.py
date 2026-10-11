@@ -18,6 +18,9 @@ class NomenclatureRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def get_names(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def get_types(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
-        """Коды типов номенклатуры: нужны другим модулям для проверок."""
         raise NotImplementedError

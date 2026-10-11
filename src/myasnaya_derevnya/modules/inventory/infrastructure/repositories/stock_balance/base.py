@@ -14,15 +14,14 @@ class StockBalanceRepository(ABC):
     async def lock_many(
         self, keys: Iterable[BalanceKey]
     ) -> dict[BalanceKey, StockBalance]:
-        """Возвращает балансы по ключам, создавая отсутствующие и блокируя их.
-
-        Блокировки берутся в отсортированном порядке ключей, иначе два
-        параллельных перемещения между складами поймают дедлок.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def save_many(self, balances: Sequence[StockBalance]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def has_any_for_warehouse(self, warehouse_id: UUID) -> bool:
         raise NotImplementedError
 
     @abstractmethod

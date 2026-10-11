@@ -12,14 +12,14 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 
 class MovementType(StrEnum):
-    RECEIPT = "receipt"  # поступление
-    ISSUE = "issue"  # расход (внутренняя передача, использование)
-    WRITE_OFF = "write_off"  # списание: просрочка, брак, недостача
-    SALE = "sale"  # продажа (зарезервировано под маржу)
-    TRANSFER_OUT = "transfer_out"  # перемещение, расходная часть (фаза 2)
-    TRANSFER_IN = "transfer_in"  # перемещение, приходная часть (фаза 2)
-    INVENTORY_SURPLUS = "inventory_surplus"  # излишек по инвентаризации
-    INVENTORY_SHORTAGE = "inventory_shortage"  # недостача по инвентаризации
+    RECEIPT = "receipt"
+    ISSUE = "issue"
+    WRITE_OFF = "write_off"
+    SALE = "sale"
+    TRANSFER_OUT = "transfer_out"
+    TRANSFER_IN = "transfer_in"
+    INVENTORY_SURPLUS = "inventory_surplus"
+    INVENTORY_SHORTAGE = "inventory_shortage"
 
 
 INBOUND_TYPES = frozenset(
@@ -32,13 +32,6 @@ INBOUND_TYPES = frozenset(
 
 
 class StockMovement:
-    """Неизменяемая проводка складского учёта.
-
-    Исправление — новая компенсирующая проводка, а не правка прежней.
-    Количество и сумма хранятся со знаком: остаток равен сумме проводок.
-    Ссылается на проведение, а не на документ: у каждого типа своя таблица.
-    """
-
     def __init__(
         self,
         id: UUID,
@@ -79,7 +72,6 @@ class StockMovement:
         lot_id: UUID | None = None,
         created_by: UUID | None = None,
     ) -> StockMovement:
-        """Количество и сумма передаются положительными: знак задаёт тип."""
         if quantity <= 0:
             raise EmptyMovementError()
         if occurred_at.tzinfo is None:
@@ -131,12 +123,10 @@ class StockMovement:
 
     @property
     def quantity(self) -> Decimal:
-        """Со знаком: положительное — приход, отрицательное — расход."""
         return self._quantity
 
     @property
     def total_cost(self) -> Money:
-        """Со знаком, как и количество."""
         return self._total_cost
 
     @property

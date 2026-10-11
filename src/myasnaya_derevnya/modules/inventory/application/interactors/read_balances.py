@@ -3,6 +3,7 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_balance import (
     StockBalance,
 )
@@ -22,10 +23,9 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 @dataclass(frozen=True, slots=True)
 class BalanceView:
-    """Остаток и признак, можно ли показывать стоимость."""
-
     balance: StockBalance
     cost_visible: bool
+    nomenclature_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,11 +40,13 @@ class GetBalanceInteractor:
         identity_provider: IdentityProvider,
         warehouse_repository: WarehouseRepository,
         balance_repository: StockBalanceRepository,
+        catalog_api: CatalogAPI,
         staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._warehouse_repository = warehouse_repository
         self._balance_repository = balance_repository
+        self._catalog_api = catalog_api
         self._staff_api = staff_api
 
     async def __call__(self, query: GetBalanceQuery) -> BalanceView:
@@ -60,14 +62,18 @@ class GetBalanceInteractor:
             query.warehouse_id, query.nomenclature_id
         )
         if balance is None:
-            # Пары «склад + номенклатура» может ещё не быть в балансах:
-            # для вызывающего это просто нулевой остаток.
             balance = StockBalance.empty(
                 warehouse_id=query.warehouse_id,
                 nomenclature_id=query.nomenclature_id,
             )
 
-        return BalanceView(balance=balance, cost_visible=cost_visible)
+        names = await self._catalog_api.nomenclature_names({balance.nomenclature_id})
+
+        return BalanceView(
+            balance=balance,
+            cost_visible=cost_visible,
+            nomenclature_name=names.get(balance.nomenclature_id),
+        )
 
     async def _check_access(self, user_id: UUID, org_unit_id: UUID) -> bool:
         allowed = await self._staff_api.can(
@@ -92,11 +98,13 @@ class ListBalancesInteractor:
         identity_provider: IdentityProvider,
         warehouse_repository: WarehouseRepository,
         balance_repository: StockBalanceRepository,
+        catalog_api: CatalogAPI,
         staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._warehouse_repository = warehouse_repository
         self._balance_repository = balance_repository
+        self._catalog_api = catalog_api
         self._staff_api = staff_api
 
     async def __call__(self, query: ListBalancesQuery) -> list[BalanceView]:
@@ -122,7 +130,15 @@ class ListBalancesInteractor:
 
         balances = await self._balance_repository.list_by_warehouse(query.warehouse_id)
 
+        names = await self._catalog_api.nomenclature_names(
+            {balance.nomenclature_id for balance in balances}
+        )
+
         return [
-            BalanceView(balance=balance, cost_visible=cost_visible)
+            BalanceView(
+                balance=balance,
+                cost_visible=cost_visible,
+                nomenclature_name=names.get(balance.nomenclature_id),
+            )
             for balance in balances
         ]

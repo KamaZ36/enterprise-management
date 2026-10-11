@@ -17,11 +17,6 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 @dataclass(frozen=True, slots=True)
 class WriteOffLine:
-    """Строка списания: цены нет, себестоимость определит проведение.
-
-    Партия указывается ссылкой на существующую.
-    """
-
     id: UUID
     nomenclature_id: UUID
     quantity: Decimal
@@ -49,8 +44,6 @@ class WriteOffLine:
 
 
 class WriteOff:
-    """Списание: просрочка, брак, недостача."""
-
     def __init__(
         self,
         id: UUID,

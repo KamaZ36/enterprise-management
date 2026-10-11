@@ -1,5 +1,3 @@
-"""Интеграционные тесты читателя номенклатуры на настоящем PostgreSQL."""
-
 from uuid import UUID, uuid4
 
 import pytest
@@ -43,7 +41,6 @@ async def test_returns_dto_with_category_name(
     assert total == 1
     assert items[0].name == f"Говядина {marker}"
     assert items[0].category_name == f"{TEST_PREFIX}Мясо {marker}"
-    # Читатель отдаёт плоские данные, а не доменную сущность
     assert not hasattr(items[0], "created_at")
 
 
@@ -73,10 +70,6 @@ async def test_search_matches_sku(db_session: AsyncSession, make_nomenclature) -
 async def test_search_treats_percent_as_literal(
     db_session: AsyncSession, make_nomenclature
 ) -> None:
-    """Знак процента в поиске — это символ, а не «любые символы».
-
-    Без экранирования шаблон «% marker» совпал бы с обеими позициями.
-    """
     marker = uuid4().hex[:6]
     await make_nomenclature(name=f"Скидка 50% {marker}", sku=f"{TEST_PREFIX}{marker}-1")
     await make_nomenclature(name=f"Без скидки {marker}", sku=f"{TEST_PREFIX}{marker}-2")

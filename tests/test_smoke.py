@@ -29,7 +29,6 @@ def _presentation_modules() -> list[Path]:
 
 
 def _requested_interactors(path: Path) -> set[str]:
-    """Имена, которые эндпоинт достаёт из контейнера: context.get(SomeInteractor)."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
     names: set[str] = set()
 
@@ -47,14 +46,13 @@ def _requested_interactors(path: Path) -> set[str]:
 
 
 def test_all_modules_import() -> None:
-    """Ловит битые импорты — приложение не должно падать на старте."""
     broken = []
     for module in pkgutil.walk_packages(
         myasnaya_derevnya.__path__, "myasnaya_derevnya."
     ):
         try:
             importlib.import_module(module.name)
-        except Exception as exc:  # noqa: BLE001 - нужен любой сбой импорта
+        except Exception as exc:  # noqa: BLE001
             broken.append(f"{module.name}: {type(exc).__name__}: {exc}")
 
     assert broken == []
@@ -76,7 +74,7 @@ def test_auth_endpoints_are_exposed() -> None:
 def test_revoke_role_endpoint_is_exposed() -> None:
     paths = create_app().openapi()["paths"]
 
-    assert "/api/employees/roles/{assignment_id}" in paths
+    assert "/api/employees/role-assignments/{assignment_id}" in paths
 
 
 def test_employee_read_endpoints_are_exposed() -> None:
@@ -87,7 +85,6 @@ def test_employee_read_endpoints_are_exposed() -> None:
 
 
 def test_read_endpoints_document_response_schema() -> None:
-    """Read-срез должен отдавать response-модель, а не пустую схему."""
     paths = create_app().openapi()["paths"]
     responses = paths["/api/employees"]["get"]["responses"]
 
@@ -115,6 +112,20 @@ def test_inventory_read_endpoints_document_response_schema() -> None:
     )
 
 
+def test_paginated_endpoints_declare_window_bounds() -> None:
+    spec = create_app().openapi()
+
+    for path in ("/api/employees", "/api/nomenclatures"):
+        parameters = {
+            item["name"]: item for item in spec["paths"][path]["get"]["parameters"]
+        }
+
+        assert parameters["limit"]["schema"]["minimum"] == 1
+        assert parameters["limit"]["schema"]["maximum"] == 100
+        assert parameters["limit"]["schema"]["default"] == 20
+        assert parameters["offset"]["schema"]["minimum"] == 0
+
+
 async def test_every_endpoint_interactor_is_registered() -> None:
     targets: list[tuple[str, str, type]] = []
     for path in _presentation_modules():
@@ -134,7 +145,7 @@ async def test_every_endpoint_interactor_is_registered() -> None:
         for module_name, name, obj in targets:
             try:
                 await context.get(obj)
-            except Exception as exc:  # noqa: BLE001 - любая ошибка DI
+            except Exception as exc:  # noqa: BLE001
                 broken.append(f"{module_name}.{name}: {type(exc).__name__}: {exc}")
 
     assert broken == []

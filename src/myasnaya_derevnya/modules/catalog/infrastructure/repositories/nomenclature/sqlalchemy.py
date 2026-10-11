@@ -28,6 +28,7 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 unit=nomenclature.unit.value,
                 type=nomenclature.type_.value,
                 category_id=nomenclature.category_id,
+                is_active=nomenclature.is_active,
                 created_at=nomenclature.created_at,
             )
         )
@@ -40,6 +41,9 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 sku=nomenclature.sku,
                 name=nomenclature.name,
                 category_id=nomenclature.category_id,
+                unit=nomenclature.unit.value,
+                type=nomenclature.type_.value,
+                is_active=nomenclature.is_active,
             )
         )
 
@@ -55,12 +59,18 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
 
         return self._to_entity(row)
 
-    async def get_types(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
-        """Коды типов номенклатуры.
+    async def get_names(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
+        if not nomenclature_ids:
+            return {}
 
-        Остаётся в репозитории, а не у читателя: эти данные нужны не для
-        показа, а для проверки бизнес-правила при проведении документа.
-        """
+        stmt = select(NOMENCLATURES_TABLE.c.id, NOMENCLATURES_TABLE.c.name).where(
+            NOMENCLATURES_TABLE.c.id.in_(nomenclature_ids)
+        )
+        rows = (await self._session.execute(stmt)).all()
+
+        return {row[0]: row[1] for row in rows}
+
+    async def get_types(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
         if not nomenclature_ids:
             return {}
 
@@ -80,4 +90,5 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
             type_=NomenclatureType(row["type"]),
             category_id=row["category_id"],
             created_at=row["created_at"],
+            is_active=row["is_active"],
         )

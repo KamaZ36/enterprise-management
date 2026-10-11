@@ -1,0 +1,40 @@
+<div class="spa-loading">
+  <div class="spa-loading__mark">МД</div>
+  <div class="spa-loading__title">Мясная деревня</div>
+  <div class="spa-loading__hint">Загрузка рабочего места…</div>
+</div>
+
+<style>
+  .spa-loading {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    background: #f5f6f8;
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    color: #1f2329;
+  }
+
+  .spa-loading__mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #7f1d1d;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+  }
+
+  .spa-loading__title {
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .spa-loading__hint {
+    color: #909399;
+    font-size: 13px;
+  }
+</style>

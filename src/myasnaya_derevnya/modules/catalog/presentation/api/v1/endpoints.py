@@ -26,10 +26,12 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_categories i
     ListCategoriesQuery,
 )
 from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclatures import (
-    DEFAULT_LIMIT,
-    MAX_LIMIT,
     ListNomenclaturesInteractor,
     ListNomenclaturesQuery,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclature import (
+    UpdateNomenclatureCommand,
+    UpdateNomenclatureInteractor,
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     NomenclatureType,
@@ -42,6 +44,7 @@ from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
     CreatePriceSchema,
     NomenclatureListSchema,
     NomenclatureSchema,
+    UpdateNomenclatureSchema,
 )
 
 router = APIRouter(prefix="/api", tags=["Catalog Module"])
@@ -124,7 +127,7 @@ async def list_nomenclatures(
     ] = None,
     type_code: Annotated[NomenclatureType | None, Query(alias="type")] = None,
     category_id: Annotated[UUID | None, Query()] = None,
-    limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> NomenclatureListSchema:
     query = ListNomenclaturesQuery(
@@ -161,3 +164,26 @@ async def list_categories(
         items = await interactor(ListCategoriesQuery(search=search))
 
     return [CategorySchema.from_dto(item) for item in items]
+
+
+@router.patch(
+    "/nomenclatures/{nomenclature_id}",
+    description="Изменить номенклатуру",
+)
+async def update_nomenclature(
+    request: Request, nomenclature_id: UUID, data: UpdateNomenclatureSchema
+) -> JSONResponse:
+    command = UpdateNomenclatureCommand(
+        nomenclature_id=nomenclature_id,
+        name=data.name,
+        category_id=data.category_id,
+        unit=data.unit,
+        type_=data.type,
+        is_active=data.is_active,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateNomenclatureInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok!"})

@@ -16,3 +16,7 @@ class RoleRepository(ABC):
     @abstractmethod
     async def get_by_code(self, code: str) -> Role | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, role_id: UUID) -> None:
+        raise NotImplementedError

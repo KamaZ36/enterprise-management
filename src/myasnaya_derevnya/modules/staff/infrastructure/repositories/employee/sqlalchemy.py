@@ -57,6 +57,16 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
 
         return self._to_entity(row)
 
+    async def get_by_user_id(self, user_id: UUID) -> Employee | None:
+        stmt = select(EMPLOYEES_TABLE).where(EMPLOYEES_TABLE.c.user_id == user_id)
+        result = await self._session.execute(stmt)
+        row = result.mappings().one_or_none()
+
+        if row is None:
+            return None
+
+        return self._to_entity(row)
+
     async def list(self, *, limit: int, offset: int) -> tuple[list[Employee], int]:
         total = await self._session.scalar(
             select(func.count()).select_from(EMPLOYEES_TABLE)

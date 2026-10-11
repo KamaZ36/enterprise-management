@@ -11,7 +11,6 @@ class WriteOffRepository(ABC):
 
     @abstractmethod
     async def save(self, write_off: WriteOff) -> None:
-        """Сохраняет шапку. Строки после создания неизменяемы."""
         raise NotImplementedError
 
     @abstractmethod

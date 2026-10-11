@@ -32,8 +32,6 @@ class CreateReceiptCommand:
 
 
 class CreateReceiptInteractor:
-    """Создаёт черновик поступления. Проведение — отдельный шаг."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,
