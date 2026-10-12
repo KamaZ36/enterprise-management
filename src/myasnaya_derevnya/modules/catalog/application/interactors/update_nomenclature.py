@@ -24,6 +24,9 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.base import (
     NomenclatureRepository,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movement.base import (
+    StockMovementRepository,
+)
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
@@ -43,6 +46,7 @@ class UpdateNomenclatureInteractor:
         identity_provider: IdentityProvider,
         nomenclature_repository: NomenclatureRepository,
         category_repository: CategoryRepository,
+        movement_repository: StockMovementRepository,
         nomenclature_usage: NomenclatureUsage,
         changes_policy: NomenclatureChangesPolicy,
         business_api: BusinessAPI,
@@ -52,6 +56,7 @@ class UpdateNomenclatureInteractor:
         self._identity_provider = identity_provider
         self._nomenclature_repository = nomenclature_repository
         self._category_repository = category_repository
+        self._movement_repository = movement_repository
         self._nomenclature_usage = nomenclature_usage
         self._changes_policy = changes_policy
         self._business_api = business_api
@@ -82,8 +87,11 @@ class UpdateNomenclatureInteractor:
             raise CategoryNotFound(command.category_id)
 
         if command.unit is not None or command.type_ is not None:
-            has_movements = await self._nomenclature_usage.has_movements(
-                nomenclature.id
+            has_movements = (
+                await self._movement_repository.count_for_nomenclature(
+                    command.nomenclature_id
+                )
+                > 0
             )
             self._changes_policy.ensure_changeable(
                 nomenclature_id=nomenclature.id,

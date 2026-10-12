@@ -42,7 +42,7 @@
         </div>
 
         <div class="photo">
-          <span class="photo__label">Фото кафе</span>
+          <img src="/photos/cafe-1.jpg" alt="Зал кафе «Мясная деревня»" loading="lazy" />
         </div>
       </div>
     </section>
@@ -50,7 +50,7 @@
     <section class="section" id="shops">
       <div class="wrap split split--reverse">
         <div class="photo">
-          <span class="photo__label">Фото магазина</span>
+          <img src="/photos/shop-1.jpg" alt="Магазин «Мясная деревня»" loading="lazy" />
         </div>
 
         <div class="split__text">
@@ -100,9 +100,13 @@
         </div>
 
         <div class="photo">
-          <span class="photo__label">Фото производства</span>
+          <img src="/photos/building.webp" alt="Здание «Мясная деревня»: магазин и кафе" loading="lazy" />
         </div>
       </div>
+    </section>
+
+    <section class="ribbon">
+      <img src="/photos/table.jpg" alt="Ассортимент «Мясная деревня»" loading="lazy" />
     </section>
 
     <section class="section" id="contacts">

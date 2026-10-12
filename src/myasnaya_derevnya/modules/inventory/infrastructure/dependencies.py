@@ -1,9 +1,6 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from myasnaya_derevnya.modules.catalog.domain.services.nomenclature_changes import (
-    NomenclatureUsage,
-)
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
     CreateReceiptInteractor,
@@ -57,9 +54,6 @@ from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
 )
 from myasnaya_derevnya.modules.inventory.domain.services.warehouse_purpose import (
     WarehousePurposePolicy,
-)
-from myasnaya_derevnya.modules.inventory.infrastructure.adapters.nomenclature_usage import (
-    InventoryNomenclatureUsage,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base import (
     BalanceReader,
@@ -177,12 +171,6 @@ class InventoryDepProvider(Provider):
         self, session: AsyncSession
     ) -> StockLotBalanceRepository:
         return SQLAlchemyStockLotBalanceRepository(session)
-
-    @provide(scope=Scope.REQUEST)
-    def get_nomenclature_usage(
-        self, movement_repository: StockMovementRepository
-    ) -> NomenclatureUsage:
-        return InventoryNomenclatureUsage(movement_repository)
 
     # READERS
 
