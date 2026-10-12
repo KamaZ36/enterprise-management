@@ -24,7 +24,13 @@ export function createApiClient(options: {
     onResponse({ request, response }) {
       const isLogin = request.url.includes("/api/login");
       const isPasswordChange = request.url.includes("/api/me/password");
-      if (response.status === 401 && !isLogin && !isPasswordChange) {
+      const hadToken = Boolean(request.headers.get("Authorization"));
+      if (
+        response.status === 401 &&
+        hadToken &&
+        !isLogin &&
+        !isPasswordChange
+      ) {
         options.onUnauthorized?.();
       }
       return response;

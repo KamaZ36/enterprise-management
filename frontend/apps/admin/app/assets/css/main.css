@@ -52,3 +52,25 @@ body {
 .muted {
   color: #909399;
 }
+
+.el-table {
+  border-radius: 8px;
+}
+
+.el-table th.el-table__cell {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.el-card,
+.el-descriptions {
+  border-radius: 8px;
+}
+
+.el-button + .el-button {
+  margin-left: 0;
+}
+
+.page__error {
+  margin-bottom: 12px;
+}

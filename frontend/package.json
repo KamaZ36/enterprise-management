@@ -3,8 +3,11 @@
   "private": true,
   "scripts": {
     "dev:admin": "pnpm --filter @md/admin dev",
-    "build:admin": "pnpm --filter @md/admin build",
+    "build:admin": "pnpm --filter @md/admin typecheck && pnpm --filter @md/admin build",
     "test": "pnpm -r test",
-    "api:types": "node scripts/generate-api-types.mjs"
+    "api:types": "node scripts/generate-api-types.mjs",
+    "typecheck:admin": "pnpm --filter @md/admin typecheck",
+    "dev:landing": "pnpm --filter @md/landing dev",
+    "build:landing": "pnpm --filter @md/landing build"
   }
 }

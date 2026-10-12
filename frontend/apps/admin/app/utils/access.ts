@@ -10,12 +10,12 @@ export const CAN = {
     "nomenclature.read",
   ],
   warehouseRead: ["inventory.warehouse.read"],
-  nomenclatureCreate: ["nomenclature.create", "category.read"],
+  warehouseCreate: ["inventory.warehouse.manage", "org_unit.read"],
+  warehouseEdit: ["inventory.warehouse.manage"],
   balancesOpen: ["inventory.balance.read", "inventory.warehouse.read"],
   nomenclaturesOpen: ["nomenclature.read", "category.read"],
-  warehouseCreate: ["inventory.warehouse.manage", "org_unit.read"],
+  nomenclatureCreate: ["nomenclature.create", "category.read"],
   orgUnitsOpen: ["org_unit.read", "inventory.warehouse.read"],
-  warehouseEdit: ["inventory.warehouse.manage"],
   employeesOpen: ["staff.employee.read"],
   employeeEdit: ["staff.employee.manage"],
   employeeResetPassword: ["staff.employee.reset_password"],
@@ -23,18 +23,50 @@ export const CAN = {
 } as const;
 
 export const SECTIONS = [
-  { path: "/documents", title: "Журнал", permissions: CAN.documentsOpen },
-  { path: "/balances", title: "Остатки", permissions: CAN.balancesOpen },
+  { path: "/", title: "Главная", icon: "HomeFilled", permissions: [] },
+  {
+    path: "/documents",
+    title: "Журнал",
+    icon: "Document",
+    permissions: CAN.documentsOpen,
+  },
+  {
+    path: "/balances",
+    title: "Остатки",
+    icon: "Box",
+    permissions: CAN.balancesOpen,
+  },
   {
     path: "/nomenclatures",
     title: "Номенклатура",
+    icon: "Goods",
     permissions: CAN.nomenclaturesOpen,
   },
-  { path: "/categories", title: "Категории", permissions: ["category.read"] },
-  { path: "/warehouses", title: "Склады", permissions: CAN.warehouseCreate },
-  { path: "/org-units", title: "Организация", permissions: CAN.orgUnitsOpen },
-  { path: "/employees", title: "Сотрудники", permissions: CAN.employeesOpen },
-  { path: "/roles", title: "Роли", permissions: CAN.rolesOpen },
+  {
+    path: "/categories",
+    title: "Категории",
+    icon: "Files",
+    permissions: ["category.read"],
+  },
+  {
+    path: "/warehouses",
+    title: "Склады",
+    icon: "OfficeBuilding",
+    permissions: CAN.warehouseCreate,
+  },
+  {
+    path: "/org-units",
+    title: "Организация",
+    icon: "Grid",
+    permissions: CAN.orgUnitsOpen,
+  },
+  {
+    path: "/employees",
+    title: "Сотрудники",
+    icon: "User",
+    permissions: CAN.employeesOpen,
+  },
+  { path: "/roles", title: "Роли", icon: "Key", permissions: CAN.rolesOpen },
 ] as const;
 
 export type Section = (typeof SECTIONS)[number];

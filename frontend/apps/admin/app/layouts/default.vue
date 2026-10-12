@@ -11,6 +11,9 @@
 
       <el-menu :default-active="activeMenu" router class="shell__menu">
         <el-menu-item v-for="section in visibleSections" :key="section.path" :index="section.path">
+          <el-icon class="menu__icon">
+            <component :is="ICONS[section.icon]" />
+          </el-icon>
           {{ section.title }}
         </el-menu-item>
       </el-menu>
@@ -88,6 +91,30 @@ const { signOut } = useAuth();
 const { user, load, can, displayName } = useCurrentUser();
 
 import { SECTIONS } from "~/utils/access";
+import {
+  Box,
+  Document,
+  Files,
+  Goods,
+  Grid,
+  HomeFilled,
+  Key,
+  OfficeBuilding,
+  User,
+} from "@element-plus/icons-vue";
+import type { Component } from "vue";
+
+const ICONS: Record<string, Component> = {
+  HomeFilled,
+  Document,
+  Box,
+  Goods,
+  Files,
+  OfficeBuilding,
+  Grid,
+  User,
+  Key,
+};
 
 const api = useApi();
 const passwordOpen = ref(false);
@@ -230,5 +257,11 @@ onMounted(load);
 
 .shell__main {
   padding: 0;
+}
+</style>
+
+<style scoped>
+.menu__icon {
+  margin-right: 8px;
 }
 </style>
