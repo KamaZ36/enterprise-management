@@ -5,6 +5,8 @@
       Структура компании в виде папок. Склады и права привязываются к подразделению.
     </p>
 
+    <ViewOnlyNotice view="org_unit.read" edit="org_unit.update" />
+
     <el-alert
       v-if="notice"
       :title="notice"
@@ -81,7 +83,12 @@
 
       <el-card class="panel" shadow="never">
         <template v-if="selected">
-          <div class="panel__title">{{ selected.name }}</div>
+          <div class="panel__head">
+            <div class="panel__title">{{ selected.name }}</div>
+            <el-button v-if="can('org_unit.update')" text @click="openEdit">
+              Изменить
+            </el-button>
+          </div>
 
           <el-descriptions :column="1" border>
             <el-descriptions-item label="Код">
@@ -123,6 +130,34 @@
         <el-empty v-else description="Выберите подразделение в дереве" :image-size="80" />
       </el-card>
     </div>
+
+    <el-dialog v-model="editOpen" title="Изменить подразделение" width="640">
+      <el-form label-position="top">
+        <el-form-item label="Название">
+          <el-input v-model="editForm.name" />
+        </el-form-item>
+
+        <el-form-item label="Адрес">
+          <el-input v-model="editForm.address" />
+        </el-form-item>
+
+        <el-form-item label="Телефон">
+          <el-input v-model="editForm.phone_number" />
+        </el-form-item>
+
+        <el-form-item label="Статус">
+          <el-switch v-model="editForm.is_active" />
+          <span class="hint">закрытое подразделение остаётся в структуре, но новые склады в нём не заводят</span>
+        </el-form-item>
+
+        <el-alert v-if="editError" :title="editError" type="error" :closable="false" show-icon />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="editOpen = false">Отмена</el-button>
+        <el-button type="primary" :loading="saving" @click="saveEdit">Сохранить</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="createOpen" title="Новое подразделение" width="640">
       <el-form label-position="top">
@@ -182,6 +217,10 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.orgUnitsOpen });
 import { Folder, FolderOpened } from "@element-plus/icons-vue";
 import type { components } from "@md/api-client";
 
@@ -214,6 +253,14 @@ const treeKey = ref(0);
 const treeRef = ref();
 
 const createOpen = ref(false);
+const editOpen = ref(false);
+const editError = ref("");
+const editForm = reactive({
+  name: "",
+  address: "",
+  phone_number: "",
+  is_active: true,
+});
 const saving = ref(false);
 const createError = ref("");
 
@@ -325,6 +372,10 @@ async function load(): Promise<void> {
 }
 
 async function loadWarehouses(): Promise<void> {
+  if (!canAll(CAN.warehouseRead)) {
+    return;
+  }
+
   const { data, response } = await api.GET("/api/inventory/warehouses", {});
   if (response.ok && data) {
     warehouses.value = data;
@@ -377,6 +428,77 @@ async function createUnit(): Promise<void> {
 watch(filter, (value) => {
   treeRef.value?.filter(value);
 });
+
+function openEdit(): void {
+  const current = selected.value;
+  if (!current) {
+    return;
+  }
+
+  editError.value = "";
+  notice.value = "";
+  editForm.name = current.name;
+  editForm.address = current.address ?? "";
+  editForm.phone_number = current.phone_number ?? "";
+  editForm.is_active = current.is_active;
+  editOpen.value = true;
+}
+
+
+async function saveEdit(): Promise<void> {
+  const current = selected.value;
+  if (!current) {
+    return;
+  }
+
+  const body: Record<string, unknown> = {};
+  if (editForm.name.trim() !== current.name) {
+    body.name = editForm.name.trim();
+  }
+  if (editForm.address.trim() !== (current.address ?? "")) {
+    body.address = editForm.address.trim() || null;
+  }
+  if (editForm.phone_number.trim() !== (current.phone_number ?? "")) {
+    body.phone_number = editForm.phone_number.trim() || null;
+  }
+  if (editForm.is_active !== current.is_active) {
+    body.is_active = editForm.is_active;
+  }
+
+  if (!Object.keys(body).length) {
+    editOpen.value = false;
+    return;
+  }
+
+  saving.value = true;
+  editError.value = "";
+
+  try {
+    const { response, error: failure } = await api.PATCH(
+      "/api/org-unit/{org_unit_id}",
+      {
+        params: { path: { org_unit_id: current.id } },
+        body: body as never,
+      },
+    );
+
+    if (!response.ok) {
+      const payload = failure as { message?: string } | undefined;
+      throw new Error(
+        payload?.message ?? `Не удалось сохранить: ${response.status}`,
+      );
+    }
+
+    editOpen.value = false;
+    notice.value = "Изменения сохранены";
+    await load();
+  } catch (cause) {
+    editError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    saving.value = false;
+  }
+}
+
 
 onMounted(async () => {
   await load();

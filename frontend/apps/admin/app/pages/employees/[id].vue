@@ -16,8 +16,21 @@
       <h1 class="page__title">{{ fullName(employee) }}</h1>
       <p class="page__subtitle">{{ employee.position }}</p>
 
+    <ViewOnlyNotice view="staff.employee.read" edit="staff.employee.manage" />
+
       <div class="card-actions">
         <el-button v-if="can('staff.employee.manage')" @click="openEdit">Изменить</el-button>
+        <el-popconfirm
+          v-if="can('staff.employee.manage')"
+          title="Выдать сотруднику новый пароль? Текущий перестанет работать сразу."
+          confirm-button-text="Выдать"
+          cancel-button-text="Отмена"
+          @confirm="resetPassword"
+        >
+          <template #reference>
+            <el-button text :disabled="busy">Сбросить пароль</el-button>
+          </template>
+        </el-popconfirm>
         <el-button
           v-if="can('staff.employee.manage')"
           :type="employee.is_active ? 'danger' : 'success'"
@@ -162,6 +175,21 @@
         </el-form>
       </el-card>
     </template>
+    <el-dialog v-model="resetOpen" title="Новый пароль" width="480">
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        title="Пароль показывается один раз"
+        description="Передайте его сотруднику. Восстановить прежний нельзя — можно только выдать новый."
+      />
+      <div class="issued mono">{{ issuedPassword }}</div>
+
+      <template #footer>
+        <el-button type="primary" @click="resetOpen = false">Понятно</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="editOpen" title="Изменить сотрудника" width="640">
       <el-form label-position="top">
         <div class="edit-grid">
@@ -195,6 +223,8 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
 import type { components } from "@md/api-client";
 
 type Employee = components["schemas"]["EmployeeSchema"];
@@ -209,6 +239,8 @@ const id = String(route.params.id);
 
 const employee = ref<Employee | null>(null);
 const editOpen = ref(false);
+const resetOpen = ref(false);
+const issuedPassword = ref("");
 const editError = ref("");
 const editForm = reactive({
   first_name: "",
@@ -284,6 +316,10 @@ async function loadDictionaries(): Promise<void> {
 }
 
 async function loadRoles(): Promise<void> {
+  if (!can("staff.role.read")) {
+    return;
+  }
+
   rolesPending.value = true;
   try {
     const { data, response } = await api.GET("/api/employees/{employee_id}/roles", {
@@ -355,6 +391,40 @@ async function revoke(assignmentId: string): Promise<void> {
     busy.value = false;
   }
 }
+
+async function resetPassword(): Promise<void> {
+  const current = employee.value;
+  if (!current) {
+    return;
+  }
+
+  busy.value = true;
+  failure.value = "";
+  notice.value = "";
+
+  try {
+    const { response, data, error: failurePayload } = await api.POST(
+      "/api/employees/{employee_id}/password",
+      { params: { path: { employee_id: current.id } } },
+    );
+
+    if (!response.ok || !data) {
+      const payload = failurePayload as { message?: string } | undefined;
+      throw new Error(
+        payload?.message ?? `Не удалось сбросить пароль: ${response.status}`,
+      );
+    }
+
+    issuedPassword.value = (data as unknown as { password: string }).password;
+    resetOpen.value = true;
+    notice.value = "Пароль сброшен — передайте новый сотруднику";
+  } catch (cause) {
+    failure.value = cause instanceof Error ? cause.message : "Ошибка сброса пароля";
+  } finally {
+    busy.value = false;
+  }
+}
+
 
 function openEdit(): void {
   const current = employee.value;
@@ -471,6 +541,15 @@ onMounted(async () => {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.issued {
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 18px;
+  text-align: center;
+  background: #f5f7fa;
+  border-radius: 6px;
 }
 
 .edit-grid {

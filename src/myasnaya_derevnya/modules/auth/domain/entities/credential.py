@@ -30,6 +30,9 @@ class UserCredential:
             secret=secret,
         )
 
+    def change_secret(self, secret: str) -> None:
+        self._secret = secret
+
     @property
     def id(self) -> UUID:
         return self._id

@@ -32,8 +32,6 @@ class UpdateEmployeeCommand:
 
 
 class UpdateEmployeeInteractor:
-    """Правка карточки сотрудника: ФИО, должность, телефон, увольнение и возврат."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

@@ -15,6 +15,7 @@ class ReceiptReader(ABC):
         self,
         *,
         warehouse_id: UUID | None = None,
+        search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[ReceiptListItem], int]:

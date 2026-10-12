@@ -29,6 +29,10 @@ from myasnaya_derevnya.modules.staff.application.interactors.list_employees impo
     ListEmployeesInteractor,
     ListEmployeesQuery,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.reset_employee_password import (
+    ResetEmployeePasswordCommand,
+    ResetEmployeePasswordInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.revoke_role import (
     RevokeRoleCommand,
     RevokeRoleInteractor,
@@ -44,6 +48,10 @@ from myasnaya_derevnya.modules.staff.application.interactors.role.delete import 
 from myasnaya_derevnya.modules.staff.application.interactors.role.list_roles import (
     ListRolesInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.role.update import (
+    UpdateRoleCommand,
+    UpdateRoleInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.update_employee import (
     UpdateEmployeeCommand,
     UpdateEmployeeInteractor,
@@ -55,6 +63,7 @@ from myasnaya_derevnya.modules.staff.presentation.api.v1.schemas import (
     EmployeeSchema,
     RoleSchema,
     UpdateEmployeeSchema,
+    UpdateRoleSchema,
 )
 
 router = APIRouter(prefix="/api/employees", tags=["Сотрудники"])
@@ -129,13 +138,16 @@ async def list_employees(
     request: Request,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
+    search: Annotated[str | None, Query(max_length=100)] = None,
 ) -> EmployeeListSchema:
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListEmployeesInteractor)
-        page = await interactor(ListEmployeesQuery(limit=limit, offset=offset))
+        page = await interactor(
+            ListEmployeesQuery(limit=limit, offset=offset, search=search)
+        )
 
     return EmployeeListSchema(
-        items=[EmployeeSchema.from_entity(item) for item in page.items],
+        items=[EmployeeSchema.from_dto(item) for item in page.items],
         total=page.total,
         limit=page.limit,
         offset=page.offset,
@@ -180,7 +192,7 @@ async def get_employee(request: Request, employee_id: UUID) -> EmployeeSchema:
         interactor = await context.get(GetEmployeeByIdInteractor)
         employee = await interactor(GetEmployeeByIdQuery(employee_id=employee_id))
 
-    return EmployeeSchema.from_entity(employee)
+    return EmployeeSchema.from_dto(employee)
 
 
 @router.delete("/roles/{role_id}", description="Удалить роль")
@@ -212,3 +224,41 @@ async def update_employee(
         await interactor(command)
 
     return JSONResponse(content={"message": "ok!"})
+
+
+@router.patch("/roles/{role_id}", description="Изменить роль")
+async def update_role(
+    request: Request, role_id: UUID, data: UpdateRoleSchema
+) -> JSONResponse:
+    command = UpdateRoleCommand(
+        role_id=role_id,
+        provided=frozenset(data.model_fields_set),
+        name=data.name,
+        description=data.description,
+        level=data.level,
+        permission_codes=(
+            frozenset(data.permission_codes)
+            if data.permission_codes is not None
+            else None
+        ),
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateRoleInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok!"})
+
+
+@router.post(
+    "/{employee_id}/password",
+    description="Сбросить пароль сотруднику",
+)
+async def reset_employee_password(request: Request, employee_id: UUID) -> JSONResponse:
+    command = ResetEmployeePasswordCommand(employee_id=employee_id)
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ResetEmployeePasswordInteractor)
+        issued = await interactor(command)
+
+    return JSONResponse(content=issued)

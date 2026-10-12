@@ -19,6 +19,9 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_categories i
 from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclatures import (
     ListNomenclaturesInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
+    UpdateCategoryInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclature import (
     UpdateNomenclatureInteractor,
 )
@@ -116,6 +119,8 @@ class CatalogDepProvider(Provider):
         NomenclatureChangesPolicy, scope=Scope.REQUEST
     )
     list_categories_interactor = provide(ListCategoriesInteractor, scope=Scope.REQUEST)
+
+    update_category_interactor = provide(UpdateCategoryInteractor, scope=Scope.REQUEST)
     create_category_interactor = provide(CreateCategoryInteractor, scope=Scope.REQUEST)
     create_price_list_interactor = provide(
         CreatePriceListInteractor, scope=Scope.REQUEST

@@ -1,6 +1,9 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.auth.application.interactors.change_password import (
+    ChangePasswordInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.login.password import (
     LoginByPasswordInteractor,
 )
@@ -12,6 +15,9 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.create_employ
 )
 from myasnaya_derevnya.modules.auth.application.interactors.system.create_user import (
     CreateUserInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.reset_employee_password import (
+    ResetEmployeePasswordInteractor,
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base import (
     CredentialRepository,
@@ -68,6 +74,12 @@ class AuthDepProvider(Provider):
 
     # INTERACTORS
     logout_interactor = provide(LogoutInteractor, scope=Scope.REQUEST)
+
+    change_password_interactor = provide(ChangePasswordInteractor, scope=Scope.REQUEST)
+
+    reset_employee_password_interactor = provide(
+        ResetEmployeePasswordInteractor, scope=Scope.REQUEST
+    )
 
     login_by_password_interactor = provide(
         LoginByPasswordInteractor, scope=Scope.REQUEST

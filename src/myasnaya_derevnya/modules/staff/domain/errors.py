@@ -28,7 +28,7 @@ class RoleIsSystemError(ConflictError):
     code: str
 
     def __str__(self) -> str:
-        return f"Системную роль «{self.code}» удалить нельзя"
+        return f"Системная роль «{self.code}»: её нельзя удалить или изменить"
 
 
 @dataclass(slots=True, eq=False)
@@ -41,3 +41,11 @@ class RoleInUseError(ConflictError):
             f"Роль «{self.code}» назначена сотрудникам ({self.assignments}) — "
             "сначала отзовите её"
         )
+
+
+@dataclass(slots=True, eq=False)
+class UnknownPermissionError(ConflictError):
+    code: str
+
+    def __str__(self) -> str:
+        return f"Права с кодом '{self.code}' не существует."

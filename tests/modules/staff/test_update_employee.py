@@ -1,5 +1,3 @@
-"""Юнит-тесты правки карточки сотрудника."""
-
 from datetime import date
 from uuid import UUID, uuid4
 

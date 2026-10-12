@@ -30,7 +30,7 @@ export function useCurrentUser() {
 
   function can(permission: string): boolean {
     if (!user.value) {
-      return true;
+      return false;
     }
 
     return user.value.permissions.includes(permission);

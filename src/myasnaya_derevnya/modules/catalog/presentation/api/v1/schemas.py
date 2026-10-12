@@ -1,7 +1,7 @@
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from myasnaya_derevnya.modules.catalog.application.dto import (
     CategoryListItem,
@@ -54,6 +54,10 @@ class NomenclatureListSchema(BaseModel):
 
 
 # CATEGORY
+class UpdateCategorySchema(BaseModel):
+    name: str = Field(min_length=1)
+
+
 class UpdateNomenclatureSchema(BaseModel):
     name: str | None = None
     category_id: UUID | None = None

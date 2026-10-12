@@ -116,3 +116,53 @@ async def test_receipt_card_resolves_nomenclature_names(
     assert detail.status == "draft"
     assert detail.lines[0].nomenclature_name == "Говядина лопатка"
     assert detail.lines[0].total_kopecks == 450500
+
+
+async def test_receipt_journal_search_by_supplier_and_document(
+    db_session: AsyncSession, make_warehouse, make_nomenclature
+) -> None:
+    marker = uuid4().hex[:8]
+    warehouse = await make_warehouse()
+    nomenclature = await make_nomenclature(
+        name=f"Позиция {marker}", sku=f"PYTEST-{marker}"
+    )
+
+    actors = build_interactors(db_session)
+    first_supplier = f"Мясокомбинат {marker}"
+    second_supplier = f"Птицефабрика {marker}"
+
+    for supplier, number in (
+        (first_supplier, f"УПД-{marker}"),
+        (second_supplier, f"ТОРГ-{marker}"),
+    ):
+        await actors.create_receipt(
+            CreateReceiptCommand(
+                warehouse_id=warehouse.id,
+                occurred_at=OCCURRED_AT,
+                supplier_name=supplier,
+                supplier_document_number=number,
+                lines=[
+                    ReceiptLineCommand(
+                        nomenclature_id=nomenclature.id,
+                        quantity=Decimal(1),
+                        unit_cost=Decimal(100),
+                    )
+                ],
+            )
+        )
+
+    reader = SQLAlchemyReceiptReader(db_session)
+
+    items, total = await reader.list(search=f"мясокомбинат {marker}", limit=10)
+    assert total == 1
+    assert [item.supplier_name for item in items] == [first_supplier]
+
+    items, total = await reader.list(search=f"ТОРГ-{marker}", limit=10)
+    assert total == 1
+    assert [item.supplier_name for item in items] == [second_supplier]
+
+    _, total = await reader.list(search=f"{marker} УПД", limit=10)
+    assert total == 1
+
+    _, total = await reader.list(search="такого-поставщика-нет-xyz", limit=10)
+    assert total == 0

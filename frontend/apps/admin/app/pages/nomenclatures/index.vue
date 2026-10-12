@@ -3,8 +3,9 @@
     <h1 class="page__title">Номенклатура</h1>
     <p class="page__subtitle">Найдено: {{ total }}</p>
 
+    <ViewOnlyNotice view="nomenclature.read" edit="nomenclature.update" />
     <div class="page__toolbar">
-      <el-button v-if="can('nomenclature.create')" type="primary" @click="openCreate">
+      <el-button v-if="canAll(CAN.nomenclatureCreate)" type="primary" @click="openCreate">
         Создать номенклатуру
       </el-button>
       <el-input
@@ -205,6 +206,10 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.nomenclaturesOpen });
 import type { components } from "@md/api-client";
 
 type Nomenclature = components["schemas"]["NomenclatureSchema"];
@@ -262,6 +267,10 @@ function reasonOf(status: number, fallback: string): string {
 }
 
 async function loadCategories(): Promise<void> {
+  if (!can("category.read")) {
+    return;
+  }
+
   const { data, response } = await api.GET("/api/categories", {});
   if (response.ok && data) {
     categories.value = data;

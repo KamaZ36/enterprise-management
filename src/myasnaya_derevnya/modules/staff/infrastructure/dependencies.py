@@ -25,6 +25,9 @@ from myasnaya_derevnya.modules.staff.application.interactors.list_employees impo
 from myasnaya_derevnya.modules.staff.application.interactors.list_permissions import (
     ListPermissionsInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.reset_employee_password import (
+    ResetEmployeePasswordInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.revoke_role import (
     RevokeRoleInteractor,
 )
@@ -37,6 +40,9 @@ from myasnaya_derevnya.modules.staff.application.interactors.role.delete import 
 from myasnaya_derevnya.modules.staff.application.interactors.role.list_roles import (
     ListRolesInteractor,
 )
+from myasnaya_derevnya.modules.staff.application.interactors.role.update import (
+    UpdateRoleInteractor,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.update_employee import (
     UpdateEmployeeInteractor,
 )
@@ -45,6 +51,12 @@ from myasnaya_derevnya.modules.staff.application.services.access_service import 
 )
 from myasnaya_derevnya.modules.staff.domain.services.policy_of_access import (
     AccessPolicy,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.readers.employee.base import (
+    EmployeeReader,
+)
+from myasnaya_derevnya.modules.staff.infrastructure.readers.employee.sqlalchemy import (
+    SQLAlchemyEmployeeReader,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.readers.employee_role.base import (
     EmployeeRoleReader,
@@ -106,6 +118,10 @@ class StaffDepProvider(Provider):
     def get_role_reader(self, session: AsyncSession) -> RoleReader:
         return SQLAlchemyRoleReader(session)
 
+    @provide(scope=Scope.REQUEST)
+    def get_employee_reader(self, session: AsyncSession) -> EmployeeReader:
+        return SQLAlchemyEmployeeReader(session)
+
     # SERVICES
     access_policy = provide(AccessPolicy, scope=Scope.REQUEST)
 
@@ -115,6 +131,12 @@ class StaffDepProvider(Provider):
     create_employee_interactor = provide(CreateEmployeeInteractor, scope=Scope.REQUEST)
 
     update_employee_interactor = provide(UpdateEmployeeInteractor, scope=Scope.REQUEST)
+
+    reset_employee_password_interactor = provide(
+        ResetEmployeePasswordInteractor, scope=Scope.REQUEST
+    )
+
+    update_role_interactor = provide(UpdateRoleInteractor, scope=Scope.REQUEST)
 
     create_credentials_interactor = provide(
         CreateCredentialEmployeeInteractor, scope=Scope.REQUEST

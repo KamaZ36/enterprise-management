@@ -38,8 +38,6 @@ class UpdateNomenclatureCommand:
 
 
 class UpdateNomenclatureInteractor:
-    """Правка номенклатуры: единицу и тип не трогаем, если были движения."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

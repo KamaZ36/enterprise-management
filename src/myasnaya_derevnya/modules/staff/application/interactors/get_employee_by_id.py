@@ -4,14 +4,14 @@ from uuid import UUID
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
+from myasnaya_derevnya.modules.staff.application.dto import EmployeeListItem
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
-from myasnaya_derevnya.modules.staff.domain.entities.employee import Employee
 from myasnaya_derevnya.modules.staff.domain.errors import EmployeeNotFound
 from myasnaya_derevnya.modules.staff.domain.permissions import READ_EMPLOYEES
-from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
-    EmployeeRepository,
+from myasnaya_derevnya.modules.staff.infrastructure.readers.employee.base import (
+    EmployeeReader,
 )
 
 
@@ -24,16 +24,16 @@ class GetEmployeeByIdInteractor:
     def __init__(
         self,
         identity_provider: IdentityProvider,
-        employee_repository: EmployeeRepository,
+        employee_reader: EmployeeReader,
         access_service: AccessService,
         business_api: BusinessAPI,
     ) -> None:
         self._identity_provider = identity_provider
-        self._employee_repository = employee_repository
+        self._employee_reader = employee_reader
         self._access_service = access_service
         self._business_api = business_api
 
-    async def __call__(self, query: GetEmployeeByIdQuery) -> Employee:
+    async def __call__(self, query: GetEmployeeByIdQuery) -> EmployeeListItem:
         current_user_id = await self._identity_provider.get_current_user_id()
         root_org_unit_id = await self._business_api.get_root_unit_id()
 
@@ -45,7 +45,7 @@ class GetEmployeeByIdInteractor:
         if not allowed:
             raise ForbiddenError()
 
-        employee = await self._employee_repository.get_by_id(query.employee_id)
+        employee = await self._employee_reader.get_by_id(query.employee_id)
 
         if employee is None:
             raise EmployeeNotFound()

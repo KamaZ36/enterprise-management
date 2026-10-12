@@ -6,8 +6,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movem
 
 
 class InventoryNomenclatureUsage:
-    """Отвечает каталогу, двигались ли остатки по номенклатуре."""
-
     def __init__(self, movement_repository: StockMovementRepository) -> None:
         self._movement_repository = movement_repository
 

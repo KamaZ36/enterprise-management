@@ -93,6 +93,7 @@ async def test_returns_reader_items() -> None:
             id=uuid4(),
             code="SUPER_ADMIN",
             name="Технический администратор",
+            description=None,
             level=100,
             is_system=True,
             is_assignable=False,

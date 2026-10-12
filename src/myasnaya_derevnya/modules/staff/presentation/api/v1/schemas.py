@@ -6,11 +6,11 @@ from pydantic import BaseModel, Field
 from myasnaya_derevnya.modules.staff.application.dto import (
     CurrentUserRole,
     CurrentUserView,
+    EmployeeListItem,
     EmployeeRoleListItem,
     PermissionItem,
     RoleListItem,
 )
-from myasnaya_derevnya.modules.staff.domain.entities.employee import Employee
 
 
 class AssignRoleCommandSchema(BaseModel):
@@ -32,19 +32,26 @@ class EmployeeSchema(BaseModel):
     is_active: bool
 
     @classmethod
-    def from_entity(cls, employee: Employee) -> EmployeeSchema:
+    def from_dto(cls, employee: EmployeeListItem) -> EmployeeSchema:
         return cls(
             id=employee.id,
             user_id=employee.user_id,
             first_name=employee.first_name,
             last_name=employee.last_name,
             middle_name=employee.middle_name,
-            phone_number=str(employee.phone_number) if employee.phone_number else None,
+            phone_number=employee.phone_number,
             position=employee.position,
             hired_at=employee.hired_at,
             dismissed_at=employee.dismissed_at,
             is_active=employee.is_active,
         )
+
+
+class UpdateRoleSchema(BaseModel):
+    name: str | None = Field(default=None, min_length=1)
+    description: str | None = None
+    level: int | None = Field(default=None, ge=1)
+    permission_codes: list[str] | None = None
 
 
 class UpdateEmployeeSchema(BaseModel):
@@ -67,6 +74,7 @@ class RoleSchema(BaseModel):
     id: UUID
     code: str
     name: str
+    description: str | None
     level: int
     is_system: bool
     is_assignable: bool
@@ -79,6 +87,7 @@ class RoleSchema(BaseModel):
             id=item.id,
             code=item.code,
             name=item.name,
+            description=item.description,
             level=item.level,
             is_system=item.is_system,
             is_assignable=item.is_assignable,

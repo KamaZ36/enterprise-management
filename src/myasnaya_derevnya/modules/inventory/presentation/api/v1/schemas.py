@@ -7,14 +7,14 @@ from pydantic import BaseModel, Field
 from myasnaya_derevnya.modules.inventory.application.dto import (
     ReceiptDetail,
     ReceiptListItem,
+    WarehouseListItem,
     WriteOffDetail,
     WriteOffListItem,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.read_balances import (
-    BalanceView,
+    BalanceListItem,
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
-    Warehouse,
     WarehouseType,
 )
 
@@ -72,7 +72,7 @@ class WarehouseSchema(BaseModel):
     is_active: bool
 
     @classmethod
-    def from_entity(cls, warehouse: Warehouse) -> WarehouseSchema:
+    def from_dto(cls, warehouse: WarehouseListItem) -> WarehouseSchema:
         return cls(
             id=warehouse.id,
             org_unit_id=warehouse.org_unit_id,
@@ -98,20 +98,14 @@ class BalanceSchema(BaseModel):
     )
 
     @classmethod
-    def from_view(cls, view: BalanceView) -> BalanceSchema:
-        balance = view.balance
-
+    def from_dto(cls, item: BalanceListItem) -> BalanceSchema:
         return cls(
-            warehouse_id=balance.warehouse_id,
-            nomenclature_id=balance.nomenclature_id,
-            nomenclature_name=view.nomenclature_name,
-            quantity=balance.quantity,
-            average_unit_cost=(
-                balance.average_unit_cost if view.cost_visible else None
-            ),
-            total_value_kopecks=(
-                balance.total_value.kopecks if view.cost_visible else None
-            ),
+            warehouse_id=item.warehouse_id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            quantity=item.quantity,
+            average_unit_cost=item.average_unit_cost,
+            total_value_kopecks=item.total_value_kopecks,
         )
 
 

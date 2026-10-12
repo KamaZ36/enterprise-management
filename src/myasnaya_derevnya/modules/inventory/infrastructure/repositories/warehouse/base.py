@@ -20,7 +20,3 @@ class WarehouseRepository(ABC):
     @abstractmethod
     async def get_by_code(self, code: str) -> Warehouse | None:
         raise NotImplementedError
-
-    @abstractmethod
-    async def list(self) -> list[Warehouse]:
-        raise NotImplementedError

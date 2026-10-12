@@ -6,6 +6,13 @@
     </p>
 
     <div class="page__toolbar">
+      <el-input
+        v-model="search"
+        placeholder="Фамилия, имя, должность или телефон"
+        style="width: 340px"
+        clearable
+        @input="onSearch"
+      />
       <el-button v-if="can('staff.employee.manage')" type="primary" @click="openCreate">
         Принять на работу
       </el-button>
@@ -133,6 +140,10 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.employeesOpen });
 import type { components } from "@md/api-client";
 
 type Employee = components["schemas"]["EmployeeSchema"];
@@ -145,6 +156,7 @@ const { can } = useCurrentUser();
 const items = ref<Employee[]>([]);
 const total = ref(0);
 const page = ref(1);
+const search = ref("");
 const pending = ref(false);
 const error = ref("");
 
@@ -179,13 +191,33 @@ function reasonOf(status: number, fallback: string): string {
   return `${fallback}: ${status}`;
 }
 
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+function onSearch(): void {
+  if (searchTimer) {
+    clearTimeout(searchTimer);
+  }
+
+  searchTimer = setTimeout(() => {
+    page.value = 1;
+    void load();
+  }, 300);
+}
+
+
 async function load(): Promise<void> {
   pending.value = true;
   error.value = "";
 
   try {
     const { data, response } = await api.GET("/api/employees", {
-      params: { query: { limit: PAGE_SIZE, offset: (page.value - 1) * PAGE_SIZE } },
+      params: {
+        query: {
+          limit: PAGE_SIZE,
+          offset: (page.value - 1) * PAGE_SIZE,
+          search: search.value.trim() || undefined,
+        },
+      },
     });
 
     if (!response.ok || !data) {

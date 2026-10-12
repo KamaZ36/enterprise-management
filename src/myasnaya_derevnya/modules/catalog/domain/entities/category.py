@@ -16,6 +16,9 @@ class Category:
 
         return cls(id_=uuid7(), name=name, parent_id=parent_id)
 
+    def rename(self, name: str) -> None:
+        self._name = name
+
     @property
     def id(self) -> UUID:
         return self._id

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, func, insert, select, update
+from sqlalchemy import RowMapping, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.types.phone_number import PhoneNumber
@@ -66,25 +66,6 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
             return None
 
         return self._to_entity(row)
-
-    async def list(self, *, limit: int, offset: int) -> tuple[list[Employee], int]:
-        total = await self._session.scalar(
-            select(func.count()).select_from(EMPLOYEES_TABLE)
-        )
-
-        stmt = (
-            select(EMPLOYEES_TABLE)
-            .order_by(
-                EMPLOYEES_TABLE.c.last_name.asc(),
-                EMPLOYEES_TABLE.c.first_name.asc(),
-            )
-            .limit(limit)
-            .offset(offset)
-        )
-        result = await self._session.execute(stmt)
-        rows = result.mappings().all()
-
-        return [self._to_entity(row) for row in rows], total or 0
 
     def _to_entity(self, row: RowMapping) -> Employee:
         return Employee(

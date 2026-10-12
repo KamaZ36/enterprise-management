@@ -44,6 +44,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Password
+         * @description Сменить свой пароль
+         */
+        post: operations["change_password_api_me_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -237,6 +257,30 @@ export interface paths {
         delete: operations["delete_role_api_employees_roles__role_id__delete"];
         options?: never;
         head?: never;
+        /**
+         * Update Role
+         * @description Изменить роль
+         */
+        patch: operations["update_role_api_employees_roles__role_id__patch"];
+        trace?: never;
+    };
+    "/api/employees/{employee_id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Employee Password
+         * @description Сбросить пароль сотруднику
+         */
+        post: operations["reset_employee_password_api_employees__employee_id__password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -262,6 +306,26 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/org-unit/{org_unit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Org Unit
+         * @description Изменить структурную единицу
+         */
+        patch: operations["update_org_unit_api_org_unit__org_unit_id__patch"];
         trace?: never;
     };
     "/api/nomenclatures": {
@@ -370,6 +434,26 @@ export interface paths {
          * @description Изменить номенклатуру
          */
         patch: operations["update_nomenclature_api_nomenclatures__nomenclature_id__patch"];
+        trace?: never;
+    };
+    "/api/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Category
+         * @description Переименовать категорию
+         */
+        patch: operations["update_category_api_categories__category_id__patch"];
         trace?: never;
     };
     "/api/inventory/warehouses": {
@@ -648,6 +732,13 @@ export interface components {
             name: string;
             /** Parent Id */
             parent_id: string | null;
+        };
+        /** ChangePasswordSchema */
+        ChangePasswordSchema: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
         };
         /** CreateCategorySchema */
         CreateCategorySchema: {
@@ -1116,6 +1207,8 @@ export interface components {
             code: string;
             /** Name */
             name: string;
+            /** Description */
+            description: string | null;
             /** Level */
             level: number;
             /** Is System */
@@ -1132,6 +1225,11 @@ export interface components {
          * @enum {string}
          */
         UnitOfMeasurement: "kg" | "g" | "pcs" | "l" | "m";
+        /** UpdateCategorySchema */
+        UpdateCategorySchema: {
+            /** Name */
+            name: string;
+        };
         /** UpdateEmployeeSchema */
         UpdateEmployeeSchema: {
             /** First Name */
@@ -1157,6 +1255,28 @@ export interface components {
             type?: components["schemas"]["NomenclatureType"] | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** UpdateOrgUnitSchema */
+        UpdateOrgUnitSchema: {
+            /** Name */
+            name?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Phone Number */
+            phone_number?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** UpdateRoleSchema */
+        UpdateRoleSchema: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Level */
+            level?: number | null;
+            /** Permission Codes */
+            permission_codes?: string[] | null;
         };
         /** UpdateWarehouseSchema */
         UpdateWarehouseSchema: {
@@ -1362,6 +1482,39 @@ export interface operations {
             };
         };
     };
+    change_password_api_me_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_current_user_api_me_get: {
         parameters: {
             query?: never;
@@ -1407,6 +1560,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                search?: string | null;
             };
             header?: never;
             path?: never;
@@ -1747,6 +1901,72 @@ export interface operations {
             };
         };
     };
+    update_role_api_employees_roles__role_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoleSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_employee_password_api_employees__employee_id__password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_org_units_api_org_unit_get: {
         parameters: {
             query?: never;
@@ -1777,6 +1997,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CreateOrgUnitSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_org_unit_api_org_unit__org_unit_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrgUnitSchema"];
             };
         };
         responses: {
@@ -2037,6 +2292,41 @@ export interface operations {
             };
         };
     };
+    update_category_api_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategorySchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_warehouses_api_inventory_warehouses_get: {
         parameters: {
             query?: never;
@@ -2096,6 +2386,7 @@ export interface operations {
                 warehouse_id?: string | null;
                 limit?: number;
                 offset?: number;
+                search?: string | null;
             };
             header?: never;
             path?: never;
@@ -2193,6 +2484,7 @@ export interface operations {
                 warehouse_id?: string | null;
                 limit?: number;
                 offset?: number;
+                search?: string | null;
             };
             header?: never;
             path?: never;
@@ -2286,7 +2578,9 @@ export interface operations {
     };
     list_balances_api_inventory_warehouses__warehouse_id__balances_get: {
         parameters: {
-            query?: never;
+            query?: {
+                search?: string | null;
+            };
             header?: never;
             path: {
                 warehouse_id: string;

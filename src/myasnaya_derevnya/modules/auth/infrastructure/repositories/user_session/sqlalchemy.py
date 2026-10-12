@@ -49,3 +49,18 @@ class SQLAlchemyUserSessionRepository(UserSessionRepository):
             expires_at=row["expires_at"],
             created_at=row["created_at"],
         )
+
+    async def delete_others_for_user(
+        self, user_id: UUID, keep_session_id: UUID
+    ) -> None:
+        await self._session.execute(
+            delete(USER_SESSIONS_TABLE).where(
+                USER_SESSIONS_TABLE.c.user_id == user_id,
+                USER_SESSIONS_TABLE.c.id != keep_session_id,
+            )
+        )
+
+    async def delete_all_for_user(self, user_id: UUID) -> None:
+        await self._session.execute(
+            delete(USER_SESSIONS_TABLE).where(USER_SESSIONS_TABLE.c.user_id == user_id)
+        )

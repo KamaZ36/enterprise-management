@@ -3,8 +3,11 @@
     <h1 class="page__title">Склады</h1>
     <p class="page__subtitle">Показаны склады, на которые есть право просмотра</p>
 
+    <ViewOnlyNotice view="inventory.warehouse.read" edit="inventory.warehouse.manage" />
     <div class="page__toolbar">
-      <el-button v-if="can('inventory.warehouse.manage')" type="primary" @click="openCreate">
+      <el-button
+        v-if="canAll(CAN.warehouseCreate)"
+        type="primary" @click="openCreate">
         Создать склад
       </el-button>
       <el-button :loading="pending" @click="load">Обновить</el-button>
@@ -144,6 +147,10 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.warehouseCreate });
 import type { components } from "@md/api-client";
 
 type Warehouse = components["schemas"]["WarehouseSchema"];
@@ -196,6 +203,10 @@ function reasonOf(status: number, fallback: string): string {
 }
 
 async function loadOrgUnits(): Promise<void> {
+  if (!can("org_unit.read")) {
+    return;
+  }
+
   const { data, response } = await api.GET("/api/org-unit", {});
   if (response.ok && data) {
     orgUnits.value = data;

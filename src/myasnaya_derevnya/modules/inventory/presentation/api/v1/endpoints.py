@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
 
 from myasnaya_derevnya.core.dependencies import container
@@ -128,7 +129,7 @@ async def list_warehouses(request: Request) -> list[WarehouseSchema]:
         interactor = await context.get(ListWarehousesInteractor)
         warehouses = await interactor()
 
-    return [WarehouseSchema.from_entity(warehouse) for warehouse in warehouses]
+    return [WarehouseSchema.from_dto(warehouse) for warehouse in warehouses]
 
 
 @router.post("/receipts", description="Создать поступление (черновик)", status_code=201)
@@ -191,14 +192,20 @@ async def post_write_off(request: Request, write_off_id: UUID) -> JSONResponse:
     response_model=BalanceListSchema,
     description="Остатки склада",
 )
-async def list_balances(request: Request, warehouse_id: UUID) -> BalanceListSchema:
+async def list_balances(
+    request: Request,
+    warehouse_id: UUID,
+    search: Annotated[str | None, Query(max_length=100)] = None,
+) -> BalanceListSchema:
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListBalancesInteractor)
-        views = await interactor(ListBalancesQuery(warehouse_id=warehouse_id))
+        items = await interactor(
+            ListBalancesQuery(warehouse_id=warehouse_id, search=search)
+        )
 
     return BalanceListSchema(
-        items=[BalanceSchema.from_view(view) for view in views],
-        total=len(views),
+        items=[BalanceSchema.from_dto(item) for item in items],
+        total=len(items),
     )
 
 
@@ -214,9 +221,9 @@ async def get_balance(
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(GetBalanceInteractor)
-        view = await interactor(query)
+        item = await interactor(query)
 
-    return BalanceSchema.from_view(view)
+    return BalanceSchema.from_dto(item)
 
 
 @router.get(
@@ -229,8 +236,11 @@ async def list_receipts(
     warehouse_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
+    search: str | None = None,
 ) -> ReceiptListSchema:
-    query = ListReceiptsQuery(warehouse_id=warehouse_id, limit=limit, offset=offset)
+    query = ListReceiptsQuery(
+        warehouse_id=warehouse_id, limit=limit, offset=offset, search=search
+    )
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListReceiptsInteractor)
@@ -267,8 +277,11 @@ async def list_write_offs(
     warehouse_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
+    search: str | None = None,
 ) -> WriteOffListSchema:
-    query = ListWriteOffsQuery(warehouse_id=warehouse_id, limit=limit, offset=offset)
+    query = ListWriteOffsQuery(
+        warehouse_id=warehouse_id, limit=limit, offset=offset, search=search
+    )
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListWriteOffsInteractor)

@@ -30,7 +30,12 @@
     />
 
     <el-table v-loading="pending" :data="items" stripe border>
-      <el-table-column prop="name" label="Название" min-width="240" />
+      <el-table-column label="Название" min-width="240">
+        <template #default="{ row }">
+          <div>{{ row.name }}</div>
+          <div v-if="row.description" class="hint">{{ row.description }}</div>
+        </template>
+      </el-table-column>
       <el-table-column prop="code" label="Код" width="200">
         <template #default="{ row }">
           <span class="mono">{{ row.code }}</span>
@@ -55,6 +60,14 @@
       </el-table-column>
       <el-table-column v-if="can('staff.role.manage')" width="130" align="right">
         <template #default="{ row }">
+          <el-button
+            v-if="!row.is_system"
+            text
+            :disabled="busy"
+            @click="openEdit(row as Role)"
+          >
+            Изменить
+          </el-button>
           <el-popconfirm
             title="Удалить роль?"
             confirm-button-text="Удалить"
@@ -75,14 +88,22 @@
       </template>
     </el-table>
 
-    <el-dialog v-model="createOpen" title="Новая роль" width="720">
+    <el-dialog
+      v-model="createOpen"
+      :title="editId ? 'Изменить роль' : 'Новая роль'"
+      width="720"
+    >
       <el-form label-position="top">
         <div class="form-grid">
           <el-form-item label="Название">
             <el-input v-model="form.name" placeholder="Заведующий складом" />
           </el-form-item>
           <el-form-item label="Код">
-            <el-input v-model="form.code" placeholder="WAREHOUSE_MANAGER" />
+            <el-input
+              v-model="form.code"
+              placeholder="WAREHOUSE_MANAGER"
+              :disabled="Boolean(editId)"
+            />
           </el-form-item>
           <el-form-item label="Уровень">
             <el-input-number v-model="form.level" :min="0" :max="1000" style="width: 100%" />
@@ -97,7 +118,7 @@
         </el-form-item>
 
         <el-form-item label="Все права сразу">
-          <el-switch v-model="form.is_wildcard" />
+          <el-switch v-model="form.is_wildcard" :disabled="Boolean(editId)" />
           <span class="hint">
             wildcard-роль получает и те права, которые появятся в системе позже
           </span>
@@ -139,13 +160,19 @@
 
       <template #footer>
         <el-button @click="createOpen = false">Отмена</el-button>
-        <el-button type="primary" :loading="saving" @click="createRole">Создать</el-button>
+        <el-button type="primary" :loading="saving" @click="saveRole">
+          {{ editId ? "Сохранить" : "Создать" }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.rolesOpen });
 import type { components } from "@md/api-client";
 
 type Role = components["schemas"]["RoleSchema"];
@@ -182,6 +209,7 @@ const error = ref("");
 const notice = ref("");
 
 const createOpen = ref(false);
+const editId = ref("");
 const busy = ref(false);
 const saving = ref(false);
 const createError = ref("");
@@ -226,6 +254,82 @@ function toggleGroup(group: { items: Permission[] }): void {
     ? selected.value.filter((code) => !codes.includes(code))
     : [...new Set([...selected.value, ...codes])];
 }
+
+function openEdit(role: Role): void {
+  createError.value = "";
+  notice.value = "";
+  editId.value = role.id;
+  form.name = role.name;
+  form.code = role.code;
+  form.description = role.description ?? "";
+  form.level = role.level;
+  form.is_assignable = role.is_assignable;
+  form.is_wildcard = role.is_wildcard;
+  selected.value = [...role.permission_codes];
+  createOpen.value = true;
+}
+
+
+watch(createOpen, (open) => {
+  if (!open) {
+    editId.value = "";
+    return;
+  }
+
+  if (editId.value) {
+    return;
+  }
+
+  form.name = "";
+  form.code = "";
+  form.description = "";
+  form.level = 10;
+  form.is_assignable = true;
+  form.is_wildcard = false;
+  selected.value = [];
+});
+
+
+async function saveRole(): Promise<void> {
+  if (!editId.value) {
+    await createRole();
+    return;
+  }
+
+  saving.value = true;
+  createError.value = "";
+
+  try {
+    const { response, error: failure } = await api.PATCH(
+      "/api/employees/roles/{role_id}",
+      {
+        params: { path: { role_id: editId.value } },
+        body: {
+          name: form.name.trim(),
+          description: form.description.trim() || null,
+          level: form.level,
+          ...(form.is_wildcard ? {} : { permission_codes: selected.value }),
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const payload = failure as { message?: string } | undefined;
+      throw new Error(
+        payload?.message ?? `Не удалось сохранить: ${response.status}`,
+      );
+    }
+
+    createOpen.value = false;
+    notice.value = "Роль изменена";
+    await load();
+  } catch (cause) {
+    createError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    saving.value = false;
+  }
+}
+
 
 function reasonOf(status: number, fallback: string): string {
   if (status === 403) {

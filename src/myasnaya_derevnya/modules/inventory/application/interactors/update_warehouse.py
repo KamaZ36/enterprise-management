@@ -29,8 +29,6 @@ class UpdateWarehouseCommand:
 
 
 class UpdateWarehouseInteractor:
-    """Правка склада: назначение не меняем, пока на складе лежат остатки."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

@@ -1,31 +1,23 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from decimal import Decimal
 from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
-from myasnaya_derevnya.modules.inventory.domain.entities.stock_balance import (
-    StockBalance,
-)
+from myasnaya_derevnya.modules.inventory.application.dto import BalanceListItem
 from myasnaya_derevnya.modules.inventory.domain.errors import WarehouseNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import (
     READ_BALANCES,
     READ_COSTS,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_balance.base import (
-    StockBalanceRepository,
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base import (
+    BalanceReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
     WarehouseRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
-
-
-@dataclass(frozen=True, slots=True)
-class BalanceView:
-    balance: StockBalance
-    cost_visible: bool
-    nomenclature_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,17 +31,17 @@ class GetBalanceInteractor:
         self,
         identity_provider: IdentityProvider,
         warehouse_repository: WarehouseRepository,
-        balance_repository: StockBalanceRepository,
+        balance_reader: BalanceReader,
         catalog_api: CatalogAPI,
         staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._warehouse_repository = warehouse_repository
-        self._balance_repository = balance_repository
+        self._balance_reader = balance_reader
         self._catalog_api = catalog_api
         self._staff_api = staff_api
 
-    async def __call__(self, query: GetBalanceQuery) -> BalanceView:
+    async def __call__(self, query: GetBalanceQuery) -> BalanceListItem:
         current_user_id = await self._identity_provider.get_current_user_id()
 
         warehouse = await self._warehouse_repository.get_by_id(query.warehouse_id)
@@ -58,22 +50,21 @@ class GetBalanceInteractor:
 
         cost_visible = await self._check_access(current_user_id, warehouse.org_unit_id)
 
-        balance = await self._balance_repository.get(
-            query.warehouse_id, query.nomenclature_id
+        item = await self._balance_reader.get(
+            query.warehouse_id, query.nomenclature_id, with_cost=cost_visible
         )
-        if balance is None:
-            balance = StockBalance.empty(
+        if item is None:
+            item = BalanceListItem(
                 warehouse_id=query.warehouse_id,
                 nomenclature_id=query.nomenclature_id,
+                quantity=Decimal(0),
+                average_unit_cost=Decimal(0) if cost_visible else None,
+                total_value_kopecks=0 if cost_visible else None,
             )
 
-        names = await self._catalog_api.nomenclature_names({balance.nomenclature_id})
+        names = await self._catalog_api.nomenclature_names({item.nomenclature_id})
 
-        return BalanceView(
-            balance=balance,
-            cost_visible=cost_visible,
-            nomenclature_name=names.get(balance.nomenclature_id),
-        )
+        return replace(item, nomenclature_name=names.get(item.nomenclature_id))
 
     async def _check_access(self, user_id: UUID, org_unit_id: UUID) -> bool:
         allowed = await self._staff_api.can(
@@ -90,6 +81,7 @@ class GetBalanceInteractor:
 @dataclass(frozen=True, slots=True)
 class ListBalancesQuery:
     warehouse_id: UUID
+    search: str | None = None
 
 
 class ListBalancesInteractor:
@@ -97,17 +89,17 @@ class ListBalancesInteractor:
         self,
         identity_provider: IdentityProvider,
         warehouse_repository: WarehouseRepository,
-        balance_repository: StockBalanceRepository,
+        balance_reader: BalanceReader,
         catalog_api: CatalogAPI,
         staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._warehouse_repository = warehouse_repository
-        self._balance_repository = balance_repository
+        self._balance_reader = balance_reader
         self._catalog_api = catalog_api
         self._staff_api = staff_api
 
-    async def __call__(self, query: ListBalancesQuery) -> list[BalanceView]:
+    async def __call__(self, query: ListBalancesQuery) -> list[BalanceListItem]:
         current_user_id = await self._identity_provider.get_current_user_id()
 
         warehouse = await self._warehouse_repository.get_by_id(query.warehouse_id)
@@ -128,17 +120,25 @@ class ListBalancesInteractor:
             org_unit_id=warehouse.org_unit_id,
         )
 
-        balances = await self._balance_repository.list_by_warehouse(query.warehouse_id)
-
-        names = await self._catalog_api.nomenclature_names(
-            {balance.nomenclature_id for balance in balances}
+        items = await self._balance_reader.list_by_warehouse(
+            query.warehouse_id, with_cost=cost_visible
         )
 
-        return [
-            BalanceView(
-                balance=balance,
-                cost_visible=cost_visible,
-                nomenclature_name=names.get(balance.nomenclature_id),
-            )
-            for balance in balances
+        names = await self._catalog_api.nomenclature_names(
+            {item.nomenclature_id for item in items}
+        )
+
+        result = [
+            replace(item, nomenclature_name=names.get(item.nomenclature_id))
+            for item in items
         ]
+
+        needle = (query.search or "").strip().lower()
+        if needle:
+            result = [
+                item
+                for item in result
+                if needle in (item.nomenclature_name or "").lower()
+            ]
+
+        return result

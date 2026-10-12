@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
@@ -8,10 +8,25 @@ from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
 
 
 @dataclass(frozen=True, slots=True)
+class EmployeeListItem:
+    id: UUID
+    user_id: UUID
+    first_name: str
+    last_name: str
+    middle_name: str | None
+    phone_number: str | None
+    position: str
+    hired_at: date
+    dismissed_at: date | None
+    is_active: bool
+
+
+@dataclass(frozen=True, slots=True)
 class RoleListItem:
     id: UUID
     code: str
     name: str
+    description: str | None
     level: int
     is_system: bool
     is_assignable: bool

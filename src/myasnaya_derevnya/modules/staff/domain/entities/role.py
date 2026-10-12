@@ -108,3 +108,19 @@ class Role:
     @property
     def created_at(self) -> datetime:
         return self._created_at
+
+    def rename(self, name: str) -> None:
+        self._name = name
+        self._updated_at = get_datetime_utc()
+
+    def change_description(self, description: str | None) -> None:
+        self._description = description
+        self._updated_at = get_datetime_utc()
+
+    def change_level(self, level: int) -> None:
+        self._level = level
+        self._updated_at = get_datetime_utc()
+
+    def change_permissions(self, permission_codes: frozenset[str]) -> None:
+        self._permissions = permission_codes
+        self._updated_at = get_datetime_utc()

@@ -61,11 +61,23 @@ from myasnaya_derevnya.modules.inventory.domain.services.warehouse_purpose impor
 from myasnaya_derevnya.modules.inventory.infrastructure.adapters.nomenclature_usage import (
     InventoryNomenclatureUsage,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base import (
+    BalanceReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.sqlalchemy import (
+    SQLAlchemyBalanceReader,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base import (
     ReceiptReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.sqlalchemy import (
     SQLAlchemyReceiptReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.base import (
+    WarehouseReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.sqlalchemy import (
+    SQLAlchemyWarehouseReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.base import (
     WriteOffReader,
@@ -173,6 +185,14 @@ class InventoryDepProvider(Provider):
         return InventoryNomenclatureUsage(movement_repository)
 
     # READERS
+
+    @provide(scope=Scope.REQUEST)
+    def get_warehouse_reader(self, session: AsyncSession) -> WarehouseReader:
+        return SQLAlchemyWarehouseReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_balance_reader(self, session: AsyncSession) -> BalanceReader:
+        return SQLAlchemyBalanceReader(session)
 
     @provide(scope=Scope.REQUEST)
     def get_receipt_reader(self, session: AsyncSession) -> ReceiptReader:

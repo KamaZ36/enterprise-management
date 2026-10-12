@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, func, select
+from sqlalchemy import RowMapping, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.database.search import like_pattern
 from myasnaya_derevnya.modules.inventory.application.dto import (
     ReceiptDetail,
     ReceiptLineItem,
@@ -25,12 +26,26 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         self,
         *,
         warehouse_id: UUID | None = None,
+        search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[ReceiptListItem], int]:
         conditions = []
         if warehouse_id is not None:
             conditions.append(RECEIPTS_TABLE.c.warehouse_id == warehouse_id)
+
+        if search:
+            conditions.extend(
+                or_(
+                    RECEIPTS_TABLE.c.supplier_name.ilike(
+                        like_pattern(token), escape="\\"
+                    ),
+                    RECEIPTS_TABLE.c.supplier_document_number.ilike(
+                        like_pattern(token), escape="\\"
+                    ),
+                )
+                for token in search.split()
+            )
 
         total_documents = await self._session.scalar(
             select(func.count()).select_from(RECEIPTS_TABLE).where(*conditions)

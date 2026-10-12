@@ -6,13 +6,25 @@
     </p>
 
     <div class="page__toolbar">
-      <el-button v-if="can('inventory.document.create')" type="primary" @click="openCreate">
+      <el-button
+        v-if="canCreateDocument"
+        type="primary"
+        @click="openCreate"
+      >
         Новое поступление
       </el-button>
-      <el-button v-if="can('inventory.document.create')" @click="openWriteOffCreate">
+      <el-button v-if="canCreateDocument" @click="openWriteOffCreate">
         Новое списание
       </el-button>
+      <el-input
+        v-model="filter"
+        placeholder="Поставщик, номер документа или причина"
+        style="width: 320px"
+        clearable
+        @input="onFilter"
+      />
       <el-select
+        v-if="can('inventory.warehouse.read')"
         v-model="warehouseId"
         placeholder="Все склады"
         clearable
@@ -425,6 +437,10 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.documentsOpen });
 import { formatKopecks, formatQuantity } from "@md/money";
 import type { components } from "@md/api-client";
 
@@ -439,6 +455,8 @@ const PAGE_SIZE = 20;
 const api = useApi();
 const { can } = useCurrentUser();
 
+const canCreateDocument = computed(() => canAll(CAN.documentsCreate));
+
 const tab = ref<"receipts" | "write-offs">("receipts");
 const receipts = ref<ReceiptListItem[]>([]);
 const writeOffs = ref<WriteOffListItem[]>([]);
@@ -450,6 +468,7 @@ const page = ref(1);
 const pending = ref(false);
 const error = ref("");
 const notice = ref("");
+const filter = ref("");
 
 const drawerOpen = ref(false);
 const createOpen = ref(false);
@@ -559,6 +578,10 @@ function reasonOf(status: number, fallback: string): string {
 }
 
 async function loadWarehouses(): Promise<void> {
+  if (!can("inventory.warehouse.read")) {
+    return;
+  }
+
   const { data, response } = await api.GET("/api/inventory/warehouses", {});
   if (response.ok && data) {
     warehouses.value = data;
@@ -573,6 +596,7 @@ async function load(): Promise<void> {
     warehouse_id: warehouseId.value ?? undefined,
     limit: PAGE_SIZE,
     offset: (page.value - 1) * PAGE_SIZE,
+    search: filter.value.trim() || undefined,
   };
 
   try {
@@ -868,6 +892,20 @@ async function postReceipt(row: ReceiptListItem): Promise<void> {
   } finally {
     busy.value = false;
   }
+}
+
+
+let filterTimer: ReturnType<typeof setTimeout> | undefined;
+
+function onFilter(): void {
+  if (filterTimer) {
+    clearTimeout(filterTimer);
+  }
+
+  filterTimer = setTimeout(() => {
+    page.value = 1;
+    void load();
+  }, 300);
 }
 
 

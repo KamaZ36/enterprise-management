@@ -1,9 +1,18 @@
 <template>
-  <div>
+  <div class="page">
     <h1 class="page__title">Остатки</h1>
     <p class="page__subtitle">Что и сколько лежит на складе и по какой себестоимости</p>
 
-    <div class="page__toolbar">
+    <el-alert
+      v-if="!canAll(CAN.warehouseRead)"
+      title="Нет права видеть склады"
+      description="Остатки ведутся в разрезе склада — попросите доступ к складам."
+      type="warning"
+      :closable="false"
+      show-icon
+      class="page__error"
+    />
+    <div v-if="canAll(CAN.warehouseRead)" class="page__toolbar">
       <el-select
         v-model="warehouseId"
         placeholder="Выберите склад"
@@ -22,6 +31,7 @@
         placeholder="Фильтр по названию"
         style="width: 280px"
         clearable
+        @input="onSearch"
       />
     </div>
 
@@ -44,8 +54,9 @@
     />
 
     <el-table
+      v-if="canAll(CAN.warehouseRead)"
       v-loading="pending"
-      :data="visible"
+      :data="balances"
       empty-text="Остатков нет"
       class="page__table"
     >
@@ -85,6 +96,10 @@
 </template>
 
 <script setup lang="ts">
+
+import { CAN } from "~/utils/access";
+
+definePageMeta({ permissions: CAN.balancesOpen });
 import type { components } from "@md/api-client";
 import { formatKopecks, formatQuantity } from "@md/money";
 
@@ -106,18 +121,23 @@ const error = ref("");
 
 const costVisible = computed(() => can("inventory.cost.read"));
 
-const visible = computed(() => {
-  const needle = filter.value.trim().toLowerCase();
-  if (!needle) {
-    return balances.value;
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+function onSearch(): void {
+  if (searchTimer) {
+    clearTimeout(searchTimer);
   }
 
-  return balances.value.filter((item) =>
-    (item.nomenclature_name ?? "").toLowerCase().includes(needle),
-  );
-});
+  searchTimer = setTimeout(() => {
+    void load();
+  }, 300);
+}
 
 async function loadWarehouses(): Promise<void> {
+  if (!canAll(CAN.warehouseRead)) {
+    return;
+  }
+
   const { data, response } = await api.GET("/api/inventory/warehouses", {});
 
   if (response.ok && data) {
@@ -137,7 +157,12 @@ async function load(): Promise<void> {
   try {
     const { response, data, error: failure } = await api.GET(
       "/api/inventory/warehouses/{warehouse_id}/balances",
-      { params: { path: { warehouse_id: warehouseId.value } } },
+      {
+        params: {
+          path: { warehouse_id: warehouseId.value },
+          query: { search: filter.value.trim() || undefined },
+        },
+      },
     );
 
     if (!response.ok || !data) {

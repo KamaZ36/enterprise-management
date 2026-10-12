@@ -176,6 +176,19 @@ class OrgUnit:
         self._attributes = attributes
         self._updated_at = get_datetime_utc()
 
+    def change_contacts(
+        self,
+        address: str | None,
+        phone_number: PhoneNumber | None,
+    ) -> None:
+        self._address = address
+        self._phone_number = phone_number
+        self._updated_at = get_datetime_utc()
+
     def deactivate(self) -> None:
         self._is_active = False
+        self._updated_at = get_datetime_utc()
+
+    def activate(self) -> None:
+        self._is_active = True
         self._updated_at = get_datetime_utc()

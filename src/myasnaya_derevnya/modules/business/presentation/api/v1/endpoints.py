@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -9,9 +11,14 @@ from myasnaya_derevnya.modules.business.application.interactors.create_org_unit 
 from myasnaya_derevnya.modules.business.application.interactors.list_org_units import (
     ListOrgUnitsInteractor,
 )
+from myasnaya_derevnya.modules.business.application.interactors.update_org_unit import (
+    UpdateOrgUnitCommand,
+    UpdateOrgUnitInteractor,
+)
 from myasnaya_derevnya.modules.business.presentation.api.v1.schemas import (
     CreateOrgUnitSchema,
     OrgUnitSchema,
+    UpdateOrgUnitSchema,
 )
 
 router = APIRouter(prefix="/api", tags=["Структурные подразделения"])
@@ -46,3 +53,23 @@ async def list_org_units(request: Request) -> list[OrgUnitSchema]:
         items = await interactor()
 
     return [OrgUnitSchema.from_dto(item) for item in items]
+
+
+@router.patch("/org-unit/{org_unit_id}", description="Изменить структурную единицу")
+async def update_org_unit(
+    request: Request, org_unit_id: UUID, data: UpdateOrgUnitSchema
+) -> JSONResponse:
+    command = UpdateOrgUnitCommand(
+        org_unit_id=org_unit_id,
+        provided=frozenset(data.model_fields_set),
+        name=data.name,
+        address=data.address,
+        phone_number=data.phone_number,
+        is_active=data.is_active,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateOrgUnitInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok!"})

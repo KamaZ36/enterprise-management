@@ -25,12 +25,56 @@
           <div class="who__position">{{ currentPosition }}</div>
         </div>
 
+        <el-button text @click="openPassword">Сменить пароль</el-button>
         <el-button text @click="signOut">Выйти</el-button>
       </el-header>
 
       <el-main class="shell__main">
         <slot />
       </el-main>
+
+      <el-dialog v-model="passwordOpen" title="Смена пароля" width="480">
+        <el-form label-position="top">
+          <el-form-item label="Текущий пароль">
+            <el-input v-model="passwordForm.current_password" type="password" show-password />
+          </el-form-item>
+          <el-form-item label="Новый пароль">
+            <el-input v-model="passwordForm.new_password" type="password" show-password />
+            <span class="hint">не короче 8 символов</span>
+          </el-form-item>
+
+          <el-alert
+            v-if="passwordError"
+            :title="passwordError"
+            type="error"
+            :closable="false"
+            show-icon
+          />
+          <el-alert
+            v-else-if="passwordDone"
+            title="Пароль изменён"
+            description="На других устройствах сессии закрыты — там потребуется войти заново."
+            type="success"
+            :closable="false"
+            show-icon
+          />
+        </el-form>
+
+        <template #footer>
+          <el-button @click="passwordOpen = false">
+            {{ passwordDone ? "Закрыть" : "Отмена" }}
+          </el-button>
+          <el-button
+            v-if="!passwordDone"
+            type="primary"
+            :loading="passwordSaving"
+            :disabled="!passwordForm.current_password || passwordForm.new_password.length < 8"
+            @click="changePassword"
+          >
+            Сменить
+          </el-button>
+        </template>
+      </el-dialog>
     </el-container>
   </el-container>
 </template>
@@ -43,18 +87,61 @@ const route = useRoute();
 const { signOut } = useAuth();
 const { user, load, can, displayName } = useCurrentUser();
 
-const sections = [
-  { path: "/documents", title: "Журнал", permission: "inventory.document.read" },
-  { path: "/balances", title: "Остатки", permission: "inventory.balance.read" },
-  { path: "/nomenclatures", title: "Номенклатура", permission: "nomenclature.read" },
-  { path: "/warehouses", title: "Склады", permission: "inventory.warehouse.read" },
-  { path: "/org-units", title: "Организация", permission: "org_unit.read" },
-  { path: "/employees", title: "Сотрудники", permission: "staff.employee.read" },
-  { path: "/roles", title: "Роли", permission: "staff.role.read" },
-];
+import { SECTIONS } from "~/utils/access";
+
+const api = useApi();
+const passwordOpen = ref(false);
+const passwordSaving = ref(false);
+const passwordError = ref("");
+const passwordDone = ref(false);
+const passwordForm = reactive({ current_password: "", new_password: "" });
+
+function openPassword(): void {
+  passwordError.value = "";
+  passwordDone.value = false;
+  passwordForm.current_password = "";
+  passwordForm.new_password = "";
+  passwordOpen.value = true;
+}
+
+async function changePassword(): Promise<void> {
+  passwordError.value = "";
+  passwordSaving.value = true;
+
+  try {
+    const { response, error: failure } = await api.POST("/api/me/password", {
+      body: {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      },
+    });
+
+    if (!response.ok) {
+      const payload = failure as { message?: string } | undefined;
+      const fallback =
+        response.status === 401
+          ? "Текущий пароль неверен"
+          : `Не удалось сменить пароль: ${response.status}`;
+      throw new Error(payload?.message ?? fallback);
+    }
+
+    passwordDone.value = true;
+    passwordForm.current_password = "";
+    passwordForm.new_password = "";
+  } catch (cause) {
+    passwordError.value = cause instanceof Error ? cause.message : "Ошибка смены пароля";
+  } finally {
+    passwordSaving.value = false;
+  }
+}
+
+
+const sections = SECTIONS;
 
 const visibleSections = computed(() =>
-  sections.filter((section) => can(section.permission)),
+  sections.filter((section) =>
+    section.permissions.every((permission) => can(permission)),
+  ),
 );
 
 const current = computed(() =>

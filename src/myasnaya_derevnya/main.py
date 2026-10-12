@@ -17,9 +17,11 @@ from myasnaya_derevnya.core.errors import (
     ValidationError,
 )
 from myasnaya_derevnya.core.seed import bootstrap_system
+from myasnaya_derevnya.core.settings.cors import CorsSettings
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import (
     login_router,
     logout_router,
+    password_router,
 )
 from myasnaya_derevnya.modules.business.presentation.api.v1 import (
     router as business_router,
@@ -82,6 +84,7 @@ async def lifespan(app: FastAPI):
 def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
     app.include_router(logout_router)
+    app.include_router(password_router)
     app.include_router(access_router)
     app.include_router(staff_router)
     app.include_router(business_router)
@@ -97,7 +100,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=CorsSettings().cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

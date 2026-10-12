@@ -13,8 +13,6 @@ class NomenclatureUsage(Protocol):
 
 
 class NomenclatureChangesPolicy:
-    """Что можно менять у номенклатуры, по которой уже двигались остатки."""
-
     def ensure_changeable(
         self,
         *,

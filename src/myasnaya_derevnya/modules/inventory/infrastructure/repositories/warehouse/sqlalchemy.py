@@ -63,13 +63,8 @@ class SQLAlchemyWarehouseRepository(WarehouseRepository):
 
         return self._to_entity(row)
 
-    async def list(self) -> list[Warehouse]:
-        stmt = select(WAREHOUSES_TABLE).order_by(WAREHOUSES_TABLE.c.code.asc())
-        rows = (await self._session.execute(stmt)).mappings().all()
-
-        return [self._to_entity(row) for row in rows]
-
-    def _to_entity(self, row: RowMapping) -> Warehouse:
+    @staticmethod
+    def _to_entity(row: RowMapping) -> Warehouse:
         return Warehouse(
             id=row["id"],
             org_unit_id=row["org_unit_id"],

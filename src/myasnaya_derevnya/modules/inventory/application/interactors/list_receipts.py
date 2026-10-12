@@ -15,6 +15,7 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 @dataclass(frozen=True, slots=True)
 class ListReceiptsQuery:
     warehouse_id: UUID | None = None
+    search: str | None = None
     limit: int = 20
     offset: int = 0
 
@@ -56,6 +57,7 @@ class ListReceiptsInteractor:
 
         items, total = await self._receipt_reader.list(
             warehouse_id=query.warehouse_id,
+            search=query.search,
             limit=query.limit,
             offset=query.offset,
         )

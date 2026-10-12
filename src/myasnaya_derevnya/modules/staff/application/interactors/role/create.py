@@ -8,6 +8,9 @@ from myasnaya_derevnya.modules.business.presentation.business_api import Busines
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
+from myasnaya_derevnya.modules.staff.application.services.permission_codes import (
+    ensure_known_permissions,
+)
 from myasnaya_derevnya.modules.staff.domain.entities.role import Role
 from myasnaya_derevnya.modules.staff.domain.permissions import MANAGE_ROLES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base import (
@@ -52,6 +55,8 @@ class CreateRoleInteractor:
             org_unit_id=root_org_unit_id,
         ):
             raise ForbiddenError()
+
+        ensure_known_permissions(command.permission_codes)
 
         role = Role.create(
             code=command.code,

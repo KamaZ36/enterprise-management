@@ -8,3 +8,7 @@ ORG_UNIT_CREATE = Permission(
 ORG_UNIT_READ = Permission(
     code="org_unit.read", description="Просмотр организационной структуры"
 )
+
+ORG_UNIT_UPDATE = Permission(
+    code="org_unit.update", description="Изменение организационной единицы"
+)

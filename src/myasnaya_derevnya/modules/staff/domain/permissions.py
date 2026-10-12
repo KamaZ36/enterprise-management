@@ -50,3 +50,8 @@ ALL: tuple[Permission, ...] = (
     MANAGE_ORG,
     MANAGE_GRANT_RULES,
 )
+
+RESET_EMPLOYEE_PASSWORD = Permission(
+    code="staff.employee.reset_password",
+    description="Сброс пароля сотрудника",
+)

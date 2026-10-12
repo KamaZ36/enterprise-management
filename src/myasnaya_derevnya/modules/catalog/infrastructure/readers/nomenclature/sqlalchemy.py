@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, func, or_, select
+from sqlalchemy import RowMapping, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.database.search import like_pattern
@@ -55,13 +55,32 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 CATEGORIES_TABLE.c.id == NOMENCLATURES_TABLE.c.category_id,
             )
             .where(*conditions)
-            .order_by(NOMENCLATURES_TABLE.c.name.asc(), NOMENCLATURES_TABLE.c.sku.asc())
+            .order_by(
+                self._exact_match_key(search),
+                NOMENCLATURES_TABLE.c.name.asc(),
+                NOMENCLATURES_TABLE.c.sku.asc(),
+            )
             .limit(limit)
             .offset(offset)
         )
         rows = (await self._session.execute(stmt)).mappings().all()
 
         return [self._to_dto(row) for row in rows], total or 0
+
+    @staticmethod
+    def _exact_match_key(search: str | None):
+        exact = (search or "").strip()
+
+        return case(
+            (
+                or_(
+                    NOMENCLATURES_TABLE.c.sku == exact,
+                    NOMENCLATURES_TABLE.c.name == exact,
+                ),
+                0,
+            ),
+            else_=1,
+        )
 
     def _conditions(
         self,
@@ -73,12 +92,12 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
         conditions: list = []
 
         if search:
-            pattern = like_pattern(search)
-            conditions.append(
+            conditions.extend(
                 or_(
-                    NOMENCLATURES_TABLE.c.name.ilike(pattern, escape="\\"),
-                    NOMENCLATURES_TABLE.c.sku.ilike(pattern, escape="\\"),
+                    NOMENCLATURES_TABLE.c.name.ilike(like_pattern(token), escape="\\"),
+                    NOMENCLATURES_TABLE.c.sku.ilike(like_pattern(token), escape="\\"),
                 )
+                for token in search.split()
             )
         if type_code:
             conditions.append(NOMENCLATURES_TABLE.c.type == type_code)

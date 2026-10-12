@@ -16,3 +16,13 @@ class UserSessionRepository(ABC):
     @abstractmethod
     async def delete_by_id(self, user_session_id: UUID) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def delete_others_for_user(
+        self, user_id: UUID, keep_session_id: UUID
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_all_for_user(self, user_id: UUID) -> None:
+        raise NotImplementedError

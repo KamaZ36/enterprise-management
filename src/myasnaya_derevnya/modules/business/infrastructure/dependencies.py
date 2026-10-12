@@ -7,6 +7,9 @@ from myasnaya_derevnya.modules.business.application.interactors.create_org_unit 
 from myasnaya_derevnya.modules.business.application.interactors.list_org_units import (
     ListOrgUnitsInteractor,
 )
+from myasnaya_derevnya.modules.business.application.interactors.update_org_unit import (
+    UpdateOrgUnitInteractor,
+)
 from myasnaya_derevnya.modules.business.infrastructure.readers.org_unit.base import (
     OrgUnitReader,
 )
@@ -42,4 +45,6 @@ class BusinessDepProvider(Provider):
 
     # INTERACTORS
     create_org_unit_interactor = provide(CreateOrgUnitInteractor, scope=Scope.REQUEST)
+
+    update_org_unit_interactor = provide(UpdateOrgUnitInteractor, scope=Scope.REQUEST)
     list_org_units_interactor = provide(ListOrgUnitsInteractor, scope=Scope.REQUEST)

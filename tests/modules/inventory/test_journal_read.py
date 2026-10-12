@@ -194,7 +194,7 @@ async def test_receipt_journal_passes_warehouse_filter_and_window() -> None:
     )
 
     assert reader.list_calls == [
-        {"warehouse_id": warehouse_id, "limit": 10, "offset": 20}
+        {"warehouse_id": warehouse_id, "limit": 10, "offset": 20, "search": None}
     ]
     assert (page.limit, page.offset, page.total) == (10, 20, 0)
 
@@ -283,3 +283,13 @@ async def test_write_off_card_fills_nomenclature_names() -> None:
     detail = await interactor(GetWriteOffQuery(write_off_id=reader.detail.id))
 
     assert detail.lines[0].nomenclature_name == "Свинина шея"
+
+
+async def test_receipt_journal_passes_search() -> None:
+    interactor, reader = build_list_receipts()
+
+    await interactor(ListReceiptsQuery(search="мясокомбинат"))
+
+    assert reader.list_calls == [
+        {"warehouse_id": None, "limit": 20, "offset": 0, "search": "мясокомбинат"}
+    ]

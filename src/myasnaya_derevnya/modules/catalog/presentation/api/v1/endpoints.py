@@ -29,6 +29,10 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclature
     ListNomenclaturesInteractor,
     ListNomenclaturesQuery,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
+    UpdateCategoryCommand,
+    UpdateCategoryInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclature import (
     UpdateNomenclatureCommand,
     UpdateNomenclatureInteractor,
@@ -44,6 +48,7 @@ from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
     CreatePriceSchema,
     NomenclatureListSchema,
     NomenclatureSchema,
+    UpdateCategorySchema,
     UpdateNomenclatureSchema,
 )
 
@@ -184,6 +189,19 @@ async def update_nomenclature(
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(UpdateNomenclatureInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok!"})
+
+
+@router.patch("/categories/{category_id}", description="Переименовать категорию")
+async def update_category(
+    request: Request, category_id: UUID, data: UpdateCategorySchema
+) -> JSONResponse:
+    command = UpdateCategoryCommand(category_id=category_id, name=data.name)
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateCategoryInteractor)
         await interactor(command)
 
     return JSONResponse(content={"message": "ok!"})

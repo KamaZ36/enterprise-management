@@ -19,6 +19,8 @@ CREATE_CATEGORY = Permission(code="category.create", description="Создани
 
 READ_CATEGORY = Permission(code="category.read", description="Просмотр категорий")
 
+UPDATE_CATEGORY = Permission(code="category.update", description="Изменение категории")
+
 
 # PRICE LISTS
 CREATE_PRICE_LIST = Permission(
