@@ -7,11 +7,14 @@ from pydantic import BaseModel, Field
 from myasnaya_derevnya.modules.inventory.application.dto import (
     ReceiptDetail,
     ReceiptListItem,
+    TransferDetail,
+    TransferLineItem,
+    TransferListItem,
     WarehouseListItem,
     WriteOffDetail,
     WriteOffListItem,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.read_balances import (
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.read import (
     BalanceListItem,
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
@@ -266,3 +269,96 @@ class WriteOffDetailSchema(BaseModel):
             comment=detail.comment,
             lines=[WriteOffLineViewSchema.from_dto(line) for line in detail.lines],
         )
+
+
+class TransferLineSchema(BaseModel):
+    nomenclature_id: UUID
+    quantity: Decimal = Field(gt=0)
+    lot_code: str | None = None
+
+
+class CreateTransferSchema(BaseModel):
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    occurred_at: datetime
+    lines: list[TransferLineSchema] = Field(min_length=1)
+    comment: str | None = None
+
+
+class TransferListItemSchema(BaseModel):
+    id: UUID
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    line_count: int
+
+    @classmethod
+    def from_dto(cls, item: TransferListItem) -> TransferListItemSchema:
+        return cls(
+            id=item.id,
+            from_warehouse_id=item.from_warehouse_id,
+            to_warehouse_id=item.to_warehouse_id,
+            status=item.status,
+            occurred_at=item.occurred_at,
+            posted_at=item.posted_at,
+            comment=item.comment,
+            line_count=item.line_count,
+        )
+
+
+class TransferLineViewSchema(BaseModel):
+    id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None
+    quantity: Decimal
+    lot_code: str | None
+
+    @classmethod
+    def from_dto(cls, item: TransferLineItem) -> TransferLineViewSchema:
+        return cls(
+            id=item.id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            quantity=item.quantity,
+            lot_code=item.lot_code,
+        )
+
+
+class TransferListSchema(BaseModel):
+    items: list[TransferListItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class TransferDetailSchema(BaseModel):
+    id: UUID
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    lines: list[TransferLineViewSchema]
+
+    @classmethod
+    def from_dto(cls, detail: TransferDetail) -> TransferDetailSchema:
+        return cls(
+            id=detail.id,
+            from_warehouse_id=detail.from_warehouse_id,
+            to_warehouse_id=detail.to_warehouse_id,
+            status=detail.status,
+            occurred_at=detail.occurred_at,
+            posted_at=detail.posted_at,
+            comment=detail.comment,
+            lines=[TransferLineViewSchema.from_dto(line) for line in detail.lines],
+        )
+
+
+class UpdateTransferSchema(BaseModel):
+    occurred_at: datetime
+    lines: list[TransferLineSchema] = Field(min_length=1)
+    comment: str | None = None

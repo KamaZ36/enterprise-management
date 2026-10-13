@@ -7,11 +7,13 @@ from myasnaya_derevnya.modules.auth.application.interactors.change_password impo
     ChangePasswordCommand,
     ChangePasswordInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
     UserCredential,
     UserCredentialType,
 )
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 CURRENT = "old-password-123"
 NEW = "new-password-456"

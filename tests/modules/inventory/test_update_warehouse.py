@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from myasnaya_derevnya.core.errors import ForbiddenError
-from myasnaya_derevnya.modules.inventory.application.interactors.update_warehouse import (
+from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.update import (
     UpdateWarehouseCommand,
     UpdateWarehouseInteractor,
 )

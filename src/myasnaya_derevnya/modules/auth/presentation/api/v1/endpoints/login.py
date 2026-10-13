@@ -7,7 +7,7 @@ from myasnaya_derevnya.modules.auth.application.interactors.login.password impor
     LoginByPasswordInteractor,
 )
 
-router = APIRouter(prefix="/api/login", tags=["Аутентификация"])
+router = APIRouter(prefix="/api/auth/login", tags=["Аутентификация"])
 
 
 @router.post("/password", description="Аутентификация по паролю (Для сотрудников)")

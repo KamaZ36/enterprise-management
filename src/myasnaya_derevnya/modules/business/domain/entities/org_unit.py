@@ -14,7 +14,6 @@ class OrgUnitType(StrEnum):
     GROUP = "group"
     CAFE = "cafe"
     SHOP = "shop"
-    DEPARTMENT = "department"
 
 
 class OrgUnit:

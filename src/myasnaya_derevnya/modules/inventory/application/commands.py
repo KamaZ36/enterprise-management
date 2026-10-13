@@ -18,3 +18,10 @@ class WriteOffLineCommand:
     nomenclature_id: UUID
     quantity: Decimal
     lot_code: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TransferLineCommand:
+    nomenclature_id: UUID
+    quantity: Decimal
+    lot_code: str | None = None

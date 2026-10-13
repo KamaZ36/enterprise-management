@@ -29,6 +29,9 @@ from myasnaya_derevnya.modules.business.presentation.api.v1 import (
 from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
     router as catalog_router,
 )
+from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
+    login_router as customer_login_router,
+)
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
 )
@@ -90,6 +93,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(business_router)
     app.include_router(catalog_router)
     app.include_router(inventory_router)
+    app.include_router(customer_login_router)
 
 
 def create_app() -> FastAPI:

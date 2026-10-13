@@ -130,3 +130,22 @@ PRICES_TABLE = Table(
     Index("ix_prices_price_list_id", "price_list_id"),
     schema=DATABASE_SCHEMA,
 )
+
+
+PRICE_LIST_BINDINGS_TABLE = Table(
+    "price_list_bindings",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("org_unit_id", UUID, nullable=False),
+    Column(
+        "price_list_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.price_lists.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    UniqueConstraint("org_unit_id", name="uq_price_list_bindings_org_unit"),
+    schema=DATABASE_SCHEMA,
+)

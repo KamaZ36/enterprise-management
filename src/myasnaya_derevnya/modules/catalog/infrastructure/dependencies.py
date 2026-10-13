@@ -1,6 +1,9 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.catalog.application.interactors.bind_price_list import (
+    BindPriceListInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.create_category import (
     CreateCategoryInteractor,
 )
@@ -16,8 +19,15 @@ from myasnaya_derevnya.modules.catalog.application.interactors.create_price_list
 from myasnaya_derevnya.modules.catalog.application.interactors.list_categories import (
     ListCategoriesInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclature_prices import (
+    ListNomenclaturePricesInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclatures import (
     ListNomenclaturesInteractor,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
+    ListPriceListPricesInteractor,
+    ListPriceListsInteractor,
 )
 from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
     UpdateCategoryInteractor,
@@ -39,6 +49,15 @@ from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature.base 
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature.sqlalchemy import (
     SQLAlchemyNomenclatureReader,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature_prices.base import (
+    NomenclaturePricesReader,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature_prices.price_lists import (
+    SQLAlchemyPriceListsReader,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature_prices.sqlalchemy import (
+    SQLAlchemyNomenclaturePricesReader,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base import (
     CategoryRepository,
@@ -64,10 +83,45 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list.ba
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list.sqlalchemy import (
     SQLAlchemyPriceListRepository,
 )
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_binding.base import (
+    PriceListBindingRepository,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_binding.sqlalchemy import (
+    SQLAlchemyPriceListBindingRepository,
+)
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 
 
 class CatalogDepProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    def get_price_lists_reader(
+        self, session: AsyncSession
+    ) -> SQLAlchemyPriceListsReader:
+        return SQLAlchemyPriceListsReader(session)
+
+    list_price_lists_interactor = provide(ListPriceListsInteractor, scope=Scope.REQUEST)
+    list_price_list_prices_interactor = provide(
+        ListPriceListPricesInteractor, scope=Scope.REQUEST
+    )
+
+    @provide(scope=Scope.REQUEST)
+    def get_nomenclature_prices_reader(
+        self, session: AsyncSession
+    ) -> NomenclaturePricesReader:
+        return SQLAlchemyNomenclaturePricesReader(session)
+
+    list_nomenclature_prices_interactor = provide(
+        ListNomenclaturePricesInteractor, scope=Scope.REQUEST
+    )
+
+    @provide(scope=Scope.REQUEST)
+    def get_price_list_binding_repository(
+        self, session: AsyncSession
+    ) -> PriceListBindingRepository:
+        return SQLAlchemyPriceListBindingRepository(session)
+
+    bind_price_list_interactor = provide(BindPriceListInteractor, scope=Scope.REQUEST)
+
     # REPOSITORIES
     @provide(scope=Scope.REQUEST)
     def get_nomenclature_repository(

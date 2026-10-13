@@ -17,7 +17,7 @@ export function useCurrentUser() {
 
     loading.value = true;
     try {
-      const { data, response } = await api.GET("/api/me", {});
+      const { data, response } = await api.GET("/api/staff/me", {});
       if (response.ok && data) {
         user.value = data;
       }

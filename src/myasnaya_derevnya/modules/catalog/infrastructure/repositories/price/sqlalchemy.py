@@ -16,15 +16,18 @@ class SQLAlchemyPriceRepository(PriceRepository):
         self._session = session
 
     async def add(self, price: Price) -> None:
-        await self._session.execute(
-            insert(PRICES_TABLE).values(
-                id=price.id,
-                nomenclature_id=price.nomenclature_id,
-                price_list_id=price.price_list_id,
-                value=price.value,
-                updated_at=price.updated_at,
-            )
+        stmt = insert(PRICES_TABLE).values(
+            id=price.id,
+            nomenclature_id=price.nomenclature_id,
+            price_list_id=price.price_list_id,
+            value=price.value,
+            updated_at=price.updated_at,
         )
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_prices_nomenclature_price_list",
+            set_={"value": stmt.excluded.value, "updated_at": stmt.excluded.updated_at},
+        )
+        await self._session.execute(stmt)
 
     async def save(self, price: Price) -> None:
         await self._session.execute(

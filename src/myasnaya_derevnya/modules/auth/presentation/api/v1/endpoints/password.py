@@ -8,7 +8,7 @@ from myasnaya_derevnya.modules.auth.application.interactors.change_password impo
     ChangePasswordInteractor,
 )
 
-router = APIRouter(prefix="/api/me", tags=["Аутентификация"])
+router = APIRouter(prefix="/api/auth/me", tags=["Аутентификация"])
 
 MIN_PASSWORD_LENGTH = 8
 

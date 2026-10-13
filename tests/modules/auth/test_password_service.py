@@ -1,4 +1,6 @@
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
+)
 
 PASSWORD = "S3cret!pass"
 

@@ -3,6 +3,9 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.modules.auth.application.errors import UserNotFound
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
     UserCredential,
     UserCredentialType,
@@ -20,7 +23,6 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 
 @dataclass(frozen=True, slots=True)

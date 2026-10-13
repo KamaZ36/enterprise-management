@@ -9,5 +9,8 @@
     "typecheck:admin": "pnpm --filter @md/admin typecheck",
     "dev:landing": "pnpm --filter @md/landing dev",
     "build:landing": "pnpm --filter @md/landing build"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
   }
 }

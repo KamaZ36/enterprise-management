@@ -10,7 +10,11 @@
       </div>
 
       <el-menu :default-active="activeMenu" router class="shell__menu">
-        <el-menu-item v-for="section in visibleSections" :key="section.path" :index="section.path">
+        <el-menu-item
+          v-for="section in visibleSections"
+          :key="section.path"
+          :index="section.path"
+        >
           <el-icon class="menu__icon">
             <component :is="ICONS[section.icon]" />
           </el-icon>
@@ -91,6 +95,7 @@ const { signOut } = useAuth();
 const { user, load, can, displayName } = useCurrentUser();
 
 import { SECTIONS } from "~/utils/access";
+import { MODULE_ICONS, MODULES } from "~/utils/modules";
 import {
   Box,
   Document,
@@ -104,17 +109,7 @@ import {
 } from "@element-plus/icons-vue";
 import type { Component } from "vue";
 
-const ICONS: Record<string, Component> = {
-  HomeFilled,
-  Document,
-  Box,
-  Goods,
-  Files,
-  OfficeBuilding,
-  Grid,
-  User,
-  Key,
-};
+const ICONS = MODULE_ICONS;
 
 const api = useApi();
 const passwordOpen = ref(false);
@@ -136,7 +131,7 @@ async function changePassword(): Promise<void> {
   passwordSaving.value = true;
 
   try {
-    const { response, error: failure } = await api.POST("/api/me/password", {
+    const { response, error: failure } = await api.POST("/api/auth/me/password", {
       body: {
         current_password: passwordForm.current_password,
         new_password: passwordForm.new_password,
@@ -165,14 +160,45 @@ async function changePassword(): Promise<void> {
 
 const sections = SECTIONS;
 
-const visibleSections = computed(() =>
-  sections.filter((section) =>
-    section.permissions.every((permission) => can(permission)),
-  ),
-);
+
+
+const visibleSections = computed(() => {
+  const items: { path: string; title: string; icon: string }[] = [];
+
+  for (const section of sections) {
+    if (!("module" in section)) {
+      items.push({
+        path: section.path,
+        title: section.title,
+        icon: section.icon,
+      });
+      continue;
+    }
+
+    const module = MODULES.find((item) => item.code === section.module);
+
+    if (!module) {
+      continue;
+    }
+
+    const firstAvailable = module.tabs.find((tab) => canAll(tab.permissions));
+
+    if (!firstAvailable) {
+      continue;
+    }
+
+    items.push({
+      path: firstAvailable.path,
+      title: section.title,
+      icon: section.icon,
+    });
+  }
+
+  return items;
+});
 
 const current = computed(() =>
-  sections.find((section) => route.path.startsWith(section.path)),
+  visibleSections.value.find((section) => route.path.startsWith(section.path)),
 );
 const activeMenu = computed(() => current.value?.path ?? route.path);
 const sectionTitle = computed(() => current.value?.title ?? "");

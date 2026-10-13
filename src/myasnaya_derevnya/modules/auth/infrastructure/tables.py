@@ -3,6 +3,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Table,
     UniqueConstraint,
@@ -12,6 +13,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from myasnaya_derevnya.core.database import metadata
 
+DATABASE_SCHEMA = "auth"
+
 USERS_TABLE = Table(
     "users",
     metadata,
@@ -20,7 +23,7 @@ USERS_TABLE = Table(
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
-    schema="auth",
+    schema=DATABASE_SCHEMA,
 )
 
 
@@ -45,7 +48,7 @@ USER_IDENTITIES_TABLE = Table(
         "ix_user_identities_user_id",
         "user_id",
     ),
-    schema="auth",
+    schema=DATABASE_SCHEMA,
 )
 
 
@@ -68,7 +71,7 @@ USER_CREDENTIALS_TABLE = Table(
         "ix_user_credentials_user_id",
         "user_id",
     ),
-    schema="auth",
+    schema=DATABASE_SCHEMA,
 )
 
 USER_SESSIONS_TABLE = Table(
@@ -87,5 +90,23 @@ USER_SESSIONS_TABLE = Table(
     ),
     Index("ix_user_sessions_user_id", "user_id"),
     Index("ix_user_sessions_expires_at", "expires_at"),
-    schema="auth",
+    schema=DATABASE_SCHEMA,
+)
+
+
+ONE_TIME_CODES_TABLE = Table(
+    "one_time_codes",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("identifier", String(255), nullable=False),
+    Column("code_hash", String(128), nullable=False),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
+    Column("attempts", Integer, nullable=False, server_default="0"),
+    Column("max_attempts", Integer, nullable=False, server_default="5"),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Index("ix_one_time_codes_identifier", "identifier"),
+    Index("ix_one_time_codes_expires_at", "expires_at"),
+    schema=DATABASE_SCHEMA,
 )

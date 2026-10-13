@@ -90,3 +90,55 @@ class CreatePriceListSchema(BaseModel):
 class CreatePriceSchema(BaseModel):
     nomenclature_id: UUID
     price: Decimal
+
+
+class BindPriceListSchema(BaseModel):
+    price_list_id: UUID
+
+
+class PriceListBindingSchema(BaseModel):
+    org_unit_id: UUID
+    price_list_id: UUID
+    price_list_name: str | None = None
+
+
+class NomenclaturePriceSchema(BaseModel):
+    price_list_id: UUID
+    price_list_name: str
+    is_active: bool
+    value: int | None
+
+    @classmethod
+    def from_dto(cls, item) -> NomenclaturePriceSchema:
+        return cls(
+            price_list_id=item.price_list_id,
+            price_list_name=item.price_list_name,
+            is_active=item.is_active,
+            value=item.value,
+        )
+
+
+class NomenclaturePriceListSchema(BaseModel):
+    items: list[NomenclaturePriceSchema]
+
+
+class PriceListEntrySchema(BaseModel):
+    id: UUID
+    name: str
+    is_active: bool
+
+
+class PriceListEntryListSchema(BaseModel):
+    items: list[PriceListEntrySchema]
+
+
+class PriceListPriceSchema(BaseModel):
+    nomenclature_id: UUID
+    nomenclature_name: str
+    sku: str
+    value: int | None
+
+
+class PriceListPriceListSchema(BaseModel):
+    items: list[PriceListPriceSchema]
+    total: int

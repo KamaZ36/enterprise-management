@@ -114,21 +114,21 @@ const tiles = computed(() => {
     result.push({
       title: "Склады",
       value: counts.warehouses,
-      path: "/warehouses",
+      path: "/inventory/warehouses",
     });
   }
   if (can("nomenclature.read")) {
     result.push({
       title: "Номенклатура",
       value: counts.nomenclatures,
-      path: "/nomenclatures",
+      path: "/catalog/nomenclatures",
     });
   }
   if (can("staff.employee.read")) {
     result.push({
       title: "Сотрудники",
       value: counts.employees,
-      path: "/employees",
+      path: "/staff/employees",
     });
   }
 
@@ -139,16 +139,16 @@ const actions = computed(() => {
   const result: { title: string; path: string }[] = [];
 
   if (can("inventory.document.create") && can("inventory.warehouse.read")) {
-    result.push({ title: "Новое поступление", path: "/documents" });
+    result.push({ title: "Новое поступление", path: "/inventory/documents" });
   }
   if (can("nomenclature.create") && can("category.read")) {
-    result.push({ title: "Добавить номенклатуру", path: "/nomenclatures" });
+    result.push({ title: "Добавить номенклатуру", path: "/catalog/nomenclatures" });
   }
   if (can("staff.employee.manage")) {
-    result.push({ title: "Принять на работу", path: "/employees" });
+    result.push({ title: "Принять на работу", path: "/staff/employees" });
   }
   if (can("staff.role.read")) {
-    result.push({ title: "Роли и права", path: "/roles" });
+    result.push({ title: "Роли и права", path: "/staff/roles" });
   }
 
   return result;
@@ -163,7 +163,7 @@ async function loadTiles(): Promise<void> {
   }
 
   if (can("nomenclature.read")) {
-    const { data, response } = await api.GET("/api/nomenclatures", {
+    const { data, response } = await api.GET("/api/catalog/nomenclatures", {
       params: { query: { limit: 1 } },
     });
     if (response.ok && data) {
@@ -172,7 +172,7 @@ async function loadTiles(): Promise<void> {
   }
 
   if (can("staff.employee.read")) {
-    const { data, response } = await api.GET("/api/employees", {
+    const { data, response } = await api.GET("/api/staff/employees", {
       params: { query: { limit: 1 } },
     });
     if (response.ok && data) {

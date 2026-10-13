@@ -2,42 +2,57 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
-from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
-    CreateReceiptInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.create_warehouse import (
-    CreateWarehouseInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.create_write_off import (
-    CreateWriteOffInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.get_receipt import (
-    GetReceiptInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.get_write_off import (
-    GetWriteOffInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.list_receipts import (
-    ListReceiptsInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.list_warehouses import (
-    ListWarehousesInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.list_write_offs import (
-    ListWriteOffsInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
-    PostReceiptInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.post_write_off import (
-    PostWriteOffInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.read_balances import (
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.read import (
     GetBalanceInteractor,
     ListBalancesInteractor,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.update_warehouse import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
+    CreateReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.get import (
+    GetReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list import (
+    ListReceiptsInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
+    PostReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
+    CreateTransferInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.get import (
+    GetTransferInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.list import (
+    ListTransfersInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.post import (
+    PostTransferInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.update import (
+    UpdateTransferInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.create import (
+    CreateWarehouseInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.list import (
+    ListWarehousesInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.update import (
     UpdateWarehouseInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
+    CreateWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.get import (
+    GetWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list import (
+    ListWriteOffsInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
+    PostWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.services.lot_resolver import (
     LotResolver,
@@ -48,12 +63,12 @@ from myasnaya_derevnya.modules.inventory.application.services.posting_preconditi
 from myasnaya_derevnya.modules.inventory.application.services.stock_ledger import (
     StockLedger,
 )
+from myasnaya_derevnya.modules.inventory.application.services.transfer_posting import (
+    TransferPosting,
+)
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
     CostPolicy,
     MovingAverageCostPolicy,
-)
-from myasnaya_derevnya.modules.inventory.domain.services.warehouse_purpose import (
-    WarehousePurposePolicy,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base import (
     BalanceReader,
@@ -66,6 +81,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base imp
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.sqlalchemy import (
     SQLAlchemyReceiptReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.base import (
+    TransferReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.sqlalchemy import (
+    SQLAlchemyTransferReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.base import (
     WarehouseReader,
@@ -114,6 +135,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_posti
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_posting.sqlalchemy import (
     SQLAlchemyStockPostingRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.base import (
+    TransferRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.sqlalchemy import (
+    SQLAlchemyTransferRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
     WarehouseRepository,
@@ -195,8 +222,6 @@ class InventoryDepProvider(Provider):
     def get_cost_policy(self) -> CostPolicy:
         return MovingAverageCostPolicy()
 
-    purpose_policy = provide(WarehousePurposePolicy, scope=Scope.REQUEST)
-
     # APPLICATION SERVICES
     @provide(scope=Scope.REQUEST)
     def get_lot_resolver(self, lot_repository: StockLotRepository) -> LotResolver:
@@ -207,12 +232,10 @@ class InventoryDepProvider(Provider):
         self,
         warehouse_repository: WarehouseRepository,
         catalog_api: CatalogAPI,
-        purpose_policy: WarehousePurposePolicy,
     ) -> PostingPreconditions:
         return PostingPreconditions(
             warehouse_repository=warehouse_repository,
             catalog_api=catalog_api,
-            purpose_policy=purpose_policy,
         )
 
     @provide(scope=Scope.REQUEST)
@@ -250,6 +273,26 @@ class InventoryDepProvider(Provider):
     get_receipt_interactor = provide(GetReceiptInteractor, scope=Scope.REQUEST)
     list_write_offs_interactor = provide(ListWriteOffsInteractor, scope=Scope.REQUEST)
     get_write_off_interactor = provide(GetWriteOffInteractor, scope=Scope.REQUEST)
+    create_transfer_interactor = provide(CreateTransferInteractor, scope=Scope.REQUEST)
+    post_transfer_interactor = provide(PostTransferInteractor, scope=Scope.REQUEST)
+    list_transfers_interactor = provide(ListTransfersInteractor, scope=Scope.REQUEST)
+    get_transfer_interactor = provide(GetTransferInteractor, scope=Scope.REQUEST)
+    update_transfer_interactor = provide(UpdateTransferInteractor, scope=Scope.REQUEST)
+
+    # TRANSFERS
+    @provide(scope=Scope.REQUEST)
+    def get_transfer_reader(self, session: AsyncSession) -> TransferReader:
+        return SQLAlchemyTransferReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_transfer_posting(
+        self, ledger: StockLedger, lot_resolver: LotResolver
+    ) -> TransferPosting:
+        return TransferPosting(ledger=ledger, lot_resolver=lot_resolver)
+
+    @provide(scope=Scope.REQUEST)
+    def get_transfer_repository(self, session: AsyncSession) -> TransferRepository:
+        return SQLAlchemyTransferRepository(session)
 
     # FACADE
     @provide(scope=Scope.REQUEST)

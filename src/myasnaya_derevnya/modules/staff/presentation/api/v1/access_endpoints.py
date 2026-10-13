@@ -12,7 +12,7 @@ from myasnaya_derevnya.modules.staff.presentation.api.v1.schemas import (
     PermissionSchema,
 )
 
-access_router = APIRouter(prefix="/api", tags=["Доступ"])
+access_router = APIRouter(prefix="/api/staff", tags=["Доступ"])
 
 
 @access_router.get(

@@ -10,33 +10,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.database.connection import async_session_maker
 from myasnaya_derevnya.core.errors import ConflictError
-from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
-)
 from myasnaya_derevnya.modules.inventory.application.commands import (
     ReceiptLineCommand,
     WriteOffLineCommand,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.create_write_off import (
-    CreateWriteOffCommand,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptCommand,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.post_write_off import (
-    PostWriteOffCommand,
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
+    CreateWriteOffCommand,
 )
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
-    WarehouseType,
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
+    PostWriteOffCommand,
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
     InsufficientLotStockError,
     InsufficientStockError,
-    NomenclatureNotAllowedInWarehouseError,
     NomenclatureNotFoundError,
     StockLotNotFoundError,
 )
@@ -275,35 +268,6 @@ async def test_double_posting_is_blocked_by_database(
 
     assert postings == 1
     assert movements_quantity == Decimal(5)
-
-
-async def test_nomenclature_type_must_match_warehouse(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
-) -> None:
-    warehouse = await make_warehouse(type_=WarehouseType.RAW)
-    finished = await make_nomenclature(type_=NomenclatureType.FINISHED_GOOD)
-
-    interactors = build_interactors(db_session)
-    receipt_id = await interactors.create_receipt(
-        CreateReceiptCommand(
-            warehouse_id=warehouse.id,
-            occurred_at=OCCURRED_AT,
-            lines=[
-                ReceiptLineCommand(
-                    nomenclature_id=finished.id,
-                    quantity=Decimal(1),
-                    unit_cost=Decimal(100),
-                )
-            ],
-        )
-    )
-
-    with pytest.raises(NomenclatureNotAllowedInWarehouseError):
-        await interactors.post_receipt(PostReceiptCommand(receipt_id=receipt_id))
-
-    await db_session.rollback()
-
-    assert await balance_of(db_session, warehouse.id, finished.id) is None
 
 
 async def test_unknown_nomenclature_is_rejected(

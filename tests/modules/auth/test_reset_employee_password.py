@@ -7,11 +7,13 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.reset_employe
     ResetEmployeePasswordCommand,
     ResetEmployeePasswordInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
     UserCredential,
     UserCredentialType,
 )
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 OLD = "old-password-123"
 NEW = "brand-new-456"

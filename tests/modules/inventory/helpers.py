@@ -13,16 +13,16 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.
     SQLAlchemyNomenclatureRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
-from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptInteractor,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.create_write_off import (
-    CreateWriteOffInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.post_write_off import (
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
+    CreateWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.services.lot_resolver import (
@@ -36,9 +36,6 @@ from myasnaya_derevnya.modules.inventory.application.services.stock_ledger impor
 )
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
     MovingAverageCostPolicy,
-)
-from myasnaya_derevnya.modules.inventory.domain.services.warehouse_purpose import (
-    WarehousePurposePolicy,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.sqlalchemy import (
     SQLAlchemyReceiptRepository,
@@ -121,7 +118,6 @@ def build_interactors(
     preconditions = PostingPreconditions(
         warehouse_repository=warehouses,
         catalog_api=CatalogAPI(SQLAlchemyNomenclatureRepository(session)),
-        purpose_policy=WarehousePurposePolicy(),
     )
     lot_resolver = LotResolver(lot_repository=lots)
     ledger = StockLedger(

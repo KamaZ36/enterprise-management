@@ -37,3 +37,11 @@ class PriceListAlreadyExists(ConflictError):
 
     def __str__(self) -> str:
         return f"Прайс-Лист '{self.price_list_name}' уже существует."
+
+
+@dataclass(slots=True, eq=False)
+class PriceListNotFound(NotFoundError):
+    price_list_id: UUID
+
+    def __str__(self) -> str:
+        return f"Прайс-лист {self.price_list_id} не найден."

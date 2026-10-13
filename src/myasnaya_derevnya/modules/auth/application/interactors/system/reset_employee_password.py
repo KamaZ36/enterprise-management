@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from myasnaya_derevnya.modules.auth.application.errors import UserNotFound
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.credential import UserCredentialType
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base import (
     CredentialRepository,
@@ -9,7 +12,6 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base 
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 
 @dataclass(frozen=True, slots=True)

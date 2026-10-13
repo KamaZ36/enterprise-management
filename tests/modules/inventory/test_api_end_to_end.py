@@ -96,13 +96,13 @@ async def _create_warehouse(client: AsyncClient, session: AsyncSession) -> str:
 
 async def _create_nomenclature(client: AsyncClient) -> str:
     category = await client.post(
-        "/api/categories",
+        "/api/catalog/categories",
         json={"name": f"{TEST_PREFIX}{uuid4().hex[:8]}", "parent_id": None},
     )
     assert category.status_code == 201, category.text
 
     nomenclature = await client.post(
-        "/api/nomenclatures",
+        "/api/catalog/nomenclatures",
         json={
             "sku": f"{TEST_PREFIX}{uuid4().hex[:8]}",
             "name": "Говядина",
@@ -126,7 +126,7 @@ async def test_full_receipt_flow_through_api(
     assert listed.status_code == 200
     assert warehouse_id in [item["id"] for item in listed.json()]
 
-    roles = await client.get("/api/employees/roles")
+    roles = await client.get("/api/staff/employees/roles")
     assert roles.status_code == 200, roles.text
     assert any(item["code"] == settings.admin_role_code for item in roles.json())
 

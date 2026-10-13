@@ -68,14 +68,14 @@ class FakeCategoryRepository:
         return self.exists
 
 
-class FakeNomenclatureUsage:
+class FakeStockMovementRepository:
     def __init__(self, has_movements: bool = False) -> None:
-        self.has_movements_value = has_movements
+        self.count = 1 if has_movements else 0
         self.calls: list[UUID] = []
 
-    async def has_movements(self, nomenclature_id: UUID) -> bool:
+    async def count_for_nomenclature(self, nomenclature_id: UUID) -> int:
         self.calls.append(nomenclature_id)
-        return self.has_movements_value
+        return self.count
 
 
 class FakeTransactionManager:
@@ -106,20 +106,20 @@ def build(
     has_movements: bool = False,
 ):
     repository = FakeNomenclatureRepository(nomenclature)
-    usage = FakeNomenclatureUsage(has_movements=has_movements)
+    movements = FakeStockMovementRepository(has_movements=has_movements)
     transaction_manager = FakeTransactionManager()
     interactor = UpdateNomenclatureInteractor(
         identity_provider=FakeIdentityProvider(),
         nomenclature_repository=repository,
         category_repository=FakeCategoryRepository(exists=category_exists),
-        nomenclature_usage=usage,
+        movement_repository=movements,
         changes_policy=NomenclatureChangesPolicy(),
         business_api=FakeBusinessAPI(),
         staff_api=FakeStaffAPI(allowed=allowed),
         transaction_manager=transaction_manager,
     )
 
-    return interactor, repository, usage, transaction_manager
+    return interactor, repository, movements, transaction_manager
 
 
 async def test_requires_update_permission() -> None:
@@ -143,7 +143,7 @@ async def test_unknown_nomenclature_raises_not_found() -> None:
 
 async def test_rename_is_applied_and_saved() -> None:
     nomenclature = make_nomenclature()
-    interactor, repository, usage, transaction_manager = build(nomenclature)
+    interactor, repository, movements, transaction_manager = build(nomenclature)
 
     await interactor(
         UpdateNomenclatureCommand(nomenclature_id=nomenclature.id, name="  Новое имя ")
@@ -152,7 +152,7 @@ async def test_rename_is_applied_and_saved() -> None:
     assert nomenclature.name == "Новое имя"
     assert repository.saved == [nomenclature]
     assert transaction_manager.commits == 1
-    assert usage.calls == []
+    assert movements.calls == []
 
 
 async def test_empty_name_is_rejected() -> None:
@@ -183,7 +183,7 @@ async def test_unknown_category_is_rejected() -> None:
 
 async def test_unit_can_change_while_there_are_no_movements() -> None:
     nomenclature = make_nomenclature()
-    interactor, _, usage, _ = build(nomenclature, has_movements=False)
+    interactor, _, movements, _ = build(nomenclature, has_movements=False)
 
     await interactor(
         UpdateNomenclatureCommand(
@@ -192,7 +192,7 @@ async def test_unit_can_change_while_there_are_no_movements() -> None:
     )
 
     assert nomenclature.unit is UnitOfMeasurement.PIECE
-    assert usage.calls == [nomenclature.id]
+    assert movements.calls == [nomenclature.id]
 
 
 async def test_unit_cannot_change_after_movements() -> None:

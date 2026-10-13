@@ -66,7 +66,7 @@ from myasnaya_derevnya.modules.staff.presentation.api.v1.schemas import (
     UpdateRoleSchema,
 )
 
-router = APIRouter(prefix="/api/employees", tags=["Сотрудники"])
+router = APIRouter(prefix="/api/staff/employees", tags=["Сотрудники"])
 
 
 @router.post("", description="Создать сотрудника")

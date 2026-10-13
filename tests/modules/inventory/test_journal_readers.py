@@ -12,14 +12,14 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.application.commands import ReceiptLineCommand
-from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.get_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.get import (
     GetReceiptInteractor,
     GetReceiptQuery,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptCommand,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.sqlalchemy import (

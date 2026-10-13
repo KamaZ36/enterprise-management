@@ -96,3 +96,36 @@ class WarehouseListItem:
     name: str
     type: WarehouseType
     is_active: bool
+
+
+@dataclass(frozen=True, slots=True)
+class TransferListItem:
+    id: UUID
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    line_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class TransferLineItem:
+    id: UUID
+    nomenclature_id: UUID
+    quantity: Decimal
+    lot_code: str | None
+    nomenclature_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TransferDetail:
+    id: UUID
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    lines: list[TransferLineItem]

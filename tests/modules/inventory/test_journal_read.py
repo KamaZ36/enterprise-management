@@ -15,19 +15,19 @@ from myasnaya_derevnya.modules.inventory.application.dto import (
     WriteOffLineItem,
     WriteOffListItem,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.get_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.get import (
     GetReceiptInteractor,
     GetReceiptQuery,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.get_write_off import (
-    GetWriteOffInteractor,
-    GetWriteOffQuery,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.list_receipts import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list import (
     ListReceiptsInteractor,
     ListReceiptsQuery,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.list_write_offs import (
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.get import (
+    GetWriteOffInteractor,
+    GetWriteOffQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list import (
     ListWriteOffsInteractor,
     ListWriteOffsQuery,
 )

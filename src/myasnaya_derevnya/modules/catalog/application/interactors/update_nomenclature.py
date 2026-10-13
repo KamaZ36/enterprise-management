@@ -16,7 +16,6 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
 from myasnaya_derevnya.modules.catalog.domain.permissions import UPDATE_NOMENCLATURE
 from myasnaya_derevnya.modules.catalog.domain.services.nomenclature_changes import (
     NomenclatureChangesPolicy,
-    NomenclatureUsage,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base import (
     CategoryRepository,
@@ -47,7 +46,6 @@ class UpdateNomenclatureInteractor:
         nomenclature_repository: NomenclatureRepository,
         category_repository: CategoryRepository,
         movement_repository: StockMovementRepository,
-        nomenclature_usage: NomenclatureUsage,
         changes_policy: NomenclatureChangesPolicy,
         business_api: BusinessAPI,
         staff_api: StaffAPI,
@@ -57,7 +55,6 @@ class UpdateNomenclatureInteractor:
         self._nomenclature_repository = nomenclature_repository
         self._category_repository = category_repository
         self._movement_repository = movement_repository
-        self._nomenclature_usage = nomenclature_usage
         self._changes_policy = changes_policy
         self._business_api = business_api
         self._staff_api = staff_api

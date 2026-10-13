@@ -1,4 +1,3 @@
-from typing import Protocol
 from uuid import UUID
 
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
@@ -6,10 +5,6 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.domain.errors import NomenclatureInUseError
-
-
-class NomenclatureUsage(Protocol):
-    async def has_movements(self, nomenclature_id: UUID) -> bool: ...
 
 
 class NomenclatureChangesPolicy:

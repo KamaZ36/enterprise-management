@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.settings import settings
 from myasnaya_derevnya.modules.auth.application.interactors.change_password import (
     ChangePasswordInteractor,
 )
@@ -16,8 +19,26 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.create_employ
 from myasnaya_derevnya.modules.auth.application.interactors.system.create_user import (
     CreateUserInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.interactors.system.ensure_user_by_phone import (
+    EnsureUserByPhoneInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.request_login_code import (
+    RequestLoginCodeInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.system.reset_employee_password import (
     ResetEmployeePasswordInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.start_session import (
+    StartSessionInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.verify_login_code import (
+    VerifyLoginCodeInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.services.login_code_service import (
+    LoginCodeService,
+)
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base import (
     CredentialRepository,
@@ -31,6 +52,12 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.sqlalchemy import (
     SQLAlchemyUserIdentityRepository,
 )
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.one_time_code.base import (
+    OneTimeCodeRepository,
+)
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.one_time_code.sqlalchemy import (
+    SQLAlchemyOneTimeCodeRepository,
+)
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
@@ -43,11 +70,38 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.bas
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.sqlalchemy import (
     SQLAlchemyUserSessionRepository,
 )
+from myasnaya_derevnya.modules.auth.infrastructure.service.login_code_sender.base import (
+    LoginCodeSender,
+)
+from myasnaya_derevnya.modules.auth.infrastructure.service.login_code_sender.cli import (
+    LoggingLoginCodeSender,
+)
 from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 
 
 class AuthDepProvider(Provider):
+    # LOGIN CODES
+    @provide(scope=Scope.REQUEST)
+    def get_one_time_code_repository(
+        self, session: AsyncSession
+    ) -> OneTimeCodeRepository:
+        return SQLAlchemyOneTimeCodeRepository(session)
+
+    @provide(scope=Scope.APP)
+    def get_login_code_service(self) -> LoginCodeService:
+        return LoginCodeService(
+            secret=settings.login_code_secret,
+            code_length=settings.login_code_length,
+            ttl=timedelta(seconds=settings.login_code_ttl_seconds),
+            max_attempts=settings.login_code_max_attempts,
+            min_interval=timedelta(seconds=settings.login_code_min_interval_seconds),
+            hourly_limit=settings.login_code_hourly_limit,
+        )
+
+    @provide(scope=Scope.APP)
+    def get_login_code_sender(self) -> LoginCodeSender:
+        return LoggingLoginCodeSender()
+
     # REPOSITORIES
     @provide(scope=Scope.REQUEST)
     def get_credential_repository(self, session: AsyncSession) -> CredentialRepository:
@@ -89,6 +143,20 @@ class AuthDepProvider(Provider):
     create_employee_credential = provide(
         CreateEmployeeCredentialInteractor, scope=Scope.REQUEST
     )
+
+    ensure_user_by_phone_interactor = provide(
+        EnsureUserByPhoneInteractor, scope=Scope.REQUEST
+    )
+
+    request_login_code_interactor = provide(
+        RequestLoginCodeInteractor, scope=Scope.REQUEST
+    )
+
+    verify_login_code_interactor = provide(
+        VerifyLoginCodeInteractor, scope=Scope.REQUEST
+    )
+
+    start_session_interactor = provide(StartSessionInteractor, scope=Scope.REQUEST)
 
     # FACADE
     auth_api = provide(AuthAPI, scope=Scope.REQUEST)

@@ -21,10 +21,10 @@ from myasnaya_derevnya.modules.business.presentation.api.v1.schemas import (
     UpdateOrgUnitSchema,
 )
 
-router = APIRouter(prefix="/api", tags=["Структурные подразделения"])
+router = APIRouter(prefix="/api/business", tags=["Структурные подразделения"])
 
 
-@router.post("/org-unit", description="Создать структурную единицу")
+@router.post("/org-units", description="Создать структурную единицу")
 async def create_org_unit(request: Request, data: CreateOrgUnitSchema) -> JSONResponse:
     command = CreateOrgUnitCommand(
         parent_id=data.parent_id,
@@ -43,7 +43,7 @@ async def create_org_unit(request: Request, data: CreateOrgUnitSchema) -> JSONRe
 
 
 @router.get(
-    "/org-unit",
+    "/org-units",
     response_model=list[OrgUnitSchema],
     description="Список организационных единиц",
 )
@@ -55,7 +55,7 @@ async def list_org_units(request: Request) -> list[OrgUnitSchema]:
     return [OrgUnitSchema.from_dto(item) for item in items]
 
 
-@router.patch("/org-unit/{org_unit_id}", description="Изменить структурную единицу")
+@router.patch("/org-units/{org_unit_id}", description="Изменить структурную единицу")
 async def update_org_unit(
     request: Request, org_unit_id: UUID, data: UpdateOrgUnitSchema
 ) -> JSONResponse:

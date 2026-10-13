@@ -67,26 +67,26 @@ def test_create_app_exposes_endpoints() -> None:
 def test_auth_endpoints_are_exposed() -> None:
     paths = create_app().openapi()["paths"]
 
-    assert "/api/login/password" in paths
-    assert "/api/logout" in paths
+    assert "/api/auth/login/password" in paths
+    assert "/api/auth/logout" in paths
 
 
 def test_revoke_role_endpoint_is_exposed() -> None:
     paths = create_app().openapi()["paths"]
 
-    assert "/api/employees/role-assignments/{assignment_id}" in paths
+    assert "/api/staff/employees/role-assignments/{assignment_id}" in paths
 
 
 def test_employee_read_endpoints_are_exposed() -> None:
     paths = create_app().openapi()["paths"]
 
-    assert "get" in paths["/api/employees"]
-    assert "get" in paths["/api/employees/{employee_id}"]
+    assert "get" in paths["/api/staff/employees"]
+    assert "get" in paths["/api/staff/employees/{employee_id}"]
 
 
 def test_read_endpoints_document_response_schema() -> None:
     paths = create_app().openapi()["paths"]
-    responses = paths["/api/employees"]["get"]["responses"]
+    responses = paths["/api/staff/employees"]["get"]["responses"]
 
     assert "200" in responses
 
@@ -115,7 +115,7 @@ def test_inventory_read_endpoints_document_response_schema() -> None:
 def test_paginated_endpoints_declare_window_bounds() -> None:
     spec = create_app().openapi()
 
-    for path in ("/api/employees", "/api/nomenclatures"):
+    for path in ("/api/staff/employees", "/api/catalog/nomenclatures"):
         parameters = {
             item["name"]: item for item in spec["paths"][path]["get"]["parameters"]
         }

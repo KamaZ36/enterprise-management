@@ -24,49 +24,9 @@ export const CAN = {
 
 export const SECTIONS = [
   { path: "/", title: "Главная", icon: "HomeFilled", permissions: [] },
-  {
-    path: "/documents",
-    title: "Журнал",
-    icon: "Document",
-    permissions: CAN.documentsOpen,
-  },
-  {
-    path: "/balances",
-    title: "Остатки",
-    icon: "Box",
-    permissions: CAN.balancesOpen,
-  },
-  {
-    path: "/nomenclatures",
-    title: "Номенклатура",
-    icon: "Goods",
-    permissions: CAN.nomenclaturesOpen,
-  },
-  {
-    path: "/categories",
-    title: "Категории",
-    icon: "Files",
-    permissions: ["category.read"],
-  },
-  {
-    path: "/warehouses",
-    title: "Склады",
-    icon: "OfficeBuilding",
-    permissions: CAN.warehouseCreate,
-  },
-  {
-    path: "/org-units",
-    title: "Организация",
-    icon: "Grid",
-    permissions: CAN.orgUnitsOpen,
-  },
-  {
-    path: "/employees",
-    title: "Сотрудники",
-    icon: "User",
-    permissions: CAN.employeesOpen,
-  },
-  { path: "/roles", title: "Роли", icon: "Key", permissions: CAN.rolesOpen },
+  { module: "inventory", title: "Склад", icon: "OfficeBuilding" },
+  { module: "catalog", title: "Справочники", icon: "Goods" },
+  { module: "staff", title: "Персонал", icon: "User" },
 ] as const;
 
 export type Section = (typeof SECTIONS)[number];

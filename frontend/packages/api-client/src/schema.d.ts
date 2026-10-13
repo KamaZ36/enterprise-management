@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/login/password": {
+    "/api/auth/login/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -17,14 +17,14 @@ export interface paths {
          * Login By Password
          * @description Аутентификация по паролю (Для сотрудников)
          */
-        post: operations["login_by_password_api_login_password_post"];
+        post: operations["login_by_password_api_auth_login_password_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/logout": {
+    "/api/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -37,14 +37,14 @@ export interface paths {
          * Logout
          * @description Завершить текущую сессию
          */
-        post: operations["logout_api_logout_post"];
+        post: operations["logout_api_auth_logout_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/me/password": {
+    "/api/auth/me/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -57,14 +57,14 @@ export interface paths {
          * Change Password
          * @description Сменить свой пароль
          */
-        post: operations["change_password_api_me_password_post"];
+        post: operations["change_password_api_auth_me_password_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/me": {
+    "/api/staff/me": {
         parameters: {
             query?: never;
             header?: never;
@@ -75,7 +75,7 @@ export interface paths {
          * Get Current User
          * @description Текущий пользователь и его права
          */
-        get: operations["get_current_user_api_me_get"];
+        get: operations["get_current_user_api_staff_me_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/permissions": {
+    "/api/staff/permissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -95,7 +95,7 @@ export interface paths {
          * List Permissions
          * @description Справочник прав
          */
-        get: operations["list_permissions_api_permissions_get"];
+        get: operations["list_permissions_api_staff_permissions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -104,7 +104,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/employees": {
+    "/api/staff/employees": {
         parameters: {
             query?: never;
             header?: never;
@@ -115,20 +115,20 @@ export interface paths {
          * List Employees
          * @description Список сотрудников
          */
-        get: operations["list_employees_api_employees_get"];
+        get: operations["list_employees_api_staff_employees_get"];
         put?: never;
         /**
          * Create Employee
          * @description Создать сотрудника
          */
-        post: operations["create_employee_api_employees_post"];
+        post: operations["create_employee_api_staff_employees_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/employees/credential": {
+    "/api/staff/employees/credential": {
         parameters: {
             query?: never;
             header?: never;
@@ -141,14 +141,14 @@ export interface paths {
          * Create Credential For Employee
          * @description Создать учетные данные для сотрудника
          */
-        post: operations["create_credential_for_employee_api_employees_credential_post"];
+        post: operations["create_credential_for_employee_api_staff_employees_credential_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/employees/roles": {
+    "/api/staff/employees/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -159,20 +159,20 @@ export interface paths {
          * List Roles
          * @description Список ролей
          */
-        get: operations["list_roles_api_employees_roles_get"];
+        get: operations["list_roles_api_staff_employees_roles_get"];
         put?: never;
         /**
          * Create Employee Role
          * @description Создать роль сотрудника
          */
-        post: operations["create_employee_role_api_employees_roles_post"];
+        post: operations["create_employee_role_api_staff_employees_roles_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/employees/{employee_id}/roles": {
+    "/api/staff/employees/{employee_id}/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -183,20 +183,20 @@ export interface paths {
          * List Employee Roles
          * @description Роли сотрудника
          */
-        get: operations["list_employee_roles_api_employees__employee_id__roles_get"];
+        get: operations["list_employee_roles_api_staff_employees__employee_id__roles_get"];
         put?: never;
         /**
          * Assign Role
          * @description Назначить роль сотруднику
          */
-        post: operations["assign_role_api_employees__employee_id__roles_post"];
+        post: operations["assign_role_api_staff_employees__employee_id__roles_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/employees/role-assignments/{assignment_id}": {
+    "/api/staff/employees/role-assignments/{assignment_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -210,13 +210,13 @@ export interface paths {
          * Revoke Role
          * @description Отозвать назначение роли
          */
-        delete: operations["revoke_role_api_employees_role_assignments__assignment_id__delete"];
+        delete: operations["revoke_role_api_staff_employees_role_assignments__assignment_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/employees/{employee_id}": {
+    "/api/staff/employees/{employee_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -227,7 +227,7 @@ export interface paths {
          * Get Employee
          * @description Карточка сотрудника
          */
-        get: operations["get_employee_api_employees__employee_id__get"];
+        get: operations["get_employee_api_staff_employees__employee_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -237,10 +237,10 @@ export interface paths {
          * Update Employee
          * @description Изменить сотрудника
          */
-        patch: operations["update_employee_api_employees__employee_id__patch"];
+        patch: operations["update_employee_api_staff_employees__employee_id__patch"];
         trace?: never;
     };
-    "/api/employees/roles/{role_id}": {
+    "/api/staff/employees/roles/{role_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -254,17 +254,17 @@ export interface paths {
          * Delete Role
          * @description Удалить роль
          */
-        delete: operations["delete_role_api_employees_roles__role_id__delete"];
+        delete: operations["delete_role_api_staff_employees_roles__role_id__delete"];
         options?: never;
         head?: never;
         /**
          * Update Role
          * @description Изменить роль
          */
-        patch: operations["update_role_api_employees_roles__role_id__patch"];
+        patch: operations["update_role_api_staff_employees_roles__role_id__patch"];
         trace?: never;
     };
-    "/api/employees/{employee_id}/password": {
+    "/api/staff/employees/{employee_id}/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -277,14 +277,14 @@ export interface paths {
          * Reset Employee Password
          * @description Сбросить пароль сотруднику
          */
-        post: operations["reset_employee_password_api_employees__employee_id__password_post"];
+        post: operations["reset_employee_password_api_staff_employees__employee_id__password_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/org-unit": {
+    "/api/business/org-units": {
         parameters: {
             query?: never;
             header?: never;
@@ -295,20 +295,20 @@ export interface paths {
          * List Org Units
          * @description Список организационных единиц
          */
-        get: operations["list_org_units_api_org_unit_get"];
+        get: operations["list_org_units_api_business_org_units_get"];
         put?: never;
         /**
          * Create Org Unit
          * @description Создать структурную единицу
          */
-        post: operations["create_org_unit_api_org_unit_post"];
+        post: operations["create_org_unit_api_business_org_units_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/org-unit/{org_unit_id}": {
+    "/api/business/org-units/{org_unit_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -325,10 +325,10 @@ export interface paths {
          * Update Org Unit
          * @description Изменить структурную единицу
          */
-        patch: operations["update_org_unit_api_org_unit__org_unit_id__patch"];
+        patch: operations["update_org_unit_api_business_org_units__org_unit_id__patch"];
         trace?: never;
     };
-    "/api/nomenclatures": {
+    "/api/catalog/nomenclatures": {
         parameters: {
             query?: never;
             header?: never;
@@ -339,20 +339,20 @@ export interface paths {
          * List Nomenclatures
          * @description Список номенклатуры
          */
-        get: operations["list_nomenclatures_api_nomenclatures_get"];
+        get: operations["list_nomenclatures_api_catalog_nomenclatures_get"];
         put?: never;
         /**
          * Create Nomenclature
          * @description Создать номенклатуру
          */
-        post: operations["create_nomenclature_api_nomenclatures_post"];
+        post: operations["create_nomenclature_api_catalog_nomenclatures_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/categories": {
+    "/api/catalog/categories": {
         parameters: {
             query?: never;
             header?: never;
@@ -363,60 +363,68 @@ export interface paths {
          * List Categories
          * @description Список категорий
          */
-        get: operations["list_categories_api_categories_get"];
+        get: operations["list_categories_api_catalog_categories_get"];
         put?: never;
         /**
          * Create Category
          * @description Создать категорию
          */
-        post: operations["create_category_api_categories_post"];
+        post: operations["create_category_api_catalog_categories_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/price_lists": {
+    "/api/catalog/price-lists": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Price Lists
+         * @description Прайс-листы
+         */
+        get: operations["list_price_lists_api_catalog_price_lists_get"];
         put?: never;
         /**
          * Create Price List
          * @description Создать Прайс-Лист
          */
-        post: operations["create_price_list_api_price_lists_post"];
+        post: operations["create_price_list_api_catalog_price_lists_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/price_lists/{price_list_id}/prices": {
+    "/api/catalog/price-lists/{price_list_id}/prices": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Price List Prices
+         * @description Позиции прайс-листа
+         */
+        get: operations["list_price_list_prices_api_catalog_price_lists__price_list_id__prices_get"];
         put?: never;
         /**
          * Create Price
          * @description Создать цену на номенклатуру в конкретном каталоге
          */
-        post: operations["create_price_api_price_lists__price_list_id__prices_post"];
+        post: operations["create_price_api_catalog_price_lists__price_list_id__prices_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/nomenclatures/{nomenclature_id}": {
+    "/api/catalog/nomenclatures/{nomenclature_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -433,10 +441,10 @@ export interface paths {
          * Update Nomenclature
          * @description Изменить номенклатуру
          */
-        patch: operations["update_nomenclature_api_nomenclatures__nomenclature_id__patch"];
+        patch: operations["update_nomenclature_api_catalog_nomenclatures__nomenclature_id__patch"];
         trace?: never;
     };
-    "/api/categories/{category_id}": {
+    "/api/catalog/categories/{category_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -453,7 +461,51 @@ export interface paths {
          * Update Category
          * @description Переименовать категорию
          */
-        patch: operations["update_category_api_categories__category_id__patch"];
+        patch: operations["update_category_api_catalog_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/catalog/org-units/{org_unit_id}/price-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Price List Binding
+         * @description Прайс-лист точки
+         */
+        get: operations["get_price_list_binding_api_catalog_org_units__org_unit_id__price_list_get"];
+        /**
+         * Bind Price List
+         * @description Назначить прайс-лист точке
+         */
+        put: operations["bind_price_list_api_catalog_org_units__org_unit_id__price_list_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/nomenclatures/{nomenclature_id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Nomenclature Prices
+         * @description Цены номенклатуры по прайс-листам
+         */
+        get: operations["list_nomenclature_prices_api_catalog_nomenclatures__nomenclature_id__prices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/inventory/warehouses": {
@@ -668,6 +720,114 @@ export interface paths {
         patch: operations["update_warehouse_api_inventory_warehouses__warehouse_id__patch"];
         trace?: never;
     };
+    "/api/inventory/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Transfers
+         * @description Журнал перемещений
+         */
+        get: operations["list_transfers_api_inventory_transfers_get"];
+        put?: never;
+        /**
+         * Create Transfer
+         * @description Создать перемещение (черновик)
+         */
+        post: operations["create_transfer_api_inventory_transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/transfers/{transfer_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Transfer
+         * @description Провести перемещение
+         */
+        post: operations["post_transfer_api_inventory_transfers__transfer_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/transfers/{transfer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Transfer
+         * @description Карточка перемещения
+         */
+        get: operations["get_transfer_api_inventory_transfers__transfer_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Transfer
+         * @description Изменить черновик перемещения
+         */
+        patch: operations["update_transfer_api_inventory_transfers__transfer_id__patch"];
+        trace?: never;
+    };
+    "/api/customers/login/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Login Code
+         * @description Отправить код входа (для клиентов)
+         */
+        post: operations["request_login_code_api_customers_login_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login Customer
+         * @description Аутентификация по коду из СМС (для клиентов)
+         */
+        post: operations["login_customer_api_customers_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -720,6 +880,14 @@ export interface components {
              * @description Стоимость остатка в копейках. null — нет права видеть стоимость
              */
             total_value_kopecks?: number | null;
+        };
+        /** BindPriceListSchema */
+        BindPriceListSchema: {
+            /**
+             * Price List Id
+             * Format: uuid
+             */
+            price_list_id: string;
         };
         /** CategorySchema */
         CategorySchema: {
@@ -862,6 +1030,28 @@ export interface components {
             permission_codes: string[];
             /** Grantable Role Ids */
             grantable_role_ids: string[];
+        };
+        /** CreateTransferSchema */
+        CreateTransferSchema: {
+            /**
+             * From Warehouse Id
+             * Format: uuid
+             */
+            from_warehouse_id: string;
+            /**
+             * To Warehouse Id
+             * Format: uuid
+             */
+            to_warehouse_id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["TransferLineSchema"][];
+            /** Comment */
+            comment?: string | null;
         };
         /** CreateWarehouseSchema */
         CreateWarehouseSchema: {
@@ -1009,6 +1199,13 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** LoginCustomerCommand */
+        LoginCustomerCommand: {
+            /** Phone */
+            phone: string;
+            /** Code */
+            code: string;
+        };
         /** NomenclatureListSchema */
         NomenclatureListSchema: {
             /** Items */
@@ -1019,6 +1216,25 @@ export interface components {
             limit: number;
             /** Offset */
             offset: number;
+        };
+        /** NomenclaturePriceListSchema */
+        NomenclaturePriceListSchema: {
+            /** Items */
+            items: components["schemas"]["NomenclaturePriceSchema"][];
+        };
+        /** NomenclaturePriceSchema */
+        NomenclaturePriceSchema: {
+            /**
+             * Price List Id
+             * Format: uuid
+             */
+            price_list_id: string;
+            /** Price List Name */
+            price_list_name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Value */
+            value: number | null;
         };
         /** NomenclatureSchema */
         NomenclatureSchema: {
@@ -1073,13 +1289,66 @@ export interface components {
          * OrgUnitType
          * @enum {string}
          */
-        OrgUnitType: "root" | "production" | "group" | "cafe" | "shop" | "department";
+        OrgUnitType: "root" | "production" | "group" | "cafe" | "shop";
         /** PermissionSchema */
         PermissionSchema: {
             /** Code */
             code: string;
             /** Description */
             description: string;
+        };
+        /** PriceListBindingSchema */
+        PriceListBindingSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /**
+             * Price List Id
+             * Format: uuid
+             */
+            price_list_id: string;
+            /** Price List Name */
+            price_list_name?: string | null;
+        };
+        /** PriceListEntryListSchema */
+        PriceListEntryListSchema: {
+            /** Items */
+            items: components["schemas"]["PriceListEntrySchema"][];
+        };
+        /** PriceListEntrySchema */
+        PriceListEntrySchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** PriceListPriceListSchema */
+        PriceListPriceListSchema: {
+            /** Items */
+            items: components["schemas"]["PriceListPriceSchema"][];
+            /** Total */
+            total: number;
+        };
+        /** PriceListPriceSchema */
+        PriceListPriceSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string;
+            /** Sku */
+            sku: string;
+            /** Value */
+            value: number | null;
         };
         /** ReceiptDetailSchema */
         ReceiptDetailSchema: {
@@ -1196,6 +1465,11 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** RequestLoginCodeCommand */
+        RequestLoginCodeCommand: {
+            /** Phone */
+            phone: string;
+        };
         /** RoleSchema */
         RoleSchema: {
             /**
@@ -1219,6 +1493,110 @@ export interface components {
             is_wildcard: boolean;
             /** Permission Codes */
             permission_codes: string[];
+        };
+        /** TransferDetailSchema */
+        TransferDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * From Warehouse Id
+             * Format: uuid
+             */
+            from_warehouse_id: string;
+            /**
+             * To Warehouse Id
+             * Format: uuid
+             */
+            to_warehouse_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Lines */
+            lines: components["schemas"]["TransferLineViewSchema"][];
+        };
+        /** TransferLineSchema */
+        TransferLineSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Quantity */
+            quantity: number | string;
+            /** Lot Code */
+            lot_code?: string | null;
+        };
+        /** TransferLineViewSchema */
+        TransferLineViewSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Lot Code */
+            lot_code: string | null;
+        };
+        /** TransferListItemSchema */
+        TransferListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * From Warehouse Id
+             * Format: uuid
+             */
+            from_warehouse_id: string;
+            /**
+             * To Warehouse Id
+             * Format: uuid
+             */
+            to_warehouse_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Line Count */
+            line_count: number;
+        };
+        /** TransferListSchema */
+        TransferListSchema: {
+            /** Items */
+            items: components["schemas"]["TransferListItemSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /**
          * UnitOfMeasurement
@@ -1277,6 +1655,18 @@ export interface components {
             level?: number | null;
             /** Permission Codes */
             permission_codes?: string[] | null;
+        };
+        /** UpdateTransferSchema */
+        UpdateTransferSchema: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["TransferLineSchema"][];
+            /** Comment */
+            comment?: string | null;
         };
         /** UpdateWarehouseSchema */
         UpdateWarehouseSchema: {
@@ -1429,7 +1819,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    login_by_password_api_login_password_post: {
+    login_by_password_api_auth_login_password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1462,7 +1852,7 @@ export interface operations {
             };
         };
     };
-    logout_api_logout_post: {
+    logout_api_auth_logout_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1482,7 +1872,7 @@ export interface operations {
             };
         };
     };
-    change_password_api_me_password_post: {
+    change_password_api_auth_me_password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1515,7 +1905,7 @@ export interface operations {
             };
         };
     };
-    get_current_user_api_me_get: {
+    get_current_user_api_staff_me_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1535,7 +1925,7 @@ export interface operations {
             };
         };
     };
-    list_permissions_api_permissions_get: {
+    list_permissions_api_staff_permissions_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1555,7 +1945,7 @@ export interface operations {
             };
         };
     };
-    list_employees_api_employees_get: {
+    list_employees_api_staff_employees_get: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1588,7 +1978,7 @@ export interface operations {
             };
         };
     };
-    create_employee_api_employees_post: {
+    create_employee_api_staff_employees_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1621,7 +2011,7 @@ export interface operations {
             };
         };
     };
-    create_credential_for_employee_api_employees_credential_post: {
+    create_credential_for_employee_api_staff_employees_credential_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1654,7 +2044,7 @@ export interface operations {
             };
         };
     };
-    list_roles_api_employees_roles_get: {
+    list_roles_api_staff_employees_roles_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1674,7 +2064,7 @@ export interface operations {
             };
         };
     };
-    create_employee_role_api_employees_roles_post: {
+    create_employee_role_api_staff_employees_roles_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1707,7 +2097,7 @@ export interface operations {
             };
         };
     };
-    list_employee_roles_api_employees__employee_id__roles_get: {
+    list_employee_roles_api_staff_employees__employee_id__roles_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1738,7 +2128,7 @@ export interface operations {
             };
         };
     };
-    assign_role_api_employees__employee_id__roles_post: {
+    assign_role_api_staff_employees__employee_id__roles_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1773,7 +2163,7 @@ export interface operations {
             };
         };
     };
-    revoke_role_api_employees_role_assignments__assignment_id__delete: {
+    revoke_role_api_staff_employees_role_assignments__assignment_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -1804,7 +2194,7 @@ export interface operations {
             };
         };
     };
-    get_employee_api_employees__employee_id__get: {
+    get_employee_api_staff_employees__employee_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1835,7 +2225,7 @@ export interface operations {
             };
         };
     };
-    update_employee_api_employees__employee_id__patch: {
+    update_employee_api_staff_employees__employee_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -1870,7 +2260,7 @@ export interface operations {
             };
         };
     };
-    delete_role_api_employees_roles__role_id__delete: {
+    delete_role_api_staff_employees_roles__role_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -1901,7 +2291,7 @@ export interface operations {
             };
         };
     };
-    update_role_api_employees_roles__role_id__patch: {
+    update_role_api_staff_employees_roles__role_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -1936,7 +2326,7 @@ export interface operations {
             };
         };
     };
-    reset_employee_password_api_employees__employee_id__password_post: {
+    reset_employee_password_api_staff_employees__employee_id__password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1967,7 +2357,7 @@ export interface operations {
             };
         };
     };
-    list_org_units_api_org_unit_get: {
+    list_org_units_api_business_org_units_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1987,7 +2377,7 @@ export interface operations {
             };
         };
     };
-    create_org_unit_api_org_unit_post: {
+    create_org_unit_api_business_org_units_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2020,7 +2410,7 @@ export interface operations {
             };
         };
     };
-    update_org_unit_api_org_unit__org_unit_id__patch: {
+    update_org_unit_api_business_org_units__org_unit_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -2055,7 +2445,7 @@ export interface operations {
             };
         };
     };
-    list_nomenclatures_api_nomenclatures_get: {
+    list_nomenclatures_api_catalog_nomenclatures_get: {
         parameters: {
             query?: {
                 /** @description Поиск по названию или SKU */
@@ -2091,7 +2481,7 @@ export interface operations {
             };
         };
     };
-    create_nomenclature_api_nomenclatures_post: {
+    create_nomenclature_api_catalog_nomenclatures_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2124,7 +2514,7 @@ export interface operations {
             };
         };
     };
-    list_categories_api_categories_get: {
+    list_categories_api_catalog_categories_get: {
         parameters: {
             query?: {
                 /** @description Поиск по названию */
@@ -2156,7 +2546,7 @@ export interface operations {
             };
         };
     };
-    create_category_api_categories_post: {
+    create_category_api_catalog_categories_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2189,7 +2579,27 @@ export interface operations {
             };
         };
     };
-    create_price_list_api_price_lists_post: {
+    list_price_lists_api_catalog_price_lists_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListEntryListSchema"];
+                };
+            };
+        };
+    };
+    create_price_list_api_catalog_price_lists_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2222,7 +2632,42 @@ export interface operations {
             };
         };
     };
-    create_price_api_price_lists__price_list_id__prices_post: {
+    list_price_list_prices_api_catalog_price_lists__price_list_id__prices_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                price_list_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListPriceListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_price_api_catalog_price_lists__price_list_id__prices_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2257,7 +2702,7 @@ export interface operations {
             };
         };
     };
-    update_nomenclature_api_nomenclatures__nomenclature_id__patch: {
+    update_nomenclature_api_catalog_nomenclatures__nomenclature_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -2292,7 +2737,7 @@ export interface operations {
             };
         };
     };
-    update_category_api_categories__category_id__patch: {
+    update_category_api_catalog_categories__category_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -2314,6 +2759,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_price_list_binding_api_catalog_org_units__org_unit_id__price_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListBindingSchema"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bind_price_list_api_catalog_org_units__org_unit_id__price_list_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BindPriceListSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_nomenclature_prices_api_catalog_nomenclatures__nomenclature_id__prices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                nomenclature_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NomenclaturePriceListSchema"];
                 };
             };
             /** @description Validation Error */
@@ -2715,6 +3257,236 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateWarehouseSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_transfers_api_inventory_transfers_get: {
+        parameters: {
+            query?: {
+                warehouse_id?: string | null;
+                limit?: number;
+                offset?: number;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transfer_api_inventory_transfers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_transfer_api_inventory_transfers__transfer_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transfer_api_inventory_transfers__transfer_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_transfer_api_inventory_transfers__transfer_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransferSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_login_code_api_customers_login_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestLoginCodeCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_customer_api_customers_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginCustomerCommand"];
             };
         };
         responses: {

@@ -5,11 +5,11 @@ from decimal import Decimal
 from uuid import UUID
 
 from myasnaya_derevnya.modules.inventory.application.commands import ReceiptLineCommand
-from myasnaya_derevnya.modules.inventory.application.interactors.create_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
     CreateReceiptInteractor,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.post_receipt import (
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptCommand,
     PostReceiptInteractor,
 )

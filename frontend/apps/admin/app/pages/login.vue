@@ -59,7 +59,7 @@ async function submit(): Promise<void> {
 
   try {
     await signIn({ username: username.value.trim(), password: password.value });
-    await navigateTo("/employees");
+    await navigateTo("/staff/employees");
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : "Не удалось войти";
   } finally {

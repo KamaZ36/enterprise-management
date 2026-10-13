@@ -22,8 +22,8 @@ export function createApiClient(options: {
       return request;
     },
     onResponse({ request, response }) {
-      const isLogin = request.url.includes("/api/login");
-      const isPasswordChange = request.url.includes("/api/me/password");
+      const isLogin = request.url.includes("/api/auth/login");
+      const isPasswordChange = request.url.includes("/api/auth/me/password");
       const hadToken = Boolean(request.headers.get("Authorization"));
       if (
         response.status === 401 &&
@@ -46,7 +46,7 @@ export async function login(
   client: ApiClient,
   credentials: { username: string; password: string },
 ): Promise<string> {
-  const { data, response } = await client.POST("/api/login/password", {
+  const { data, response } = await client.POST("/api/auth/login/password", {
     body: credentials,
   });
 
@@ -62,5 +62,5 @@ export async function login(
 }
 
 export async function logout(client: ApiClient): Promise<void> {
-  await client.POST("/api/logout", {});
+  await client.POST("/api/auth/logout", {});
 }

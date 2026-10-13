@@ -301,3 +301,59 @@ STOCK_LOT_BALANCES_TABLE = Table(
     Index("ix_stock_lot_balances_lot_id", "lot_id"),
     schema=DATABASE_SCHEMA,
 )
+
+
+TRANSFERS_TABLE = Table(
+    "transfers",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("status", String(32), nullable=False),
+    Column("occurred_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "from_warehouse_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column(
+        "to_warehouse_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("comment", String(512), nullable=True),
+    Column("created_by", UUID, nullable=True),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column("posted_at", DateTime(timezone=True), nullable=True),
+    Index("ix_transfers_from_occurred_at", "from_warehouse_id", "occurred_at"),
+    Index("ix_transfers_to_occurred_at", "to_warehouse_id", "occurred_at"),
+    Index("ix_transfers_status", "status"),
+    schema=DATABASE_SCHEMA,
+)
+
+
+TRANSFER_LINES_TABLE = Table(
+    "transfer_lines",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column(
+        "transfer_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.transfers.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("nomenclature_id", UUID, nullable=False),
+    Column(
+        "lot_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.stock_lots.id", ondelete="RESTRICT"),
+        nullable=True,
+    ),
+    Column("lot_code", String(64), nullable=True),
+    Column("quantity", QUANTITY, nullable=False),
+    CheckConstraint("quantity > 0", name="transfer_lines_quantity_positive"),
+    Index("ix_transfer_lines_transfer_id", "transfer_id"),
+    schema=DATABASE_SCHEMA,
+)

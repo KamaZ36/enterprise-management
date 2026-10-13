@@ -148,20 +148,6 @@ class EmptyDocumentError(InventoryDomainError):
 
 
 @dataclass(slots=True, eq=False)
-class NomenclatureNotAllowedInWarehouseError(InventoryDomainError):
-    warehouse_id: UUID
-    nomenclature_id: UUID
-    warehouse_type: str
-    nomenclature_type: str
-
-    def __str__(self) -> str:
-        return (
-            f"Номенклатура типа '{self.nomenclature_type}' не может храниться "
-            f"на складе типа '{self.warehouse_type}'"
-        )
-
-
-@dataclass(slots=True, eq=False)
 class WarehouseInUseError(ConflictError):
     warehouse_id: UUID
 
@@ -170,3 +156,19 @@ class WarehouseInUseError(ConflictError):
             f"Нельзя изменить назначение склада {self.warehouse_id}: "
             "на нём есть остатки"
         )
+
+
+@dataclass(slots=True, eq=False)
+class TransferNotFoundError(NotFoundError):
+    transfer_id: UUID
+
+    def __str__(self) -> str:
+        return f"Перемещение {self.transfer_id} не найдено."
+
+
+@dataclass(slots=True, eq=False)
+class SameWarehouseTransferError(InventoryDomainError):
+    warehouse_id: UUID
+
+    def __str__(self) -> str:
+        return "Нельзя переместить товар на тот же склад."

@@ -3,6 +3,9 @@ import asyncio
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.dependencies import container
 from myasnaya_derevnya.core.settings import settings
+from myasnaya_derevnya.modules.auth.application.services.password_service import (
+    PasswordService,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
     UserCredential,
     UserCredentialType,
@@ -21,7 +24,6 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
-from myasnaya_derevnya.modules.auth.services.password_service import PasswordService
 from myasnaya_derevnya.modules.business.domain.entities.org_unit import OrgUnit
 from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_repository.base import (
     OrgUnitRepository,

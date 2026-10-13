@@ -6,7 +6,7 @@ from myasnaya_derevnya.modules.auth.application.interactors.logout import (
     LogoutInteractor,
 )
 
-router = APIRouter(prefix="/api/logout", tags=["Аутентификация"])
+router = APIRouter(prefix="/api/auth/logout", tags=["Аутентификация"])
 
 
 @router.post("", description="Завершить текущую сессию")
