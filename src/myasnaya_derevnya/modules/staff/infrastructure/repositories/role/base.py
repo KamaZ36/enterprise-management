@@ -10,6 +10,10 @@ class RoleRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def save(self, role: Role) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def get_by_id(self, role_id: UUID) -> Role | None:
         raise NotImplementedError
 
