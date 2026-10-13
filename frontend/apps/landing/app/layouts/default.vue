@@ -1,13 +1,16 @@
+<script setup lang="ts">
+const menuOpen = ref(false);
+</script>
+
 <template>
   <div class="shell">
     <header class="top">
       <div class="wrap top__inner">
         <NuxtLink to="/" class="brand">
-          <span class="brand__mark">МД</span>
           <span class="brand__text">Мясная деревня</span>
         </NuxtLink>
 
-        <nav class="nav">
+        <nav class="nav" :class="{ 'nav--open': menuOpen }" @click="menuOpen = false">
           <a href="/#cafe">Кафе</a>
           <a href="/#shops">Магазины</a>
           <a href="/#company">О компании</a>
@@ -15,8 +18,17 @@
         </nav>
 
         <div class="top__right">
-          <span class="top__phone">+7 (000) 000-00-00</span>
-          <NuxtLink to="/cafe" class="button button--small">Сайт кафе</NuxtLink>
+          <NuxtLink to="/cafe" class="button button--small">Кафе</NuxtLink>
+
+          <button
+            class="burger"
+            type="button"
+            :aria-expanded="menuOpen"
+            aria-label="Меню"
+            @click="menuOpen = !menuOpen"
+          >
+            <AppIcon :name="menuOpen ? 'close' : 'menu'" />
+          </button>
         </div>
       </div>
     </header>

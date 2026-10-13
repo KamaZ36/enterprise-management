@@ -1,6 +1,11 @@
 export default defineNuxtConfig({
   compatibilityDate: "2026-10-11",
   devServer: { port: 3001, host: "127.0.0.1" },
+  vite: {
+    server: {
+      allowedHosts: [".tuna.am"],
+    },
+  },
   css: ["~/assets/css/main.css"],
   app: {
     head: {
