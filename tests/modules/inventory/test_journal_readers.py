@@ -1,3 +1,13 @@
+from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
+    GetPointPricesInteractor,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price.sqlalchemy import (
+    SQLAlchemyPriceRepository,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_binding.sqlalchemy import (
+    SQLAlchemyPriceListBindingRepository,
+)
+
 """Интеграционные тесты читателей журнала на настоящем PostgreSQL."""
 
 from datetime import UTC, datetime
@@ -106,7 +116,13 @@ async def test_receipt_card_resolves_nomenclature_names(
     interactor = GetReceiptInteractor(
         identity_provider=FakeIdentityProvider(uuid4()),
         receipt_reader=SQLAlchemyReceiptReader(db_session),
-        catalog_api=CatalogAPI(SQLAlchemyNomenclatureRepository(db_session)),
+        catalog_api=CatalogAPI(
+            get_point_prices_interactor=GetPointPricesInteractor(
+                binding_repository=SQLAlchemyPriceListBindingRepository(db_session),
+                price_repository=SQLAlchemyPriceRepository(db_session),
+            ),
+            nomenclature_repository=SQLAlchemyNomenclatureRepository(db_session),
+        ),
         business_api=FakeBusinessAPI(uuid4()),
         staff_api=FakeStaffAPI(),
     )

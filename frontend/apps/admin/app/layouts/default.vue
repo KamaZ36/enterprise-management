@@ -94,6 +94,11 @@ const route = useRoute();
 const { signOut } = useAuth();
 const { user, load, can, displayName } = useCurrentUser();
 
+// Принудительно: после смены пользователя кэш держал бы прежние права.
+onMounted(() => {
+  void load(true);
+});
+
 import { SECTIONS } from "~/utils/access";
 import { MODULE_ICONS, MODULES } from "~/utils/modules";
 import {
@@ -164,6 +169,11 @@ const sections = SECTIONS;
 
 const visibleSections = computed(() => {
   const items: { path: string; title: string; icon: string }[] = [];
+
+  // Пока не знаем, кто пришёл, показывать нечего: иначе мелькают чужие разделы.
+  if (!user.value) {
+    return items;
+  }
 
   for (const section of sections) {
     if (!("module" in section)) {

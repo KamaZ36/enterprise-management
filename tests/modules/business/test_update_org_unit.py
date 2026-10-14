@@ -32,6 +32,9 @@ class FakeStaffAPI:
         self.checked.append(permission.code)
         return self.allowed
 
+    async def can_anywhere(self, *, user_id: UUID, permission: object) -> bool:
+        return await self.can(user_id=user_id, permission=permission, org_unit_id=None)
+
 
 class FakeOrgUnitRepository:
     def __init__(self, org_unit: OrgUnit | None) -> None:

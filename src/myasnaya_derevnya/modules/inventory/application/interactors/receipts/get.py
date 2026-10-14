@@ -6,7 +6,9 @@ from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.application.dto import ReceiptDetail
-from myasnaya_derevnya.modules.inventory.domain.errors import ReceiptNotFoundError
+from myasnaya_derevnya.modules.inventory.domain.errors import (
+    ReceiptNotFoundError,
+)
 from myasnaya_derevnya.modules.inventory.domain.permissions import READ_DOCUMENTS
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base import (
     ReceiptReader,

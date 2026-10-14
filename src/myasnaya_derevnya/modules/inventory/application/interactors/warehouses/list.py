@@ -21,15 +21,17 @@ class ListWarehousesInteractor:
     async def __call__(self) -> list[WarehouseListItem]:
         current_user_id = await self._identity_provider.get_current_user_id()
 
+        # Одна проверка области вместо запроса на каждый склад: и быстрее,
+        # и смысл тот же — менеджер кафе видит только свои склады.
+        scope = await self._staff_api.scope_for(
+            user_id=current_user_id, permission=READ_WAREHOUSES
+        )
+
+        if scope.is_empty():
+            return []
+
         warehouses = await self._warehouse_reader.list_all()
 
-        allowed: list[WarehouseListItem] = []
-        for warehouse in warehouses:
-            if await self._staff_api.can(
-                user_id=current_user_id,
-                permission=READ_WAREHOUSES,
-                org_unit_id=warehouse.org_unit_id,
-            ):
-                allowed.append(warehouse)
-
-        return allowed
+        return [
+            warehouse for warehouse in warehouses if scope.covers(warehouse.org_unit_id)
+        ]

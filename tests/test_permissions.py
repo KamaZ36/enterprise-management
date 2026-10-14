@@ -32,12 +32,14 @@ def test_registry_matches_permissions_declared_in_modules() -> None:
     from myasnaya_derevnya.core.types.permission import Permission
     from myasnaya_derevnya.modules.business.domain import permissions as business
     from myasnaya_derevnya.modules.catalog.domain import permissions as catalog
+    from myasnaya_derevnya.modules.customer.domain import permissions as customer
     from myasnaya_derevnya.modules.inventory.domain import permissions as inventory
+    from myasnaya_derevnya.modules.sales.domain import permissions as sales
     from myasnaya_derevnya.modules.staff.domain import permissions as staff
 
     declared = [
         value.code
-        for module in (business, catalog, inventory, staff)
+        for module in (business, catalog, customer, inventory, sales, staff)
         for value in vars(module).values()
         if isinstance(value, Permission)
     ]

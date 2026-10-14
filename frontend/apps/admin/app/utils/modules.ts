@@ -41,7 +41,8 @@ export type ModuleDefinition = {
   tabs: ModuleTab[];
 };
 
-export const MODULES: ModuleDefinition[] = [
+export const MODULES: ModuleDefinition[
+] = [
   {
     code: "inventory",
     title: "Склад",
@@ -114,6 +115,32 @@ export const MODULES: ModuleDefinition[] = [
         title: "Роли",
         icon: "Key",
         permissions: CAN.rolesOpen,
+      },
+    ],
+  },
+  {
+    code: "sales",
+    title: "Заказы",
+    icon: "Document",
+    tabs: [
+      {
+        path: "/sales/orders",
+        title: "Заказы",
+        icon: "Document",
+        permissions: CAN.ordersOpen,
+      },
+    ],
+  },
+  {
+    code: "customers",
+    title: "Клиенты",
+    icon: "User",
+    tabs: [
+      {
+        path: "/customers",
+        title: "Клиенты",
+        icon: "User",
+        permissions: CAN.customersOpen,
       },
     ],
   },

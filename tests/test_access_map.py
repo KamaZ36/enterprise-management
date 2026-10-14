@@ -14,4 +14,6 @@ def test_frontend_access_map_uses_known_permissions() -> None:
 
     unknown = codes - {permission.code for permission in all_permissions()}
 
-    assert not unknown, f"в карте фронта права, которых нет в реестре: {sorted(unknown)}"
+    assert not unknown, (
+        f"в карте фронта права, которых нет в реестре: {sorted(unknown)}"
+    )

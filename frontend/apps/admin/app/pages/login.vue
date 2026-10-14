@@ -53,12 +53,15 @@ const password = ref("");
 const error = ref("");
 const pending = ref(false);
 
+const { clearSessionState } = useSessionReset();
+
 async function submit(): Promise<void> {
   error.value = "";
   pending.value = true;
 
   try {
     await signIn({ username: username.value.trim(), password: password.value });
+    clearSessionState();
     await navigateTo("/staff/employees");
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : "Не удалось войти";

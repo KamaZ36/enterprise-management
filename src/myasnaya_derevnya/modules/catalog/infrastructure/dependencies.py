@@ -16,6 +16,9 @@ from myasnaya_derevnya.modules.catalog.application.interactors.create_price impo
 from myasnaya_derevnya.modules.catalog.application.interactors.create_price_list import (
     CreatePriceListInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
+    GetPointPricesInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.list_categories import (
     ListCategoriesInteractor,
 )
@@ -93,6 +96,8 @@ from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAP
 
 
 class CatalogDepProvider(Provider):
+    get_point_prices_interactor = provide(GetPointPricesInteractor, scope=Scope.REQUEST)
+
     @provide(scope=Scope.REQUEST)
     def get_price_lists_reader(
         self, session: AsyncSession
@@ -153,9 +158,14 @@ class CatalogDepProvider(Provider):
     # FACADE
     @provide(scope=Scope.REQUEST)
     def get_catalog_api(
-        self, nomenclature_repository: NomenclatureRepository
+        self,
+        nomenclature_repository: NomenclatureRepository,
+        get_point_prices_interactor: GetPointPricesInteractor,
     ) -> CatalogAPI:
-        return CatalogAPI(nomenclature_repository=nomenclature_repository)
+        return CatalogAPI(
+            get_point_prices_interactor=get_point_prices_interactor,
+            nomenclature_repository=nomenclature_repository,
+        )
 
     # INTERACTOR
     create_nomenclature_interactor = provide(

@@ -44,6 +44,7 @@ class ReceiptDetail:
     supplier_document_number: str | None
     comment: str | None
     lines: list[ReceiptLineItem]
+    org_unit_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,3 +130,4 @@ class TransferDetail:
     posted_at: datetime | None
     comment: str | None
     lines: list[TransferLineItem]
+    org_unit_id: UUID | None = None

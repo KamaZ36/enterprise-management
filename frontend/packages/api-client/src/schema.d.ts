@@ -24,6 +24,154 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sales/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Orders
+         * @description Заказы
+         */
+        get: operations["list_orders_api_sales_orders_get"];
+        put?: never;
+        /**
+         * Create Order
+         * @description Создать заказ
+         */
+        post: operations["create_order_api_sales_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Order
+         * @description Карточка заказа
+         */
+        get: operations["get_order_api_sales_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/orders/{order_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Order
+         * @description Подтвердить заказ
+         */
+        post: operations["confirm_order_api_sales_orders__order_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Order
+         * @description Отменить заказ
+         */
+        post: operations["cancel_order_api_sales_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/me/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List My Orders
+         * @description Мои заказы
+         */
+        get: operations["list_my_orders_api_sales_me_orders_get"];
+        put?: never;
+        /**
+         * Create My Order
+         * @description Оформить заказ
+         */
+        post: operations["create_my_order_api_sales_me_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/me/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Order
+         * @description Моя карточка заказа
+         */
+        get: operations["get_my_order_api_sales_me_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/me/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel My Order
+         * @description Отменить свой заказ
+         */
+        post: operations["cancel_my_order_api_sales_me_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/logout": {
         parameters: {
             query?: never;
@@ -828,6 +976,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Customers
+         * @description Клиенты
+         */
+        get: operations["list_customers_api_customers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{customer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Customer
+         * @description Карточка клиента
+         */
+        get: operations["get_customer_api_customers__customer_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -957,6 +1145,26 @@ export interface components {
              */
             category_id: string;
         };
+        /** CreateOrderSchema */
+        CreateOrderSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            channel: components["schemas"]["OrderChannel"];
+            /** Customer Id */
+            customer_id?: string | null;
+            /** Planned At */
+            planned_at?: string | null;
+            /** Comment */
+            comment?: string | null;
+            /**
+             * Lines
+             * @default []
+             */
+            lines: components["schemas"]["OrderLineCommandSchema"][];
+        };
         /** CreateOrgUnitSchema */
         CreateOrgUnitSchema: {
             /**
@@ -1085,6 +1293,14 @@ export interface components {
             /** Comment */
             comment?: string | null;
         };
+        /** CreatedOrderSchema */
+        CreatedOrderSchema: {
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+        };
         /** CurrentUserRoleSchema */
         CurrentUserRoleSchema: {
             /** Code */
@@ -1115,6 +1331,76 @@ export interface components {
             roles: components["schemas"]["CurrentUserRoleSchema"][];
             /** Permissions */
             permissions: string[];
+            /**
+             * Scopes
+             * @default []
+             */
+            scopes: components["schemas"]["CurrentUserScopeSchema"][];
+        };
+        /** CurrentUserScopeSchema */
+        CurrentUserScopeSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** CustomerDetailSchema */
+        CustomerDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CustomerListItemSchema */
+        CustomerListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CustomerListSchema */
+        CustomerListSchema: {
+            /** Items */
+            items: components["schemas"]["CustomerListItemSchema"][];
+            /** Total */
+            total: number;
         };
         /** EmployeeListSchema */
         EmployeeListSchema: {
@@ -1206,6 +1492,49 @@ export interface components {
             /** Code */
             code: string;
         };
+        /**
+         * MyOrderDetailSchema
+         * @description Карточка для покупателя: состав, статус и сумма.
+         *
+         *     Сознательно нет того, что клиенту знать не нужно: кто из сотрудников оформил,
+         *     идентификатор профиля, контактный телефон. Отдельная схема — защита от того,
+         *     что служебное поле однажды добавится в общую и утечёт на сайт.
+         */
+        MyOrderDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number | null;
+            /** Status */
+            status: string;
+            /** Channel */
+            channel: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Planned At */
+            planned_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Total */
+            total: number;
+            /** Lines */
+            lines: components["schemas"]["OrderLineViewSchema"][];
+        };
         /** NomenclatureListSchema */
         NomenclatureListSchema: {
             /** Items */
@@ -1264,6 +1593,126 @@ export interface components {
          * @enum {string}
          */
         NomenclatureType: "raw_material" | "semi_finished" | "finished_good";
+        /**
+         * OrderChannel
+         * @enum {string}
+         */
+        OrderChannel: "site" | "pos" | "phone";
+        /** OrderDetailSchema */
+        OrderDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number | null;
+            /** Status */
+            status: string;
+            /** Channel */
+            channel: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Customer Id */
+            customer_id: string | null;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Planned At */
+            planned_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Total */
+            total: number;
+            /** Lines */
+            lines: components["schemas"]["OrderLineViewSchema"][];
+        };
+        /** OrderLineCommandSchema */
+        OrderLineCommandSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Quantity */
+            quantity: number | string;
+        };
+        /** OrderLineViewSchema */
+        OrderLineViewSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Unit Price */
+            unit_price: number;
+            /** Total */
+            total: number;
+        };
+        /** OrderListItemSchema */
+        OrderListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number | null;
+            /** Status */
+            status: string;
+            /** Channel */
+            channel: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Customer Id */
+            customer_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Planned At */
+            planned_at: string | null;
+            /** Total */
+            total: number;
+            /** Line Count */
+            line_count: number;
+        };
+        /** OrderListSchema */
+        OrderListSchema: {
+            /** Items */
+            items: components["schemas"]["OrderListItemSchema"][];
+            /** Total */
+            total: number;
+        };
         /** OrgUnitSchema */
         OrgUnitSchema: {
             /**
@@ -1831,6 +2280,298 @@ export interface operations {
                 "application/json": components["schemas"]["LoginByPasswordCommand"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_orders_api_sales_orders_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+                customer_id?: string | null;
+                statuses?: string | null;
+                day?: string | null;
+                search?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_order_api_sales_orders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedOrderSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_order_api_sales_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_order_api_sales_orders__order_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_order_api_sales_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_orders_api_sales_me_orders_get: {
+        parameters: {
+            query?: {
+                statuses?: string | null;
+                day?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_my_order_api_sales_me_orders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedOrderSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_order_api_sales_me_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyOrderDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_my_order_api_sales_me_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -3497,6 +4238,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_customers_api_customers_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                status?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_customer_api_customers__customer_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDetailSchema"];
                 };
             };
             /** @description Validation Error */

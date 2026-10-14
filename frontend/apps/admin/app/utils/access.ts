@@ -20,6 +20,9 @@ export const CAN = {
   employeeEdit: ["staff.employee.manage"],
   employeeResetPassword: ["staff.employee.reset_password"],
   rolesOpen: ["staff.role.read"],
+  ordersOpen: ["order.read"],
+  customersOpen: ["customer.read"],
+  orderCreate: ["order.create", "nomenclature.read"],
 } as const;
 
 export const SECTIONS = [
@@ -27,6 +30,8 @@ export const SECTIONS = [
   { module: "inventory", title: "Склад", icon: "OfficeBuilding" },
   { module: "catalog", title: "Справочники", icon: "Goods" },
   { module: "staff", title: "Персонал", icon: "User" },
+  { module: "sales", title: "Заказы", icon: "Document" },
+  { module: "customers", title: "Клиенты", icon: "User" },
 ] as const;
 
 export type Section = (typeof SECTIONS)[number];

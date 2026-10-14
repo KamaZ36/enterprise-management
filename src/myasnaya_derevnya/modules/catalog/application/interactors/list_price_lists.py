@@ -43,10 +43,9 @@ class ListPriceListsInteractor:
         current_user_id = await self._identity_provider.get_current_user_id()
         root_org_unit_id = await self._business_api.get_root_unit_id()
 
-        if not await self._staff_api.can(
+        if not await self._staff_api.can_anywhere(
             user_id=current_user_id,
             permission=READ_PRICE_LIST,
-            org_unit_id=root_org_unit_id,
         ):
             raise ForbiddenError()
 
@@ -82,10 +81,9 @@ class ListPriceListPricesInteractor:
         current_user_id = await self._identity_provider.get_current_user_id()
         root_org_unit_id = await self._business_api.get_root_unit_id()
 
-        if not await self._staff_api.can(
+        if not await self._staff_api.can_anywhere(
             user_id=current_user_id,
             permission=READ_PRICE,
-            org_unit_id=root_org_unit_id,
         ):
             raise ForbiddenError()
 

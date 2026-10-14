@@ -130,6 +130,11 @@ class CurrentUserRoleSchema(BaseModel):
         return cls(code=item.code, name=item.name, org_unit_id=item.org_unit_id)
 
 
+class CurrentUserScopeSchema(BaseModel):
+    id: UUID
+    title: str
+
+
 class CurrentUserSchema(BaseModel):
     user_id: UUID
     employee_id: UUID | None
@@ -139,6 +144,7 @@ class CurrentUserSchema(BaseModel):
     position: str | None
     roles: list[CurrentUserRoleSchema]
     permissions: list[str]
+    scopes: list[CurrentUserScopeSchema] = []
 
     @classmethod
     def from_dto(cls, view: CurrentUserView) -> CurrentUserSchema:
@@ -151,6 +157,10 @@ class CurrentUserSchema(BaseModel):
             position=view.position,
             roles=[CurrentUserRoleSchema.from_dto(item) for item in view.roles],
             permissions=sorted(view.permissions),
+            scopes=[
+                CurrentUserScopeSchema(id=item.id, title=item.title)
+                for item in view.scopes
+            ],
         )
 
 

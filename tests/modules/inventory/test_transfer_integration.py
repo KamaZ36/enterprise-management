@@ -9,8 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.core.database.transaction_manager.sqlalchemy import (
     SQLAlchemyTransactionManager,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
+    GetPointPricesInteractor,
+)
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.sqlalchemy import (
     SQLAlchemyNomenclatureRepository,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price.sqlalchemy import (
+    SQLAlchemyPriceRepository,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_binding.sqlalchemy import (
+    SQLAlchemyPriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.application.commands import (
@@ -93,7 +102,13 @@ def build_transfer_interactors(session: AsyncSession):
 
     preconditions = PostingPreconditions(
         warehouse_repository=warehouses,
-        catalog_api=CatalogAPI(SQLAlchemyNomenclatureRepository(session)),
+        catalog_api=CatalogAPI(
+            get_point_prices_interactor=GetPointPricesInteractor(
+                binding_repository=SQLAlchemyPriceListBindingRepository(session),
+                price_repository=SQLAlchemyPriceRepository(session),
+            ),
+            nomenclature_repository=SQLAlchemyNomenclatureRepository(session),
+        ),
     )
     ledger = StockLedger(
         posting_repository=SQLAlchemyStockPostingRepository(session),

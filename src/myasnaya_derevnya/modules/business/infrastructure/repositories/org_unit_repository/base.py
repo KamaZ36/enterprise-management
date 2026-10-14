@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from uuid import UUID
 
 from myasnaya_derevnya.modules.business.domain.entities.org_unit import OrgUnit
@@ -30,9 +31,20 @@ class OrgUnitRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def descendants_of_many(
+        self, org_unit_ids: Iterable[UUID]
+    ) -> frozenset[UUID]:
+        """Поддеревья сразу для нескольких подразделений, включая их сами."""
+        raise NotImplementedError
+
+    @abstractmethod
     async def root_of(self, org_unit_id: UUID) -> UUID | None:
         raise NotImplementedError
 
     @abstractmethod
     async def get_root_id(self) -> UUID | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_titles(self, org_unit_ids: Iterable[UUID]) -> dict[UUID, str]:
         raise NotImplementedError

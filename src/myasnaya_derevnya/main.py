@@ -35,6 +35,9 @@ from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
 )
+from myasnaya_derevnya.modules.sales.presentation.api.v1 import (
+    router as sales_router,
+)
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
     access_router,
 )
@@ -84,8 +87,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
+from myasnaya_derevnya.modules.customer.presentation.api.v1.customers import (
+    router as customers_router,
+)
+
+
 def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
+    app.include_router(sales_router)
     app.include_router(logout_router)
     app.include_router(password_router)
     app.include_router(access_router)
@@ -94,6 +103,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(catalog_router)
     app.include_router(inventory_router)
     app.include_router(customer_login_router)
+    app.include_router(customers_router)
 
 
 def create_app() -> FastAPI:

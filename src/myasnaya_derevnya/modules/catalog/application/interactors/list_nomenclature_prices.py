@@ -42,12 +42,10 @@ class ListNomenclaturePricesInteractor:
         self, query: ListNomenclaturePricesQuery
     ) -> list[NomenclaturePriceItem]:
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
 
-        allowed = await self._staff_api.can(
+        allowed = await self._staff_api.can_anywhere(
             user_id=current_user_id,
             permission=READ_PRICE,
-            org_unit_id=root_org_unit_id,
         )
         if not allowed:
             raise ForbiddenError()

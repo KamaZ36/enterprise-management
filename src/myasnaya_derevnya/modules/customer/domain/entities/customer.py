@@ -16,21 +16,29 @@ class Customer:
         id: UUID,
         user_id: UUID,
         first_name: str | None,
+        contact_phone: str | None,
         status: CustomerStatus,
         created_at: datetime,
     ) -> None:
         self._id = id
         self._user_id = user_id
         self._first_name = first_name
+        self._contact_phone = contact_phone
         self._status = status
         self._created_at = created_at
 
     @classmethod
-    def create(cls, user_id: UUID, first_name: str | None = None) -> Customer:
+    def create(
+        cls,
+        user_id: UUID,
+        first_name: str | None = None,
+        contact_phone: str | None = None,
+    ) -> Customer:
         return cls(
             id=uuid7(),
             user_id=user_id,
             first_name=first_name,
+            contact_phone=contact_phone,
             status=CustomerStatus.ACTIVE,
             created_at=get_datetime_utc(),
         )
@@ -46,6 +54,11 @@ class Customer:
     @property
     def first_name(self) -> str | None:
         return self._first_name
+
+    @property
+    def contact_phone(self) -> str | None:
+        """Контактный телефон. Отдельно от телефона-логина: по нему звонят, а не входят."""
+        return self._contact_phone
 
     @property
     def status(self) -> CustomerStatus:

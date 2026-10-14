@@ -47,19 +47,20 @@ class UpdateWarehouseInteractor:
 
     async def __call__(self, command: UpdateWarehouseCommand) -> None:
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
-
-        allowed = await self._staff_api.can(
-            user_id=current_user_id,
-            permission=MANAGE_WAREHOUSES,
-            org_unit_id=root_org_unit_id,
-        )
-        if not allowed:
-            raise ForbiddenError()
 
         warehouse = await self._warehouse_repository.get_by_id(command.warehouse_id)
         if warehouse is None:
             raise WarehouseNotFoundError(command.warehouse_id)
+
+        # Право проверяем на точке самого склада: у управляющего кафе прав
+        # на всю компанию нет, а на свой склад — есть.
+        allowed = await self._staff_api.can(
+            user_id=current_user_id,
+            permission=MANAGE_WAREHOUSES,
+            org_unit_id=warehouse.org_unit_id,
+        )
+        if not allowed:
+            raise ForbiddenError()
 
         if command.type_ is not None and command.type_ is not warehouse.type:
             if await self._balance_repository.has_any_for_warehouse(warehouse.id):

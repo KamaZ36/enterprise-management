@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from uuid import UUID
 
 from sqlalchemy import RowMapping, insert, select, update
@@ -84,6 +85,32 @@ class SQLAlchemyOrgUnitRepository(OrgUnitRepository):
     async def ancestors_of(self, org_unit_id: UUID) -> frozenset[UUID]:
         stmt = select(ORG_UNIT_CLOSURE_TABLE.c.ancestor_id).where(
             ORG_UNIT_CLOSURE_TABLE.c.descendant_id == org_unit_id
+        )
+        result = await self._session.execute(stmt)
+
+        return frozenset(row[0] for row in result)
+
+    async def get_titles(self, org_unit_ids: Iterable[UUID]) -> dict[UUID, str]:
+        ids = list(org_unit_ids)
+        if not ids:
+            return {}
+
+        stmt = select(ORG_UNITS_TABLE.c.id, ORG_UNITS_TABLE.c.name).where(
+            ORG_UNITS_TABLE.c.id.in_(ids)
+        )
+        rows = (await self._session.execute(stmt)).all()
+
+        return {row[0]: row[1] for row in rows}
+
+    async def descendants_of_many(
+        self, org_unit_ids: Iterable[UUID]
+    ) -> frozenset[UUID]:
+        ids = list(org_unit_ids)
+        if not ids:
+            return frozenset()
+
+        stmt = select(ORG_UNIT_CLOSURE_TABLE.c.descendant_id).where(
+            ORG_UNIT_CLOSURE_TABLE.c.ancestor_id.in_(ids)
         )
         result = await self._session.execute(stmt)
 

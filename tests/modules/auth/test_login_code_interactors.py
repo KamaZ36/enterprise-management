@@ -200,7 +200,7 @@ async def test_request_respects_min_interval() -> None:
 
 async def test_request_respects_hourly_limit() -> None:
     service = make_service(hourly_limit=2, min_interval=timedelta(seconds=0))
-    interactor, codes, sender, _ = build_request(service=service)
+    interactor, _codes, sender, _ = build_request(service=service)
 
     await interactor(PHONE)
     await interactor(PHONE)

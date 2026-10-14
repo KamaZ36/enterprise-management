@@ -9,6 +9,7 @@ CUSTOMERS_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("user_id", UUID, nullable=False),
     Column("first_name", String(255), nullable=True),
+    Column("contact_phone", String(32), nullable=True),
     Column("status", String(20), nullable=False),
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()

@@ -63,9 +63,16 @@ class CurrentUserView:
     position: str | None
     roles: list[CurrentUserRole]
     permissions: frozenset[str]
+    scopes: tuple[CurrentUserScope, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class PermissionItem:
     code: str
     description: str
+
+
+@dataclass(frozen=True, slots=True)
+class CurrentUserScope:
+    id: UUID
+    title: str

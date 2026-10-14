@@ -40,6 +40,9 @@ class FakeStaffAPI:
         self.checked.append((permission.code, org_unit_id))
         return self.allowed
 
+    async def can_anywhere(self, *, user_id: UUID, permission: object) -> bool:
+        return await self.can(user_id=user_id, permission=permission, org_unit_id=None)
+
 
 class FakeNomenclatureReader:
     def __init__(self) -> None:
@@ -89,7 +92,7 @@ async def test_requires_read_permission() -> None:
     assert reader.calls == []
 
 
-async def test_checks_permission_at_company_level() -> None:
+async def test_checks_permission_anywhere() -> None:
     root_unit_id = uuid4()
     reader = FakeNomenclatureReader()
     staff_api = FakeStaffAPI()
@@ -102,7 +105,7 @@ async def test_checks_permission_at_company_level() -> None:
 
     await interactor(ListNomenclaturesQuery())
 
-    assert staff_api.checked == [(READ_NOMENCLATURE.code, root_unit_id)]
+    assert staff_api.checked == [(READ_NOMENCLATURE.code, None)]
 
 
 async def test_filters_are_passed_to_reader() -> None:

@@ -15,6 +15,7 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base imp
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     RECEIPT_LINES_TABLE,
     RECEIPTS_TABLE,
+    WAREHOUSES_TABLE,
 )
 
 
@@ -87,7 +88,17 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         header = (
             (
                 await self._session.execute(
-                    select(RECEIPTS_TABLE).where(RECEIPTS_TABLE.c.id == receipt_id)
+                    select(
+                        RECEIPTS_TABLE,
+                        WAREHOUSES_TABLE.c.org_unit_id,
+                    )
+                    .select_from(
+                        RECEIPTS_TABLE.outerjoin(
+                            WAREHOUSES_TABLE,
+                            WAREHOUSES_TABLE.c.id == RECEIPTS_TABLE.c.warehouse_id,
+                        )
+                    )
+                    .where(RECEIPTS_TABLE.c.id == receipt_id)
                 )
             )
             .mappings()
@@ -111,6 +122,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         return ReceiptDetail(
             id=header["id"],
             warehouse_id=header["warehouse_id"],
+            org_unit_id=header["org_unit_id"],
             status=header["status"],
             occurred_at=header["occurred_at"],
             posted_at=header["posted_at"],

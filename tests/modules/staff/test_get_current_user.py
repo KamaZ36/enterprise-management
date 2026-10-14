@@ -37,6 +37,11 @@ class FakeEmployeeRepository:
         return None
 
 
+class FakeBusinessAPI:
+    async def org_unit_titles(self, org_unit_ids: object) -> dict[object, str]:
+        return {}
+
+
 class FakeRoleAssignmentRepository:
     def __init__(self, assignments: list[ResolvedAssignment]) -> None:
         self.assignments = assignments
@@ -100,6 +105,7 @@ def build(
             identity_provider=FakeIdentityProvider(user_id),
             employee_repository=FakeEmployeeRepository(employee),
             role_assignment_repository=repository,
+            business_api=FakeBusinessAPI(),
         ),
         repository,
     )

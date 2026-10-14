@@ -36,6 +36,9 @@ class FakeStaffAPI:
         self.checked.append((permission.code, org_unit_id))
         return self.allowed
 
+    async def can_anywhere(self, *, user_id: UUID, permission: object) -> bool:
+        return await self.can(user_id=user_id, permission=permission, org_unit_id=None)
+
 
 class FakeCategoryReader:
     def __init__(self) -> None:
@@ -71,7 +74,7 @@ async def test_requires_read_permission() -> None:
     assert reader.calls == []
 
 
-async def test_checks_permission_at_company_level() -> None:
+async def test_checks_permission_anywhere() -> None:
     root_unit_id = uuid4()
     reader = FakeCategoryReader()
     staff_api = FakeStaffAPI()
@@ -84,7 +87,7 @@ async def test_checks_permission_at_company_level() -> None:
 
     await interactor(ListCategoriesQuery())
 
-    assert staff_api.checked == [(READ_CATEGORY.code, root_unit_id)]
+    assert staff_api.checked == [(READ_CATEGORY.code, None)]
 
 
 async def test_search_is_passed_and_stripped() -> None:
