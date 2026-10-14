@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from uuid import UUID
 
 from sqlalchemy import RowMapping, and_, func, or_, select
@@ -24,9 +25,15 @@ class SQLAlchemyEmployeeReader(EmployeeReader):
         self._session = session
 
     async def list(
-        self, *, limit: int, offset: int, search: str | None = None
+        self,
+        *,
+        limit: int,
+        offset: int,
+        search: str | None = None,
+        org_unit_ids: Collection[UUID] | None = None,
     ) -> tuple[list[EmployeeListItem], int]:
         condition = _search_condition(search)
+        scope_condition = _scope_condition(org_unit_ids)
 
         count_stmt = select(func.count()).select_from(EMPLOYEES_TABLE)
         stmt = (
@@ -39,17 +46,27 @@ class SQLAlchemyEmployeeReader(EmployeeReader):
             .offset(offset)
         )
 
-        if condition is not None:
-            count_stmt = count_stmt.where(condition)
-            stmt = stmt.where(condition)
+        for extra in (condition, scope_condition):
+            if extra is not None:
+                count_stmt = count_stmt.where(extra)
+                stmt = stmt.where(extra)
 
         total = await self._session.scalar(count_stmt)
         rows = (await self._session.execute(stmt)).mappings().all()
 
         return [self._to_dto(row) for row in rows], total or 0
 
-    async def get_by_id(self, employee_id: UUID) -> EmployeeListItem | None:
+    async def get_by_id(
+        self,
+        employee_id: UUID,
+        org_unit_ids: Collection[UUID] | None = None,
+    ) -> EmployeeListItem | None:
         stmt = select(EMPLOYEES_TABLE).where(EMPLOYEES_TABLE.c.id == employee_id)
+
+        scope_condition = _scope_condition(org_unit_ids)
+        if scope_condition is not None:
+            stmt = stmt.where(scope_condition)
+
         row = (await self._session.execute(stmt)).mappings().one_or_none()
 
         return self._to_dto(row) if row is not None else None
@@ -59,6 +76,7 @@ class SQLAlchemyEmployeeReader(EmployeeReader):
         return EmployeeListItem(
             id=row["id"],
             user_id=row["user_id"],
+            org_unit_id=row["org_unit_id"],
             first_name=row["first_name"],
             last_name=row["last_name"],
             middle_name=row["middle_name"],
@@ -68,6 +86,13 @@ class SQLAlchemyEmployeeReader(EmployeeReader):
             dismissed_at=row["dismissed_at"],
             is_active=row["dismissed_at"] is None,
         )
+
+
+def _scope_condition(org_unit_ids: Collection[UUID] | None):
+    if org_unit_ids is None:
+        return None
+
+    return EMPLOYEES_TABLE.c.org_unit_id.in_(list(org_unit_ids))
 
 
 def _search_condition(search: str | None):

@@ -4,7 +4,6 @@ from uuid import UUID
 from myasnaya_derevnya.core.errors import ConflictError, NotFoundError
 
 
-# NOMENCLATURE
 @dataclass(slots=True, eq=False)
 class NomenclatureNotFound(NotFoundError):
     nomenclature_id: UUID
@@ -13,7 +12,6 @@ class NomenclatureNotFound(NotFoundError):
         return f"Номенклатура {self.nomenclature_id} не найдена."
 
 
-# CATEGORY
 @dataclass(slots=True, eq=False)
 class CategoryNotFound(NotFoundError):
     category_id: UUID
@@ -30,7 +28,6 @@ class CategoryAlreadyExists(ConflictError):
         return f"Категория '{self.category_name}' уже существует."
 
 
-# PRICE LIST
 @dataclass(slots=True, eq=False)
 class PriceListAlreadyExists(ConflictError):
     price_list_name: str

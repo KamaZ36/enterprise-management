@@ -2,7 +2,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from myasnaya_derevnya.modules.business.application.dto import OrgUnitListItem
+from myasnaya_derevnya.modules.business.application.dto import (
+    CafeOrgUnitListItem,
+    OrgUnitListItem,
+)
 from myasnaya_derevnya.modules.business.domain.entities.org_unit import OrgUnitType
 
 
@@ -41,6 +44,26 @@ class OrgUnitSchema(BaseModel):
             code=item.code,
             name=item.name,
             is_active=item.is_active,
+            address=item.address,
+            phone_number=item.phone_number,
+        )
+
+
+class CafeOrgUnitSchema(BaseModel):
+    id: UUID
+    type: OrgUnitType
+    code: str
+    name: str
+    address: str | None
+    phone_number: str | None
+
+    @classmethod
+    def from_dto(cls, item: CafeOrgUnitListItem) -> CafeOrgUnitSchema:
+        return cls(
+            id=item.id,
+            type=item.type,
+            code=item.code,
+            name=item.name,
             address=item.address,
             phone_number=item.phone_number,
         )

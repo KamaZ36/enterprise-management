@@ -28,8 +28,6 @@ class DeleteRoleCommand:
 
 
 class DeleteRoleInteractor:
-    """Удаление роли: системные и выданные сотрудникам удалять нельзя."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

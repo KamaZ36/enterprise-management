@@ -77,6 +77,7 @@ class WriteOffDetail:
     reason: str | None
     comment: str | None
     lines: list[WriteOffLineItem]
+    org_unit_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,3 +132,4 @@ class TransferDetail:
     comment: str | None
     lines: list[TransferLineItem]
     org_unit_id: UUID | None = None
+    to_org_unit_id: UUID | None = None

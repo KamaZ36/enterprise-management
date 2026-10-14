@@ -22,8 +22,6 @@ class ListNomenclaturePricesQuery:
 
 
 class ListNomenclaturePricesInteractor:
-    """Цены позиции по всем прайс-листам: что задано, а что нет."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

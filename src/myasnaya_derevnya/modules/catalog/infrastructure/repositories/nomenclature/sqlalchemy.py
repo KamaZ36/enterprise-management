@@ -29,6 +29,8 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 type=nomenclature.type_.value,
                 category_id=nomenclature.category_id,
                 is_active=nomenclature.is_active,
+                image_url=nomenclature.image_url,
+                description=nomenclature.description,
                 created_at=nomenclature.created_at,
             )
         )
@@ -44,6 +46,8 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 unit=nomenclature.unit.value,
                 type=nomenclature.type_.value,
                 is_active=nomenclature.is_active,
+                image_url=nomenclature.image_url,
+                description=nomenclature.description,
             )
         )
 
@@ -91,4 +95,6 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
             category_id=row["category_id"],
             created_at=row["created_at"],
             is_active=row["is_active"],
+            image_url=row["image_url"],
+            description=row["description"],
         )

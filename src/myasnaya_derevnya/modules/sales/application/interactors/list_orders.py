@@ -27,12 +27,6 @@ class ListOrdersQuery:
 
 
 class ListOrdersInteractor:
-    """Список заказов: сотруднику — по области видимости, клиенту — только свои.
-
-    Область берётся из назначений ролей и расширяется по дереву подразделений.
-    Точка из запроса может только сузить эту область, но не расширить её.
-    """
-
     def __init__(
         self,
         identity_provider: IdentityProvider,
@@ -67,13 +61,3 @@ class ListOrdersInteractor:
             limit=query.limit,
             offset=query.offset,
         )
-
-    @staticmethod
-    def _narrow(allowed: set[UUID] | None, requested: UUID | None) -> list[UUID] | None:
-        if requested is None:
-            return None if allowed is None else sorted(allowed)
-
-        if allowed is None:
-            return [requested]
-
-        return [requested] if requested in allowed else []

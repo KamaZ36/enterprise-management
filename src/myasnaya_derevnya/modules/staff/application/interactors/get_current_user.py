@@ -1,13 +1,12 @@
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
-from myasnaya_derevnya.core.permissions import all_permissions
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.staff.application.dto import (
     CurrentUserRole,
     CurrentUserScope,
     CurrentUserView,
 )
-from myasnaya_derevnya.modules.staff.domain.value_objects.resolved_assignment import (
-    ResolvedAssignment,
+from myasnaya_derevnya.modules.staff.application.services.access_service import (
+    AccessService,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
     EmployeeRepository,
@@ -18,18 +17,18 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment
 
 
 class GetCurrentUserInteractor:
-    """Кто вошёл и что ему доступно."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,
         employee_repository: EmployeeRepository,
         role_assignment_repository: RoleAssignmentRepository,
+        access_service: AccessService,
         business_api: BusinessAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._employee_repository = employee_repository
         self._role_assignment_repository = role_assignment_repository
+        self._access_service = access_service
         self._business_api = business_api
 
     async def __call__(self) -> CurrentUserView:
@@ -39,14 +38,20 @@ class GetCurrentUserInteractor:
             user_id
         )
         employee = await self._employee_repository.get_by_user_id(user_id)
+        access = await self._access_service.access_map(user_id)
 
-        # Точки, где сотрудник вообще может работать: нужны переключателю контекста.
-        scope_ids = {
-            item.assignment.org_unit_id
-            for item in assignments
-            if item.assignment.org_unit_id is not None
-        }
-        titles = await self._business_api.org_unit_titles(scope_ids)
+
+        scopes: tuple[CurrentUserScope, ...] = ()
+        if access.by_unit:
+            titles = await self._business_api.org_unit_titles(access.by_unit)
+            scopes = tuple(
+                CurrentUserScope(
+                    id=unit_id,
+                    title=titles.get(unit_id, str(unit_id)),
+                    permissions=access.by_unit[unit_id],
+                )
+                for unit_id in sorted(access.by_unit, key=str)
+            )
 
         return CurrentUserView(
             user_id=user_id,
@@ -63,20 +68,6 @@ class GetCurrentUserInteractor:
                 )
                 for item in assignments
             ],
-            permissions=_effective_permissions(assignments),
-            scopes=tuple(
-                CurrentUserScope(id=scope_id, title=titles.get(scope_id, str(scope_id)))
-                for scope_id in sorted(scope_ids, key=str)
-            ),
+            permissions=access.permissions,
+            scopes=scopes,
         )
-
-
-def _effective_permissions(
-    assignments: list[ResolvedAssignment],
-) -> frozenset[str]:
-    if any(item.role.is_wildcard for item in assignments):
-        return frozenset(permission.code for permission in all_permissions())
-
-    return frozenset(
-        code for item in assignments for code in item.role.permission_codes
-    )

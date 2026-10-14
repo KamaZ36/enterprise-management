@@ -57,7 +57,6 @@ class Customer:
 
     @property
     def contact_phone(self) -> str | None:
-        """Контактный телефон. Отдельно от телефона-логина: по нему звонят, а не входят."""
         return self._contact_phone
 
     @property

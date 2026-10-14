@@ -8,6 +8,9 @@ from myasnaya_derevnya.modules.business.application.interactors.create_org_unit 
     CreateOrgUnitCommand,
     CreateOrgUnitInteractor,
 )
+from myasnaya_derevnya.modules.business.application.interactors.get_cafe_list import (
+    CafeListOrgUnitsInteractor,
+)
 from myasnaya_derevnya.modules.business.application.interactors.list_org_units import (
     ListOrgUnitsInteractor,
 )
@@ -16,6 +19,7 @@ from myasnaya_derevnya.modules.business.application.interactors.update_org_unit 
     UpdateOrgUnitInteractor,
 )
 from myasnaya_derevnya.modules.business.presentation.api.v1.schemas import (
+    CafeOrgUnitSchema,
     CreateOrgUnitSchema,
     OrgUnitSchema,
     UpdateOrgUnitSchema,
@@ -53,6 +57,19 @@ async def list_org_units(request: Request) -> list[OrgUnitSchema]:
         items = await interactor()
 
     return [OrgUnitSchema.from_dto(item) for item in items]
+
+
+@router.get(
+    "/org-units/cafe",
+    response_model=list[CafeOrgUnitSchema],
+    description="Список активных кафе",
+)
+async def cafe_list_org_units(request: Request) -> list[CafeOrgUnitSchema]:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(CafeListOrgUnitsInteractor)
+        items = await interactor()
+
+    return [CafeOrgUnitSchema.from_dto(item) for item in items]
 
 
 @router.patch("/org-units/{org_unit_id}", description="Изменить структурную единицу")

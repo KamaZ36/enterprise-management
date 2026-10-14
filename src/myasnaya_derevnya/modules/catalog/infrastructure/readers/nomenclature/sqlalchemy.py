@@ -48,6 +48,8 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 NOMENCLATURES_TABLE.c.unit,
                 NOMENCLATURES_TABLE.c.category_id,
                 NOMENCLATURES_TABLE.c.is_active,
+                NOMENCLATURES_TABLE.c.image_url,
+                NOMENCLATURES_TABLE.c.description,
                 CATEGORIES_TABLE.c.name.label("category_name"),
             )
             .join(
@@ -116,4 +118,6 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
             category_id=row["category_id"],
             category_name=row["category_name"],
             is_active=row["is_active"],
+            image_url=row["image_url"],
+            description=row["description"],
         )

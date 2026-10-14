@@ -31,7 +31,7 @@ export function useAuth() {
     try {
       await apiLogout(api);
     } catch {
-      // сессия могла истечь — выходим в любом случае
+
     }
 
     token.value = null;

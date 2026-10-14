@@ -17,12 +17,6 @@ class GetMyOrderQuery:
 
 
 class GetMyOrderInteractor:
-    """Карточка своего заказа.
-
-    Чужой заказ отдаёт «не найден», а не «запрещено»: иначе мы подтверждали бы,
-    что заказ с таким номером существует.
-    """
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

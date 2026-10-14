@@ -38,6 +38,9 @@ class UpdateNomenclatureCommand:
     type_: NomenclatureType | None = None
     is_active: bool | None = None
 
+    image_url: str | None = None
+    description: str | None = None
+
 
 class UpdateNomenclatureInteractor:
     def __init__(
@@ -107,6 +110,10 @@ class UpdateNomenclatureInteractor:
             nomenclature.change_type(command.type_)
         if command.is_active is not None:
             nomenclature.activate() if command.is_active else nomenclature.deactivate()
+        if command.image_url is not None:
+            nomenclature.change_image_url(command.image_url)
+        if command.description is not None:
+            nomenclature.change_description(command.description)
 
         await self._nomenclature_repository.save(nomenclature)
         await self._transaction_manager.commit()

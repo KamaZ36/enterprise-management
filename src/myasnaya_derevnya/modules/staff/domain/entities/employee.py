@@ -10,6 +10,7 @@ class Employee:
         self,
         id: UUID,
         user_id: UUID,
+        org_unit_id: UUID,
         first_name: str,
         last_name: str,
         middle_name: str | None,
@@ -21,6 +22,7 @@ class Employee:
     ) -> None:
         self._id = id
         self._user_id = user_id
+        self._org_unit_id = org_unit_id
         self._first_name = first_name
         self._last_name = last_name
         self._middle_name = middle_name
@@ -34,6 +36,7 @@ class Employee:
     def create(
         cls,
         user_id: UUID,
+        org_unit_id: UUID,
         first_name: str,
         last_name: str,
         middle_name: str | None,
@@ -44,6 +47,7 @@ class Employee:
         return cls(
             id=uuid7(),
             user_id=user_id,
+            org_unit_id=org_unit_id,
             first_name=first_name,
             last_name=last_name,
             middle_name=middle_name,
@@ -57,6 +61,10 @@ class Employee:
     @property
     def id(self) -> UUID:
         return self._id
+
+    @property
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def user_id(self) -> UUID:
@@ -114,6 +122,9 @@ class Employee:
 
     def change_phone(self, phone_number: PhoneNumber | None) -> None:
         self._phone_number = phone_number
+
+    def transfer_to(self, org_unit_id: UUID) -> None:
+        self._org_unit_id = org_unit_id
 
     def restore(self) -> None:
         self._dismissed_at = None

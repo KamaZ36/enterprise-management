@@ -1,0 +1,23 @@
+{
+  "name": "@md/cafe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@md/api-client": "workspace:*",
+    "@md/money": "workspace:*",
+    "nuxt": "^4.6.1",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.13"
+  }
+}

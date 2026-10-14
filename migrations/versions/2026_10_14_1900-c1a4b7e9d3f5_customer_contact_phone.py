@@ -12,7 +12,6 @@ SCHEMA = "customer"
 
 
 def upgrade() -> None:
-    # Контактный телефон отдельно от телефона-логина: по нему звонят, им не входят.
     op.add_column(
         "customers",
         sa.Column("contact_phone", sa.String(length=32), nullable=True),

@@ -217,6 +217,7 @@ async def update_employee(
         phone_number=data.phone_number,
         position=data.position,
         is_active=data.is_active,
+        org_unit_id=data.org_unit_id,
     )
 
     async with container(context={Request: request}) as context:

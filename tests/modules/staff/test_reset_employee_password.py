@@ -20,11 +20,6 @@ class FakeIdentityProvider:
         return uuid4()
 
 
-class FakeBusinessAPI:
-    async def get_root_unit_id(self) -> UUID:
-        return uuid4()
-
-
 class FakeAccessService:
     def __init__(self, allowed: bool = True) -> None:
         self.allowed = allowed
@@ -60,6 +55,7 @@ class FakeTransactionManager:
 def make_employee() -> Employee:
     return Employee.create(
         user_id=uuid4(),
+        org_unit_id=uuid4(),
         first_name="Иван",
         last_name="Петров",
         middle_name=None,
@@ -76,7 +72,6 @@ def build(employee: Employee | None, *, allowed: bool = True):
         identity_provider=FakeIdentityProvider(),
         employee_repository=FakeEmployeeRepository(employee),
         access_service=FakeAccessService(allowed=allowed),
-        business_api=FakeBusinessAPI(),
         auth_api=auth_api,
         transaction_manager=transaction_manager,
     )

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from sqlalchemy import RowMapping, func, or_, select
@@ -13,6 +14,7 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.base i
     WriteOffReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
+    WAREHOUSES_TABLE,
     WRITE_OFF_LINES_TABLE,
     WRITE_OFFS_TABLE,
 )
@@ -25,14 +27,14 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
     async def list(
         self,
         *,
-        warehouse_id: UUID | None = None,
+        warehouse_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[WriteOffListItem], int]:
         conditions = []
-        if warehouse_id is not None:
-            conditions.append(WRITE_OFFS_TABLE.c.warehouse_id == warehouse_id)
+        if warehouse_ids is not None:
+            conditions.append(WRITE_OFFS_TABLE.c.warehouse_id.in_(warehouse_ids))
 
         if search:
             conditions.extend(
@@ -79,9 +81,17 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
         header = (
             (
                 await self._session.execute(
-                    select(WRITE_OFFS_TABLE).where(
-                        WRITE_OFFS_TABLE.c.id == write_off_id
+                    select(
+                        WRITE_OFFS_TABLE,
+                        WAREHOUSES_TABLE.c.org_unit_id,
                     )
+                    .select_from(
+                        WRITE_OFFS_TABLE.outerjoin(
+                            WAREHOUSES_TABLE,
+                            WAREHOUSES_TABLE.c.id == WRITE_OFFS_TABLE.c.warehouse_id,
+                        )
+                    )
+                    .where(WRITE_OFFS_TABLE.c.id == write_off_id)
                 )
             )
             .mappings()
@@ -111,6 +121,7 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
             reason=header["reason"],
             comment=header["comment"],
             lines=[self._to_line_item(row) for row in lines],
+            org_unit_id=header["org_unit_id"],
         )
 
     def _to_list_item(self, row: RowMapping) -> WriteOffListItem:

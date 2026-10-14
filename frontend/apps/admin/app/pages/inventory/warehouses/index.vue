@@ -329,6 +329,11 @@ onMounted(async () => {
   await loadOrgUnits();
   await load();
 });
+
+const { scopeId } = useCurrentScope();
+watch(scopeId, () => {
+  void load();
+});
 </script>
 
 <style scoped>

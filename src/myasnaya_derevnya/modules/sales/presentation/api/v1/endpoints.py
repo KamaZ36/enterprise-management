@@ -9,6 +9,10 @@ from myasnaya_derevnya.modules.sales.application.interactors.cancel_order import
     CancelOrderCommand,
     CancelOrderInteractor,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.complete_order import (
+    CompleteOrderCommand,
+    CompleteOrderInteractor,
+)
 from myasnaya_derevnya.modules.sales.application.interactors.confirm_order import (
     ConfirmOrderCommand,
     ConfirmOrderInteractor,
@@ -34,6 +38,20 @@ from myasnaya_derevnya.modules.sales.application.interactors.list_orders import 
     ListOrdersInteractor,
     ListOrdersQuery,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.mark_order_ready import (
+    MarkOrderReadyCommand,
+    MarkOrderReadyInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.start_preparing_order import (
+    StartPreparingOrderCommand,
+    StartPreparingOrderInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.update_order import (
+    UpdateOrderCommand,
+    UpdateOrderInteractor,
+    UpdateOrderLineCommand,
+)
+from myasnaya_derevnya.modules.sales.domain.entities.order import OrderChannel
 from myasnaya_derevnya.modules.sales.presentation.api.v1.schemas import (
     CreatedOrderSchema,
     CreateOrderSchema,
@@ -43,6 +61,7 @@ from myasnaya_derevnya.modules.sales.presentation.api.v1.schemas import (
     OrderDetailSchema,
     OrderListItemSchema,
     OrderListSchema,
+    UpdateOrderSchema,
 )
 
 router = APIRouter(prefix="/api/sales", tags=["Заказы"])
@@ -123,6 +142,57 @@ async def confirm_order(request: Request, order_id: UUID) -> JSONResponse:
     return JSONResponse(content={"message": "ok"})
 
 
+@router.post("/orders/{order_id}/preparing", description="Заказ готовится")
+async def start_preparing_order(request: Request, order_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(StartPreparingOrderInteractor)
+        await interactor(StartPreparingOrderCommand(order_id=order_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post("/orders/{order_id}/ready", description="Заказ готов")
+async def mark_order_ready(request: Request, order_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(MarkOrderReadyInteractor)
+        await interactor(MarkOrderReadyCommand(order_id=order_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post("/orders/{order_id}/completed", description="Выдать заказ")
+async def complete_order(request: Request, order_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(CompleteOrderInteractor)
+        await interactor(CompleteOrderCommand(order_id=order_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.patch("/orders/{order_id}", description="Изменить черновик заказа")
+async def update_order(
+    request: Request, order_id: UUID, data: UpdateOrderSchema
+) -> JSONResponse:
+    command = UpdateOrderCommand(
+        order_id=order_id,
+        planned_at=data.planned_at,
+        comment=data.comment,
+        lines=tuple(
+            UpdateOrderLineCommand(
+                nomenclature_id=line.nomenclature_id,
+                quantity=line.quantity,
+            )
+            for line in data.lines
+        ),
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateOrderInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
 @router.post("/orders/{order_id}/cancel", description="Отменить заказ")
 async def cancel_order(request: Request, order_id: UUID) -> JSONResponse:
     async with container(context={Request: request}) as context:
@@ -132,7 +202,11 @@ async def cancel_order(request: Request, order_id: UUID) -> JSONResponse:
     return JSONResponse(content={"message": "ok"})
 
 
-@router.get("/me/orders", response_model=OrderListSchema, description="Мои заказы")
+@router.get(
+    "/me/orders",
+    response_model=MyOrderListSchema,
+    description="Мои заказы",
+)
 async def list_my_orders(
     request: Request,
     statuses: str | None = None,

@@ -12,7 +12,7 @@ def test_company_wide_scope_covers_everything_and_does_not_filter() -> None:
     point = uuid7()
 
     assert scope.covers(point)
-    # без запрошенной точки фильтра нет, с точкой — сужаемся до неё
+
     assert scope.narrow(None) is None
     assert scope.narrow(point) == frozenset({point})
 

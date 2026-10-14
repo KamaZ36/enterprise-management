@@ -2,9 +2,14 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
-from myasnaya_derevnya.modules.inventory.application.interactors.balances.read import (
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.get import (
     GetBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.list import (
     ListBalancesInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
+    PostProductionInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptInteractor,
@@ -53,6 +58,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.services.document_scope import (
+    DocumentScope,
 )
 from myasnaya_derevnya.modules.inventory.application.services.lot_resolver import (
     LotResolver,
@@ -158,7 +166,6 @@ from myasnaya_derevnya.modules.inventory.presentation.inventory_api import Inven
 
 
 class InventoryDepProvider(Provider):
-    # REPOSITORIES
     @provide(scope=Scope.REQUEST)
     def get_warehouse_repository(self, session: AsyncSession) -> WarehouseRepository:
         return SQLAlchemyWarehouseRepository(session)
@@ -199,7 +206,6 @@ class InventoryDepProvider(Provider):
     ) -> StockLotBalanceRepository:
         return SQLAlchemyStockLotBalanceRepository(session)
 
-    # READERS
 
     @provide(scope=Scope.REQUEST)
     def get_warehouse_reader(self, session: AsyncSession) -> WarehouseReader:
@@ -217,12 +223,14 @@ class InventoryDepProvider(Provider):
     def get_write_off_reader(self, session: AsyncSession) -> WriteOffReader:
         return SQLAlchemyWriteOffReader(session)
 
-    # DOMAIN SERVICES
+
     @provide(scope=Scope.REQUEST)
     def get_cost_policy(self) -> CostPolicy:
         return MovingAverageCostPolicy()
 
-    # APPLICATION SERVICES
+
+    document_scope = provide(DocumentScope, scope=Scope.REQUEST)
+
     @provide(scope=Scope.REQUEST)
     def get_lot_resolver(self, lot_repository: StockLotRepository) -> LotResolver:
         return LotResolver(lot_repository=lot_repository)
@@ -255,7 +263,7 @@ class InventoryDepProvider(Provider):
             cost_policy=cost_policy,
         )
 
-    # INTERACTORS
+
     update_warehouse_interactor = provide(
         UpdateWarehouseInteractor, scope=Scope.REQUEST
     )
@@ -265,6 +273,9 @@ class InventoryDepProvider(Provider):
     list_warehouses_interactor = provide(ListWarehousesInteractor, scope=Scope.REQUEST)
     create_receipt_interactor = provide(CreateReceiptInteractor, scope=Scope.REQUEST)
     post_receipt_interactor = provide(PostReceiptInteractor, scope=Scope.REQUEST)
+    post_production_interactor = provide(
+        PostProductionInteractor, scope=Scope.REQUEST
+    )
     create_write_off_interactor = provide(CreateWriteOffInteractor, scope=Scope.REQUEST)
     post_write_off_interactor = provide(PostWriteOffInteractor, scope=Scope.REQUEST)
     get_balance_interactor = provide(GetBalanceInteractor, scope=Scope.REQUEST)
@@ -279,7 +290,7 @@ class InventoryDepProvider(Provider):
     get_transfer_interactor = provide(GetTransferInteractor, scope=Scope.REQUEST)
     update_transfer_interactor = provide(UpdateTransferInteractor, scope=Scope.REQUEST)
 
-    # TRANSFERS
+
     @provide(scope=Scope.REQUEST)
     def get_transfer_reader(self, session: AsyncSession) -> TransferReader:
         return SQLAlchemyTransferReader(session)
@@ -294,16 +305,22 @@ class InventoryDepProvider(Provider):
     def get_transfer_repository(self, session: AsyncSession) -> TransferRepository:
         return SQLAlchemyTransferRepository(session)
 
-    # FACADE
+
     @provide(scope=Scope.REQUEST)
     def get_inventory_api(
         self,
         create_receipt_interactor: CreateReceiptInteractor,
         post_receipt_interactor: PostReceiptInteractor,
+        post_production_interactor: PostProductionInteractor,
         balance_repository: StockBalanceRepository,
+        warehouse_repository: WarehouseRepository,
+        warehouse_reader: WarehouseReader,
     ) -> InventoryAPI:
         return InventoryAPI(
             create_receipt_interactor=create_receipt_interactor,
             post_receipt_interactor=post_receipt_interactor,
+            post_production_interactor=post_production_interactor,
             balance_repository=balance_repository,
+            warehouse_repository=warehouse_repository,
+            warehouse_reader=warehouse_reader,
         )

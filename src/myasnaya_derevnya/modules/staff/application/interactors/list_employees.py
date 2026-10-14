@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
@@ -42,26 +42,38 @@ class ListEmployeesInteractor:
         self._business_api = business_api
 
     async def __call__(self, query: ListEmployeesQuery) -> EmployeePage:
-        page = query
-
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
 
-        allowed = await self._access_service.can(
-            user_id=current_user_id,
-            permission=READ_EMPLOYEES,
-            org_unit_id=root_org_unit_id,
+        scope = await self._access_service.scope_for(
+            user_id=current_user_id, permission=READ_EMPLOYEES
         )
-        if not allowed:
+        if scope.is_empty():
             raise ForbiddenError()
 
         items, total = await self._employee_reader.list(
-            limit=page.limit, offset=page.offset, search=page.search
+            limit=query.limit,
+            offset=query.offset,
+            search=query.search,
+            org_unit_ids=scope.narrow(None),
         )
 
         return EmployeePage(
-            items=items,
+            items=await self._with_unit_names(items),
             total=total,
-            limit=page.limit,
-            offset=page.offset,
+            limit=query.limit,
+            offset=query.offset,
         )
+
+    async def _with_unit_names(
+        self, items: list[EmployeeListItem]
+    ) -> list[EmployeeListItem]:
+        if not items:
+            return items
+
+        titles = await self._business_api.org_unit_titles(
+            {item.org_unit_id for item in items}
+        )
+
+        return [
+            replace(item, org_unit_name=titles.get(item.org_unit_id)) for item in items
+        ]

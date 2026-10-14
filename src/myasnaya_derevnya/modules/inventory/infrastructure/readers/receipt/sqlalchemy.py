@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from sqlalchemy import RowMapping, func, or_, select
@@ -26,14 +27,14 @@ class SQLAlchemyReceiptReader(ReceiptReader):
     async def list(
         self,
         *,
-        warehouse_id: UUID | None = None,
+        warehouse_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[ReceiptListItem], int]:
         conditions = []
-        if warehouse_id is not None:
-            conditions.append(RECEIPTS_TABLE.c.warehouse_id == warehouse_id)
+        if warehouse_ids is not None:
+            conditions.append(RECEIPTS_TABLE.c.warehouse_id.in_(warehouse_ids))
 
         if search:
             conditions.extend(

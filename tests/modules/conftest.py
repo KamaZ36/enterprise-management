@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.database.connection import async_session_maker, engine
+from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.modules.catalog.domain.entities.category import Category
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
@@ -37,8 +38,19 @@ async def db_session() -> AsyncIterator[AsyncSession]:
 
 
 @pytest.fixture
-async def make_nomenclature(db_session: AsyncSession) -> Callable[..., Coroutine]:
+async def root_org_unit_id(db_session: AsyncSession) -> UUID:
+    await bootstrap_system()
 
+    root_id = await db_session.scalar(
+        text("select id from business.org_units where parent_id is null limit 1")
+    )
+    assert root_id is not None
+
+    return root_id
+
+
+@pytest.fixture
+async def make_nomenclature(db_session: AsyncSession) -> Callable[..., Coroutine]:
     categories = SQLAlchemyCategoryRepository(db_session)
     nomenclatures = SQLAlchemyNomenclatureRepository(db_session)
     created_categories: list[UUID] = []

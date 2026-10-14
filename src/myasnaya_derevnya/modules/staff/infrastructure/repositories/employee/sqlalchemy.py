@@ -19,6 +19,7 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         stmt = insert(EMPLOYEES_TABLE).values(
             id=employee.id,
             user_id=employee.user_id,
+            org_unit_id=employee.org_unit_id,
             first_name=employee.first_name,
             last_name=employee.last_name,
             middle_name=employee.middle_name,
@@ -35,6 +36,7 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
             update(EMPLOYEES_TABLE)
             .where(EMPLOYEES_TABLE.c.id == employee.id)
             .values(
+                org_unit_id=employee.org_unit_id,
                 first_name=employee.first_name,
                 last_name=employee.last_name,
                 middle_name=employee.middle_name,
@@ -71,6 +73,7 @@ class SQLAlchemyEmployeeRepository(EmployeeRepository):
         return Employee(
             id=row["id"],
             user_id=row["user_id"],
+            org_unit_id=row["org_unit_id"],
             first_name=row["first_name"],
             last_name=row["last_name"],
             middle_name=row["middle_name"],

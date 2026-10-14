@@ -4,6 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.modules.sales.application.interactors.cancel_order import (
     CancelOrderInteractor,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.complete_order import (
+    CompleteOrderInteractor,
+)
 from myasnaya_derevnya.modules.sales.application.interactors.confirm_order import (
     ConfirmOrderInteractor,
 )
@@ -21,6 +24,15 @@ from myasnaya_derevnya.modules.sales.application.interactors.list_my_orders impo
 )
 from myasnaya_derevnya.modules.sales.application.interactors.list_orders import (
     ListOrdersInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.mark_order_ready import (
+    MarkOrderReadyInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.start_preparing_order import (
+    StartPreparingOrderInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.update_order import (
+    UpdateOrderInteractor,
 )
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
@@ -56,3 +68,9 @@ class SalesDepProvider(Provider):
     create_order_interactor = provide(CreateOrderInteractor, scope=Scope.REQUEST)
     confirm_order_interactor = provide(ConfirmOrderInteractor, scope=Scope.REQUEST)
     cancel_order_interactor = provide(CancelOrderInteractor, scope=Scope.REQUEST)
+    complete_order_interactor = provide(CompleteOrderInteractor, scope=Scope.REQUEST)
+    update_order_interactor = provide(UpdateOrderInteractor, scope=Scope.REQUEST)
+    start_preparing_order_interactor = provide(
+        StartPreparingOrderInteractor, scope=Scope.REQUEST
+    )
+    mark_order_ready_interactor = provide(MarkOrderReadyInteractor, scope=Scope.REQUEST)

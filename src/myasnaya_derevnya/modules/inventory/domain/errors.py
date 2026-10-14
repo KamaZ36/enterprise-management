@@ -148,9 +148,14 @@ class EmptyDocumentError(InventoryDomainError):
 
 
 @dataclass(slots=True, eq=False)
+class CostAllocationError(InventoryDomainError):
+    def __str__(self) -> str:
+        return "Сумма долей выпуска равна нулю: себестоимость разложить нечем."
+
+
+@dataclass(slots=True, eq=False)
 class WarehouseInUseError(ConflictError):
     warehouse_id: UUID
-
     def __str__(self) -> str:
         return (
             f"Нельзя изменить назначение склада {self.warehouse_id}: "

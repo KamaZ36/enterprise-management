@@ -428,5 +428,4 @@ async function goToPage(target: number): Promise<void> {
   page.value = target;
   await loadPrices();
 }
-
 </script>

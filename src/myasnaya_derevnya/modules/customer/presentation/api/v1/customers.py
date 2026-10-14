@@ -3,9 +3,11 @@ from uuid import UUID
 from fastapi import APIRouter, Request
 
 from myasnaya_derevnya.core.dependencies.container import container
-from myasnaya_derevnya.modules.customer.application.interactors.list_customers import (
+from myasnaya_derevnya.modules.customer.application.interactors.get_customer import (
     GetCustomerInteractor,
     GetCustomerQuery,
+)
+from myasnaya_derevnya.modules.customer.application.interactors.list_customers import (
     ListCustomersInteractor,
     ListCustomersQuery,
 )

@@ -22,6 +22,8 @@ class AssignRoleCommandSchema(BaseModel):
 class EmployeeSchema(BaseModel):
     id: UUID
     user_id: UUID
+    org_unit_id: UUID
+    org_unit_name: str | None = None
     first_name: str
     last_name: str
     middle_name: str | None
@@ -36,6 +38,8 @@ class EmployeeSchema(BaseModel):
         return cls(
             id=employee.id,
             user_id=employee.user_id,
+            org_unit_id=employee.org_unit_id,
+            org_unit_name=employee.org_unit_name,
             first_name=employee.first_name,
             last_name=employee.last_name,
             middle_name=employee.middle_name,
@@ -61,6 +65,7 @@ class UpdateEmployeeSchema(BaseModel):
     phone_number: str | None = None
     position: str | None = Field(default=None, min_length=1)
     is_active: bool | None = None
+    org_unit_id: UUID | None = None
 
 
 class EmployeeListSchema(BaseModel):
@@ -133,6 +138,7 @@ class CurrentUserRoleSchema(BaseModel):
 class CurrentUserScopeSchema(BaseModel):
     id: UUID
     title: str
+    permissions: list[str]
 
 
 class CurrentUserSchema(BaseModel):
@@ -158,7 +164,11 @@ class CurrentUserSchema(BaseModel):
             roles=[CurrentUserRoleSchema.from_dto(item) for item in view.roles],
             permissions=sorted(view.permissions),
             scopes=[
-                CurrentUserScopeSchema(id=item.id, title=item.title)
+                CurrentUserScopeSchema(
+                    id=item.id,
+                    title=item.title,
+                    permissions=sorted(item.permissions),
+                )
                 for item in view.scopes
             ],
         )

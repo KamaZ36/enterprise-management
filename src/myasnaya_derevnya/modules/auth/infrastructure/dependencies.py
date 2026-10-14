@@ -80,7 +80,6 @@ from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
 
 
 class AuthDepProvider(Provider):
-    # LOGIN CODES
     @provide(scope=Scope.REQUEST)
     def get_one_time_code_repository(
         self, session: AsyncSession
@@ -102,7 +101,7 @@ class AuthDepProvider(Provider):
     def get_login_code_sender(self) -> LoginCodeSender:
         return LoggingLoginCodeSender()
 
-    # REPOSITORIES
+
     @provide(scope=Scope.REQUEST)
     def get_credential_repository(self, session: AsyncSession) -> CredentialRepository:
         return SQLAlchemyCredentialRepository(session)
@@ -123,10 +122,10 @@ class AuthDepProvider(Provider):
     ) -> UserIdentityRepository:
         return SQLAlchemyUserIdentityRepository(session)
 
-    # SERVICES
+
     password_service = provide(PasswordService, scope=Scope.REQUEST)
 
-    # INTERACTORS
+
     logout_interactor = provide(LogoutInteractor, scope=Scope.REQUEST)
 
     change_password_interactor = provide(ChangePasswordInteractor, scope=Scope.REQUEST)
@@ -158,5 +157,5 @@ class AuthDepProvider(Provider):
 
     start_session_interactor = provide(StartSessionInteractor, scope=Scope.REQUEST)
 
-    # FACADE
+
     auth_api = provide(AuthAPI, scope=Scope.REQUEST)

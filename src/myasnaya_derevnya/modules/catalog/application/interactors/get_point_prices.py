@@ -30,13 +30,7 @@ class GetPointPricesInteractor:
         if binding is None:
             return {}
 
-        prices: dict[UUID, int] = {}
-        for nomenclature_id in query.nomenclature_ids:
-            price = await self._price_repository.get_by_nomenclature_and_list(
-                nomenclature_id=nomenclature_id,
-                price_list_id=binding.price_list_id,
-            )
-            if price is not None:
-                prices[nomenclature_id] = price.value
-
-        return prices
+        return await self._price_repository.get_values_by_nomenclatures_and_list(
+            nomenclature_ids=query.nomenclature_ids,
+            price_list_id=binding.price_list_id,
+        )

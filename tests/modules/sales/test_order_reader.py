@@ -50,7 +50,7 @@ async def test_list_filters_and_totals(db_session: AsyncSession) -> None:
 
     by_lines = {item.id: item.line_count for item in items}
     assert by_lines[first.id] == 1
-    assert by_lines[third.id] if third.id in by_lines else True
+    assert third.id not in by_lines
 
     only_customer, customer_total = await reader.list(customer_id=customer_id)
 
@@ -58,11 +58,11 @@ async def test_list_filters_and_totals(db_session: AsyncSession) -> None:
     assert only_customer[0].id == second.id
     assert only_customer[0].number is None
 
-    same_day, day_total = await reader.list(day=first.created_at.date())
+    _same_day, day_total = await reader.list(day=first.created_at.date())
 
     assert day_total == 3
 
-    drafts, draft_total = await reader.list(statuses=["draft"])
+    _drafts, draft_total = await reader.list(statuses=["draft"])
 
     assert draft_total == 3
 

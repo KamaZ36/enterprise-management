@@ -37,6 +37,10 @@
 
       <el-table-column prop="position" label="Должность" min-width="200" />
 
+      <el-table-column label="Точка" min-width="180">
+        <template #default="{ row }">{{ row.org_unit_name ?? "—" }}</template>
+      </el-table-column>
+
       <el-table-column label="Телефон" width="190">
         <template #default="{ row }">{{ row.phone_number ?? "—" }}</template>
       </el-table-column>
@@ -95,6 +99,21 @@
           </el-form-item>
         </div>
 
+        <el-form-item label="Работает в">
+          <el-select
+            v-model="form.org_unit_id"
+            placeholder="Подразделение"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="unit in orgUnitOptions"
+              :key="unit.id"
+              :label="unit.name"
+              :value="unit.id"
+            />
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="Логин для входа">
           <el-input v-model="form.username" placeholder="ivanov" />
         </el-form-item>
@@ -147,11 +166,13 @@ definePageMeta({ permissions: CAN.employeesOpen });
 import type { components } from "@md/api-client";
 
 type Employee = components["schemas"]["EmployeeSchema"];
+type OrgUnit = components["schemas"]["OrgUnitSchema"];
 
 const PAGE_SIZE = 20;
 
 const api = useApi();
 const { can } = useCurrentUser();
+const { scopes, scopeId, load: loadScope } = useCurrentScope();
 
 const items = ref<Employee[]>([]);
 const total = ref(0);
@@ -165,6 +186,7 @@ const credentialsOpen = ref(false);
 const saving = ref(false);
 const createError = ref("");
 const credentials = reactive({ username: "", password: "" });
+const orgUnitOptions = ref<{ id: string; name: string }[]>([]);
 
 const today = new Date().toISOString().slice(0, 10);
 const form = reactive({
@@ -175,6 +197,7 @@ const form = reactive({
   phone_number: "",
   hired_at: today,
   username: "",
+  org_unit_id: "",
 });
 
 function reasonOf(status: number, fallback: string): string {
@@ -235,8 +258,39 @@ async function load(): Promise<void> {
   }
 }
 
+async function loadOrgUnits(): Promise<void> {
+  const options = new Map<string, string>();
+
+
+  for (const scope of scopes.value) {
+    options.set(scope.id, scope.title);
+  }
+
+  if (can("org_unit.read")) {
+    const { data, response } = await api.GET("/api/business/org-units", {});
+    if (response.ok && data) {
+      for (const unit of data) {
+        if (!options.has(unit.id)) {
+          options.set(unit.id, unit.name);
+        }
+      }
+    }
+  }
+
+  orgUnitOptions.value = [...options].map(([id, name]) => ({ id, name }));
+
+  if (!form.org_unit_id) {
+    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+  }
+}
+
 function openCreate(): void {
   createError.value = "";
+
+  if (!form.org_unit_id) {
+    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+  }
+
   createOpen.value = true;
 }
 
@@ -253,6 +307,7 @@ async function createEmployee(): Promise<void> {
         phone_number: form.phone_number.trim() || null,
         position: form.position.trim(),
         hired_at: form.hired_at,
+        org_unit_id: form.org_unit_id || undefined,
       },
     });
 
@@ -288,6 +343,7 @@ async function createEmployee(): Promise<void> {
     form.position = "";
     form.phone_number = "";
     form.username = "";
+    form.org_unit_id = "";
 
     page.value = 1;
     await load();
@@ -298,8 +354,17 @@ async function createEmployee(): Promise<void> {
   }
 }
 
-onMounted(load);
+onMounted(async () => {
+  await loadScope();
+  await loadOrgUnits();
+  await load();
+});
+
 watch(page, load);
+watch(scopeId, () => {
+  page.value = 1;
+  void load();
+});
 </script>
 
 <style scoped>

@@ -8,8 +8,7 @@ down_revision: str | Sequence[str] | None = "e6c3d9a4b2f8"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-# колонка → допустимые значения. Список берётся из перечислений кода,
-# чтобы база не принимала значения, которых код не знает.
+
 CONSTRAINTS: dict[tuple[str, str, str], tuple[str, ...]] = {
     ("auth", "user_credentials", "credential_type"): ("password",),
     ("auth", "user_identities", "identity_type"): ("username", "phone_number"),

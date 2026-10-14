@@ -183,6 +183,40 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="Фото для меню">
+          <div class="photo">
+            <div class="photo__preview">
+              <img v-if="form.image_url" :src="form.image_url" alt="" />
+              <span v-else class="photo__empty">нет фото</span>
+            </div>
+
+            <div class="photo__controls">
+              <el-upload
+                :show-file-list="false"
+                accept="image/*"
+                :http-request="uploadToCreate"
+              >
+                <el-button :loading="uploading">
+                  {{ form.image_url ? "Заменить" : "Загрузить фото" }}
+                </el-button>
+              </el-upload>
+              <el-button v-if="form.image_url" text @click="form.image_url = ''">
+                Убрать
+              </el-button>
+              <span class="hint">JPG, PNG или WebP — сожмём и пересохраним сами</span>
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="Описание для меню">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="2"
+            placeholder="Состав или короткое описание блюда"
+          />
+        </el-form-item>
+
         <el-alert
           v-if="createError"
           :title="createError"
@@ -250,6 +284,40 @@
           <span class="hint">закрытая позиция остаётся в документах, но её нельзя выбрать в новых</span>
         </el-form-item>
 
+        <el-form-item label="Фото для меню">
+          <div class="photo">
+            <div class="photo__preview">
+              <img v-if="editForm.image_url" :src="editForm.image_url" alt="" />
+              <span v-else class="photo__empty">нет фото</span>
+            </div>
+
+            <div class="photo__controls">
+              <el-upload
+                :show-file-list="false"
+                accept="image/*"
+                :http-request="uploadToEdit"
+              >
+                <el-button :loading="uploading">
+                  {{ editForm.image_url ? "Заменить" : "Загрузить фото" }}
+                </el-button>
+              </el-upload>
+              <el-button v-if="editForm.image_url" text @click="editForm.image_url = ''">
+                Убрать
+              </el-button>
+              <span class="hint">JPG, PNG или WebP — сожмём и пересохраним сами</span>
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="Описание для меню">
+          <el-input
+            v-model="editForm.description"
+            type="textarea"
+            :rows="2"
+            placeholder="Состав или короткое описание блюда"
+          />
+        </el-form-item>
+
         <el-alert
           v-if="editError"
           :title="editError"
@@ -306,8 +374,11 @@ const editForm = reactive({
   unit: "kg" as Nomenclature["unit"],
   type: "raw_material" as Nomenclature["type"],
   is_active: true,
+  image_url: "",
+  description: "",
 });
 const saving = ref(false);
+const uploading = ref(false);
 const createError = ref("");
 
 const form = reactive({
@@ -316,6 +387,8 @@ const form = reactive({
   type: "raw_material",
   unit: "kg",
   category_id: "",
+  image_url: "",
+  description: "",
 });
 
 function reasonOf(status: number, fallback: string): string {
@@ -387,6 +460,8 @@ function openCreate(): void {
   form.type = "raw_material";
   form.unit = "kg";
   form.category_id = categories.value[0]?.id ?? "";
+  form.image_url = "";
+  form.description = "";
   createOpen.value = true;
 }
 
@@ -402,6 +477,8 @@ async function createNomenclature(): Promise<void> {
         unit: form.unit as Nomenclature["unit"],
         type: form.type as Nomenclature["type"],
         category_id: form.category_id,
+        image_url: form.image_url.trim() || null,
+        description: form.description.trim() || null,
       },
     });
 
@@ -419,6 +496,49 @@ async function createNomenclature(): Promise<void> {
   }
 }
 
+
+async function uploadPhoto(
+  file: File,
+  target: "create" | "edit",
+): Promise<void> {
+  const model = target === "create" ? form : editForm;
+  const failure = target === "create" ? createError : editError;
+  const payload = new FormData();
+  payload.append("file", file);
+
+  uploading.value = true;
+  failure.value = "";
+  notice.value = "";
+
+  try {
+    const { data, response, error } = await api.POST("/api/catalog/images", {
+      body: payload as never,
+    });
+
+    if (!response.ok || !data) {
+      const reason = error as { message?: string } | undefined;
+      throw new Error(
+        reason?.message ?? `Не удалось загрузить фото: ${response.status}`,
+      );
+    }
+
+    model.image_url = data.url;
+    notice.value = `Фото загружено: ${data.width}×${data.height}, ${Math.round(data.size_bytes / 1024)} КБ`;
+  } catch (cause) {
+    failure.value = cause instanceof Error ? cause.message : "Ошибка загрузки";
+  } finally {
+    uploading.value = false;
+  }
+}
+
+function uploadToCreate(options: { file: File }): Promise<void> {
+  return uploadPhoto(options.file, "create");
+}
+
+function uploadToEdit(options: { file: File }): Promise<void> {
+  return uploadPhoto(options.file, "edit");
+}
+
 function openEdit(row: Nomenclature): void {
   editRow.value = row;
   editError.value = "";
@@ -428,6 +548,8 @@ function openEdit(row: Nomenclature): void {
   editForm.unit = row.unit;
   editForm.type = row.type;
   editForm.is_active = row.is_active;
+  editForm.image_url = row.image_url ?? "";
+  editForm.description = row.description ?? "";
   editOpen.value = true;
 }
 
@@ -453,6 +575,14 @@ async function saveEdit(): Promise<void> {
   }
   if (editForm.is_active !== row.is_active) {
     body.is_active = editForm.is_active;
+  }
+
+
+  if (editForm.image_url.trim() !== (row.image_url ?? "")) {
+    body.image_url = editForm.image_url.trim();
+  }
+  if (editForm.description.trim() !== (row.description ?? "")) {
+    body.description = editForm.description.trim();
   }
 
   if (!Object.keys(body).length) {
@@ -575,7 +705,6 @@ async function savePrice(row: {
     priceSaving.value = null;
   }
 }
-
 </script>
 
 <style scoped>
@@ -598,5 +727,38 @@ async function savePrice(row: {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 16px;
+}
+
+.photo {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.photo__preview {
+  display: grid;
+  width: 132px;
+  height: 99px;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+}
+
+.photo__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 </style>

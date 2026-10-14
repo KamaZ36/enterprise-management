@@ -1,27 +1,26 @@
+import { useCurrentUser } from "~/composables/useCurrentUser";
+
 export type ScopeOption = {
   id: string;
   title: string;
 };
 
-/**
- * Текущий контекст работы: точка, в которой сотрудник сейчас смотрит данные.
- * Незаполненный контекст означает «все доступные точки» — так работает директор.
- */
+
 export function useCurrentScope() {
-  const api = useApi();
-
+  const { user, load: loadUser } = useCurrentUser();
   const cookie = useCookie<string | null>("scope_id", { default: () => null });
-  const scopes = useState<ScopeOption[]>("scope_options", () => []);
 
-  async function load(): Promise<void> {
-    // Всегда спрашиваем заново: после смены пользователя кэш держал бы чужие точки.
-    const { data } = await api.GET("/api/staff/me", {});
 
-    // Точки и их названия приходят с сервера: клиент ничего не додумывает.
-    scopes.value = (data?.scopes ?? []).map((scope) => ({
+  const scopes = computed<ScopeOption[]>(() =>
+    (user.value?.scopes ?? []).map((scope) => ({
       id: scope.id,
       title: scope.title,
-    }));
+    })),
+  );
+
+  async function load(): Promise<void> {
+    await loadUser();
+
     const ids = scopes.value.map((scope) => scope.id);
 
     if (cookie.value && !ids.includes(cookie.value)) {
@@ -36,8 +35,9 @@ export function useCurrentScope() {
   const scopeId = computed(() => cookie.value);
   const hasChoice = computed(() => scopes.value.length > 1);
 
-  function setScope(id: string | null): void {
-    cookie.value = id;
+  function setScope(id: string | null | undefined): void {
+
+    cookie.value = id || null;
   }
 
   return { scopes, scopeId, hasChoice, setScope, load };

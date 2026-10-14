@@ -1,6 +1,5 @@
 from myasnaya_derevnya.core.types.permission import Permission
 
-# СКЛАДЫ
 MANAGE_WAREHOUSES = Permission(
     code="inventory.warehouse.manage",
     description="Управление складами",
@@ -12,7 +11,6 @@ READ_WAREHOUSES = Permission(
 )
 
 
-# ДОКУМЕНТЫ
 CREATE_DOCUMENT = Permission(
     code="inventory.document.create",
     description="Создание складских документов",
@@ -24,7 +22,6 @@ POST_DOCUMENT = Permission(
 )
 
 
-# ОСТАТКИ И СЕБЕСТОИМОСТЬ
 READ_BALANCES = Permission(
     code="inventory.balance.read",
     description="Просмотр остатков",

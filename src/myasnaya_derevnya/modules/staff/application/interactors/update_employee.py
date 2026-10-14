@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
-from myasnaya_derevnya.core.errors import ForbiddenError
+from myasnaya_derevnya.core.errors import ForbiddenError, ValidationError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.core.types.phone_number import PhoneNumber
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
@@ -29,6 +29,7 @@ class UpdateEmployeeCommand:
     phone_number: str | None = None
     position: str | None = None
     is_active: bool | None = None
+    org_unit_id: UUID | None = None
 
 
 class UpdateEmployeeInteractor:
@@ -48,19 +49,28 @@ class UpdateEmployeeInteractor:
 
     async def __call__(self, command: UpdateEmployeeCommand) -> None:
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
-
-        allowed = await self._access_service.can(
-            user_id=current_user_id,
-            permission=MANAGE_EMPLOYEES,
-            org_unit_id=root_org_unit_id,
-        )
-        if not allowed:
-            raise ForbiddenError()
 
         employee = await self._employee_repository.get_by_id(command.employee_id)
         if employee is None:
             raise EmployeeNotFound()
+
+        target_org_unit_id = employee.org_unit_id
+        if "org_unit_id" in command.provided and command.org_unit_id is not None:
+            target_org_unit_id = command.org_unit_id
+
+        for org_unit_id in {employee.org_unit_id, target_org_unit_id}:
+            allowed = await self._access_service.can(
+                user_id=current_user_id,
+                permission=MANAGE_EMPLOYEES,
+                org_unit_id=org_unit_id,
+            )
+            if not allowed:
+                raise ForbiddenError()
+
+        if target_org_unit_id != employee.org_unit_id:
+            if not await self._business_api.org_unit_exists(target_org_unit_id):
+                raise ValidationError()
+            employee.transfer_to(target_org_unit_id)
 
         if any(field in command.provided for field in NAME_FIELDS):
             employee.rename(

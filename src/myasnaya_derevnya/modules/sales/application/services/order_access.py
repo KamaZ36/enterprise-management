@@ -8,12 +8,6 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 class OrderAccess:
-    """Кто вправе действовать с заказом.
-
-    Сотрудник — по праву на точку заказа. Клиент — только если заказ его.
-    Профиль читается, но не создаётся: иначе сотруднику завёлся бы лишний.
-    """
-
     def __init__(self, staff_api: StaffAPI, customer_api: CustomerAPI) -> None:
         self._staff_api = staff_api
         self._customer_api = customer_api
@@ -38,8 +32,15 @@ class OrderAccess:
         if own_customer_id is None or order.customer_id != own_customer_id:
             raise ForbiddenError()
 
+    async def ensure_is_staff(
+        self, *, user_id: UUID, order: Order, permission: Permission
+    ) -> None:
+        if not await self.is_staff(
+            user_id=user_id, org_unit_id=order.org_unit_id, permission=permission
+        ):
+            raise ForbiddenError()
+
     async def customer_id_of(self, user_id: UUID) -> UUID | None:
-        """Профиль клиента, если он есть. Ничего не создаёт."""
         return await self._customer_api.get_customer_id(user_id)
 
     async def ensure_can_view(
@@ -50,7 +51,6 @@ class OrderAccess:
         customer_id: UUID | None,
         permission: Permission,
     ) -> None:
-        """Просмотр готовых данных, где нет сущности заказа под рукой."""
         if await self.is_staff(
             user_id=user_id, org_unit_id=org_unit_id, permission=permission
         ):

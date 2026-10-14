@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Table,
     UniqueConstraint,
@@ -28,6 +29,8 @@ CATEGORIES_TABLE = Table(
         nullable=True,
     ),
     Column("name", String(128), nullable=False),
+
+    Column("sort_order", Integer, nullable=False, server_default="0"),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -59,6 +62,8 @@ NOMENCLATURES_TABLE = Table(
         nullable=False,
     ),
     Column("gtin", String(14), nullable=True),
+    Column("image_url", String(512), nullable=True),
+    Column("description", String(1024), nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()

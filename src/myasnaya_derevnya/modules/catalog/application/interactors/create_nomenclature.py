@@ -28,6 +28,8 @@ class CreateNomenclatureCommand:
     unit: UnitOfMeasurement
     type_: NomenclatureType
     category_id: UUID
+    image_url: str | None = None
+    description: str | None = None
 
 
 class CreateNomenclatureInteractor:
@@ -64,6 +66,8 @@ class CreateNomenclatureInteractor:
             unit=command.unit,
             type_=command.type_,
             category_id=command.category_id,
+            image_url=command.image_url,
+            description=command.description,
         )
 
         await self._nomenclature_repository.add(nomenclature)

@@ -22,11 +22,17 @@ EMPLOYEES_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("user_id", UUID, nullable=False),
+    Column(
+        "org_unit_id",
+        UUID,
+        ForeignKey("business.org_units.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
     Column("first_name", String(100), nullable=False),
     Column("last_name", String(100), nullable=False),
     Column("middle_name", String(100), nullable=True),
     Column("phone_number", String(20), nullable=True),
-    # E.164
+
     Column("position", String(100), nullable=False),
     Column("hired_at", Date, nullable=False),
     Column("dismissed_at", Date, nullable=True),
@@ -39,6 +45,7 @@ EMPLOYEES_TABLE = Table(
         unique=True,
     ),
     Index("ix_employees_last_name", "last_name"),
+    Index("ix_employees_org_unit_id", "org_unit_id"),
     schema=DATABASE_SCHEMA,
 )
 

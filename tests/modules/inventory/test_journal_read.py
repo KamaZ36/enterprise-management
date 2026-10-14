@@ -1,4 +1,3 @@
-"""Юнит-тесты чтения журнала документов склада."""
 
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -11,6 +10,10 @@ from myasnaya_derevnya.modules.inventory.application.dto import (
     ReceiptDetail,
     ReceiptLineItem,
     ReceiptListItem,
+    TransferDetail,
+    TransferLineItem,
+    TransferListItem,
+    WarehouseListItem,
     WriteOffDetail,
     WriteOffLineItem,
     WriteOffListItem,
@@ -23,6 +26,14 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list i
     ListReceiptsInteractor,
     ListReceiptsQuery,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.get import (
+    GetTransferInteractor,
+    GetTransferQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.list import (
+    ListTransfersInteractor,
+    ListTransfersQuery,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.get import (
     GetWriteOffInteractor,
     GetWriteOffQuery,
@@ -31,12 +42,21 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list
     ListWriteOffsInteractor,
     ListWriteOffsQuery,
 )
+from myasnaya_derevnya.modules.inventory.application.services.document_scope import (
+    DocumentScope,
+)
+from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import WarehouseType
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     ReceiptNotFoundError,
+    TransferNotFoundError,
     WriteOffNotFoundError,
+)
+from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
+    AccessScope,
 )
 
 OCCURRED_AT = datetime(2026, 10, 11, 9, 0, tzinfo=UTC)
+READ_DOCUMENTS = "inventory.document.read"
 
 
 class FakeIdentityProvider:
@@ -47,22 +67,38 @@ class FakeIdentityProvider:
         return uuid4()
 
 
-class FakeBusinessAPI:
-    def __init__(self, root_unit_id: UUID) -> None:
-        self._root_unit_id = root_unit_id
-
-    async def get_root_unit_id(self) -> UUID:
-        return self._root_unit_id
-
-
 class FakeStaffAPI:
-    def __init__(self, allowed: bool = True) -> None:
+    def __init__(
+        self,
+        allowed: bool = True,
+        scope: AccessScope | None = None,
+        allowed_units: set[UUID] | None = None,
+    ) -> None:
         self.allowed = allowed
-        self.checked: list[tuple[str, UUID | None]] = []
+        self.scope = scope if scope is not None else AccessScope.company_wide()
+        self.allowed_units = allowed_units
+        self.can_calls: list[tuple[str, UUID | None]] = []
+        self.scope_calls: list[str] = []
 
     async def can(self, user_id: UUID, permission, org_unit_id: UUID | None) -> bool:
-        self.checked.append((permission.code, org_unit_id))
+        self.can_calls.append((permission.code, org_unit_id))
+        if self.allowed_units is not None:
+            return org_unit_id in self.allowed_units
         return self.allowed
+
+    async def scope_for(self, user_id: UUID, permission) -> AccessScope:
+        self.scope_calls.append(permission.code)
+        return self.scope
+
+
+class FakeWarehouseReader:
+    def __init__(self, warehouses: list[WarehouseListItem] | None = None) -> None:
+        self.warehouses = warehouses or []
+        self.list_all_calls = 0
+
+    async def list_all(self) -> list[WarehouseListItem]:
+        self.list_all_calls += 1
+        return self.warehouses
 
 
 class FakeCatalogAPI:
@@ -76,9 +112,9 @@ class FakeCatalogAPI:
 
 
 class FakeReceiptReader:
-    def __init__(self) -> None:
+    def __init__(self, detail: ReceiptDetail | None = None) -> None:
         self.items: list[ReceiptListItem] = []
-        self.detail: ReceiptDetail | None = None
+        self.detail = detail
         self.list_calls: list[dict] = []
         self.get_calls: list[UUID] = []
 
@@ -91,21 +127,74 @@ class FakeReceiptReader:
         return self.detail
 
 
-class FakeWriteOffReader:
-    def __init__(self) -> None:
-        self.items: list[WriteOffListItem] = []
-        self.detail: WriteOffDetail | None = None
+class FakeTransferReader:
+    def __init__(self, detail: TransferDetail | None = None) -> None:
+        self.items: list[TransferListItem] = []
+        self.detail = detail
         self.list_calls: list[dict] = []
+        self.get_calls: list[UUID] = []
+
+    async def list(self, **kwargs):
+        self.list_calls.append(kwargs)
+        return self.items, len(self.items)
+
+    async def get(self, transfer_id: UUID) -> TransferDetail | None:
+        self.get_calls.append(transfer_id)
+        return self.detail
+
+
+class FakeWriteOffReader:
+    def __init__(self, detail: WriteOffDetail | None = None) -> None:
+        self.items: list[WriteOffListItem] = []
+        self.detail = detail
+        self.list_calls: list[dict] = []
+        self.get_calls: list[UUID] = []
 
     async def list(self, **kwargs):
         self.list_calls.append(kwargs)
         return self.items, len(self.items)
 
     async def get(self, write_off_id: UUID) -> WriteOffDetail | None:
+        self.get_calls.append(write_off_id)
         return self.detail
 
 
-def make_receipt_detail(nomenclature_id: UUID) -> ReceiptDetail:
+def make_warehouse_item(org_unit_id: UUID, name: str = "Склад") -> WarehouseListItem:
+    return WarehouseListItem(
+        id=uuid4(),
+        org_unit_id=org_unit_id,
+        code=f"W-{uuid4().hex[:6]}",
+        name=name,
+        type=WarehouseType.RAW,
+        is_active=True,
+    )
+
+
+def make_document_scope(
+    *,
+    scope: AccessScope | None = None,
+    warehouses: list[WarehouseListItem] | None = None,
+    allowed: bool = True,
+    allowed_units: set[UUID] | None = None,
+) -> tuple[DocumentScope, FakeWarehouseReader, FakeStaffAPI]:
+    warehouse_reader = FakeWarehouseReader(warehouses)
+    staff_api = FakeStaffAPI(
+        allowed=allowed,
+        scope=scope,
+        allowed_units=allowed_units,
+    )
+    document_scope = DocumentScope(
+        identity_provider=FakeIdentityProvider(),
+        warehouse_reader=warehouse_reader,
+        staff_api=staff_api,
+    )
+
+    return document_scope, warehouse_reader, staff_api
+
+
+def make_receipt_detail(
+    nomenclature_id: UUID, org_unit_id: UUID | None = None
+) -> ReceiptDetail:
     return ReceiptDetail(
         id=uuid4(),
         warehouse_id=uuid4(),
@@ -126,10 +215,40 @@ def make_receipt_detail(nomenclature_id: UUID) -> ReceiptDetail:
                 expires_at=date(2026, 11, 5),
             )
         ],
+        org_unit_id=org_unit_id,
     )
 
 
-def make_write_off_detail(nomenclature_id: UUID) -> WriteOffDetail:
+def make_transfer_detail(
+    nomenclature_id: UUID,
+    *,
+    from_org_unit_id: UUID | None = None,
+    to_org_unit_id: UUID | None = None,
+) -> TransferDetail:
+    return TransferDetail(
+        id=uuid4(),
+        from_warehouse_id=uuid4(),
+        to_warehouse_id=uuid4(),
+        status="posted",
+        occurred_at=OCCURRED_AT,
+        posted_at=OCCURRED_AT,
+        comment="Перевозка",
+        lines=[
+            TransferLineItem(
+                id=uuid4(),
+                nomenclature_id=nomenclature_id,
+                quantity=Decimal(2),
+                lot_code="L-001",
+            )
+        ],
+        org_unit_id=from_org_unit_id,
+        to_org_unit_id=to_org_unit_id,
+    )
+
+
+def make_write_off_detail(
+    nomenclature_id: UUID, org_unit_id: UUID | None = None
+) -> WriteOffDetail:
     return WriteOffDetail(
         id=uuid4(),
         warehouse_id=uuid4(),
@@ -146,38 +265,75 @@ def make_write_off_detail(nomenclature_id: UUID) -> WriteOffDetail:
                 lot_code="L-001",
             )
         ],
+        org_unit_id=org_unit_id,
     )
 
 
-def build_list_receipts(*, allowed: bool = True):
+def build_list_receipts(
+    *,
+    scope: AccessScope | None = None,
+    warehouses: list[WarehouseListItem] | None = None,
+) -> tuple[ListReceiptsInteractor, FakeReceiptReader]:
     reader = FakeReceiptReader()
-    staff_api = FakeStaffAPI(allowed=allowed)
+    document_scope, _, _ = make_document_scope(scope=scope, warehouses=warehouses)
     interactor = ListReceiptsInteractor(
-        identity_provider=FakeIdentityProvider(),
         receipt_reader=reader,
-        business_api=FakeBusinessAPI(uuid4()),
-        staff_api=staff_api,
+        document_scope=document_scope,
     )
 
     return interactor, reader
 
 
-def build_list_write_offs():
+def build_list_transfers(
+    *,
+    scope: AccessScope | None = None,
+    warehouses: list[WarehouseListItem] | None = None,
+) -> tuple[ListTransfersInteractor, FakeTransferReader]:
+    reader = FakeTransferReader()
+    document_scope, _, _ = make_document_scope(scope=scope, warehouses=warehouses)
+    interactor = ListTransfersInteractor(
+        transfer_reader=reader,
+        document_scope=document_scope,
+    )
+
+    return interactor, reader
+
+
+def build_list_write_offs() -> tuple[ListWriteOffsInteractor, FakeWriteOffReader]:
     reader = FakeWriteOffReader()
+    document_scope, _, _ = make_document_scope()
 
     return (
         ListWriteOffsInteractor(
-            identity_provider=FakeIdentityProvider(),
             write_off_reader=reader,
-            business_api=FakeBusinessAPI(uuid4()),
-            staff_api=FakeStaffAPI(),
+            document_scope=document_scope,
         ),
         reader,
     )
 
 
+def build_get_receipt(
+    detail: ReceiptDetail | None,
+    *,
+    allowed: bool = True,
+    allowed_units: set[UUID] | None = None,
+    catalog_api: FakeCatalogAPI | None = None,
+) -> tuple[GetReceiptInteractor, FakeReceiptReader, FakeStaffAPI]:
+    reader = FakeReceiptReader(detail=detail)
+    document_scope, _, staff_api = make_document_scope(
+        allowed=allowed, allowed_units=allowed_units
+    )
+    interactor = GetReceiptInteractor(
+        receipt_reader=reader,
+        catalog_api=catalog_api or FakeCatalogAPI(),
+        document_scope=document_scope,
+    )
+
+    return interactor, reader, staff_api
+
+
 async def test_journal_requires_read_permission() -> None:
-    interactor, reader = build_list_receipts(allowed=False)
+    interactor, reader = build_list_receipts(scope=AccessScope.of([]))
 
     with pytest.raises(ForbiddenError):
         await interactor(ListReceiptsQuery())
@@ -194,9 +350,53 @@ async def test_receipt_journal_passes_warehouse_filter_and_window() -> None:
     )
 
     assert reader.list_calls == [
-        {"warehouse_id": warehouse_id, "limit": 10, "offset": 20, "search": None}
+        {"warehouse_ids": [warehouse_id], "limit": 10, "offset": 20, "search": None}
     ]
     assert (page.limit, page.offset, page.total) == (10, 20, 0)
+
+
+async def test_receipt_journal_is_limited_to_scope_warehouses() -> None:
+    own_unit, other_unit = uuid4(), uuid4()
+    own = make_warehouse_item(own_unit)
+    other = make_warehouse_item(other_unit)
+    interactor, reader = build_list_receipts(
+        scope=AccessScope.of([own_unit]), warehouses=[own, other]
+    )
+
+    await interactor(ListReceiptsQuery())
+
+    assert reader.list_calls == [
+        {"warehouse_ids": [own.id], "limit": 20, "offset": 0, "search": None}
+    ]
+
+
+async def test_receipt_journal_denies_foreign_warehouse() -> None:
+    own_unit = uuid4()
+    own = make_warehouse_item(own_unit)
+    foreign = make_warehouse_item(uuid4())
+    interactor, reader = build_list_receipts(
+        scope=AccessScope.of([own_unit]), warehouses=[own, foreign]
+    )
+
+    with pytest.raises(ForbiddenError):
+        await interactor(ListReceiptsQuery(warehouse_id=foreign.id))
+
+    assert reader.list_calls == []
+
+
+async def test_transfer_journal_is_limited_to_scope_warehouses() -> None:
+    own_unit, other_unit = uuid4(), uuid4()
+    own = make_warehouse_item(own_unit)
+    other = make_warehouse_item(other_unit)
+    interactor, reader = build_list_transfers(
+        scope=AccessScope.of([own_unit]), warehouses=[own, other]
+    )
+
+    await interactor(ListTransfersQuery())
+
+    assert reader.list_calls == [
+        {"warehouse_ids": [own.id], "limit": 20, "offset": 0, "search": None}
+    ]
 
 
 async def test_write_off_journal_returns_page() -> None:
@@ -220,69 +420,120 @@ async def test_write_off_journal_returns_page() -> None:
 
 
 async def test_unknown_receipt_raises_not_found() -> None:
-    reader = FakeReceiptReader()
-    interactor = GetReceiptInteractor(
-        identity_provider=FakeIdentityProvider(),
-        receipt_reader=reader,
-        catalog_api=FakeCatalogAPI(),
-        business_api=FakeBusinessAPI(uuid4()),
-        staff_api=FakeStaffAPI(),
-    )
+    interactor, _, _ = build_get_receipt(None)
 
     with pytest.raises(ReceiptNotFoundError):
         await interactor(GetReceiptQuery(receipt_id=uuid4()))
 
 
+async def test_unknown_transfer_raises_not_found() -> None:
+    document_scope, _, _ = make_document_scope()
+    interactor = GetTransferInteractor(
+        transfer_reader=FakeTransferReader(),
+        catalog_api=FakeCatalogAPI(),
+        document_scope=document_scope,
+    )
+
+    with pytest.raises(TransferNotFoundError):
+        await interactor(GetTransferQuery(transfer_id=uuid4()))
+
+
 async def test_unknown_write_off_raises_not_found() -> None:
+    document_scope, _, _ = make_document_scope()
     interactor = GetWriteOffInteractor(
-        identity_provider=FakeIdentityProvider(),
         write_off_reader=FakeWriteOffReader(),
         catalog_api=FakeCatalogAPI(),
-        business_api=FakeBusinessAPI(uuid4()),
-        staff_api=FakeStaffAPI(),
+        document_scope=document_scope,
     )
 
     with pytest.raises(WriteOffNotFoundError):
         await interactor(GetWriteOffQuery(write_off_id=uuid4()))
 
 
+async def test_receipt_card_checks_document_unit() -> None:
+    unit = uuid4()
+    detail = make_receipt_detail(uuid4(), org_unit_id=unit)
+    interactor, reader, staff_api = build_get_receipt(detail)
+
+    await interactor(GetReceiptQuery(receipt_id=detail.id))
+
+    assert reader.get_calls == [detail.id]
+    assert staff_api.can_calls == [(READ_DOCUMENTS, unit)]
+
+
+async def test_receipt_card_denies_foreign_unit() -> None:
+    detail = make_receipt_detail(uuid4(), org_unit_id=uuid4())
+    interactor, reader, _ = build_get_receipt(detail, allowed=False)
+
+    with pytest.raises(ForbiddenError):
+        await interactor(GetReceiptQuery(receipt_id=detail.id))
+
+    assert reader.get_calls == [detail.id]
+
+
 async def test_receipt_card_fills_nomenclature_names() -> None:
     nomenclature_id = uuid4()
-    reader = FakeReceiptReader()
-    reader.detail = make_receipt_detail(nomenclature_id)
+    detail = make_receipt_detail(nomenclature_id, org_unit_id=uuid4())
     catalog_api = FakeCatalogAPI({nomenclature_id: "Говядина лопатка"})
+    interactor, _, _ = build_get_receipt(detail, catalog_api=catalog_api)
 
-    interactor = GetReceiptInteractor(
-        identity_provider=FakeIdentityProvider(),
-        receipt_reader=reader,
-        catalog_api=catalog_api,
-        business_api=FakeBusinessAPI(uuid4()),
-        staff_api=FakeStaffAPI(),
-    )
-
-    detail = await interactor(GetReceiptQuery(receipt_id=reader.detail.id))
+    result = await interactor(GetReceiptQuery(receipt_id=detail.id))
 
     assert catalog_api.calls == [{nomenclature_id}]
-    assert detail.lines[0].nomenclature_name == "Говядина лопатка"
+    assert result.lines[0].nomenclature_name == "Говядина лопатка"
+
+
+async def test_transfer_card_allows_destination_unit() -> None:
+    from_unit, to_unit = uuid4(), uuid4()
+    detail = make_transfer_detail(
+        uuid4(), from_org_unit_id=from_unit, to_org_unit_id=to_unit
+    )
+    document_scope, _, staff_api = make_document_scope(allowed_units={to_unit})
+    interactor = GetTransferInteractor(
+        transfer_reader=FakeTransferReader(detail),
+        catalog_api=FakeCatalogAPI(),
+        document_scope=document_scope,
+    )
+
+    result = await interactor(GetTransferQuery(transfer_id=detail.id))
+
+    assert result.id == detail.id
+    assert staff_api.can_calls == [
+        (READ_DOCUMENTS, from_unit),
+        (READ_DOCUMENTS, to_unit),
+    ]
+
+
+async def test_transfer_card_denies_foreign_units() -> None:
+    detail = make_transfer_detail(
+        uuid4(), from_org_unit_id=uuid4(), to_org_unit_id=uuid4()
+    )
+    document_scope, _, _ = make_document_scope(allowed_units=set())
+
+    interactor = GetTransferInteractor(
+        transfer_reader=FakeTransferReader(detail),
+        catalog_api=FakeCatalogAPI(),
+        document_scope=document_scope,
+    )
+
+    with pytest.raises(ForbiddenError):
+        await interactor(GetTransferQuery(transfer_id=detail.id))
 
 
 async def test_write_off_card_fills_nomenclature_names() -> None:
     nomenclature_id = uuid4()
-    reader = FakeWriteOffReader()
-    reader.detail = make_write_off_detail(nomenclature_id)
+    detail = make_write_off_detail(nomenclature_id, org_unit_id=uuid4())
     catalog_api = FakeCatalogAPI({nomenclature_id: "Свинина шея"})
-
+    document_scope, _, _ = make_document_scope()
     interactor = GetWriteOffInteractor(
-        identity_provider=FakeIdentityProvider(),
-        write_off_reader=reader,
+        write_off_reader=FakeWriteOffReader(detail),
         catalog_api=catalog_api,
-        business_api=FakeBusinessAPI(uuid4()),
-        staff_api=FakeStaffAPI(),
+        document_scope=document_scope,
     )
 
-    detail = await interactor(GetWriteOffQuery(write_off_id=reader.detail.id))
+    result = await interactor(GetWriteOffQuery(write_off_id=detail.id))
 
-    assert detail.lines[0].nomenclature_name == "Свинина шея"
+    assert result.lines[0].nomenclature_name == "Свинина шея"
 
 
 async def test_receipt_journal_passes_search() -> None:
@@ -291,5 +542,5 @@ async def test_receipt_journal_passes_search() -> None:
     await interactor(ListReceiptsQuery(search="мясокомбинат"))
 
     assert reader.list_calls == [
-        {"warehouse_id": None, "limit": 20, "offset": 0, "search": "мясокомбинат"}
+        {"warehouse_ids": None, "limit": 20, "offset": 0, "search": "мясокомбинат"}
     ]

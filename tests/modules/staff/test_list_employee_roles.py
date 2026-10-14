@@ -4,17 +4,21 @@ from uuid import UUID, uuid4
 import pytest
 
 from myasnaya_derevnya.core.errors import ForbiddenError
-from myasnaya_derevnya.modules.staff.application.dto import EmployeeRoleListItem
+from myasnaya_derevnya.modules.staff.application.dto import (
+    EmployeeListItem,
+    EmployeeRoleListItem,
+)
 from myasnaya_derevnya.modules.staff.application.interactors.list_employee_roles import (
     ListEmployeeRolesInteractor,
     ListEmployeeRolesQuery,
 )
-from myasnaya_derevnya.modules.staff.domain.entities.employee import Employee
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignmentStatus,
 )
 from myasnaya_derevnya.modules.staff.domain.errors import EmployeeNotFound
-from myasnaya_derevnya.modules.staff.domain.permissions import READ_EMPLOYEES
+from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
+    AccessScope,
+)
 
 
 class FakeIdentityProvider:
@@ -25,30 +29,28 @@ class FakeIdentityProvider:
         return uuid4()
 
 
-class FakeBusinessAPI:
-    def __init__(self, root_unit_id: UUID) -> None:
-        self._root_unit_id = root_unit_id
-
-    async def get_root_unit_id(self) -> UUID:
-        return self._root_unit_id
-
-
 class FakeAccessService:
-    def __init__(self, allowed: bool = True) -> None:
-        self.allowed = allowed
-        self.checked: list[tuple[str, UUID | None]] = []
+    def __init__(self, scope: AccessScope) -> None:
+        self.scope = scope
+        self.calls: list[str] = []
 
-    async def can(self, user_id: UUID, permission, org_unit_id: UUID | None) -> bool:
-        self.checked.append((permission.code, org_unit_id))
-        return self.allowed
+    async def scope_for(self, user_id: UUID, permission) -> AccessScope:
+        self.calls.append(permission.code)
+        return self.scope
 
 
-class FakeEmployeeRepository:
-    def __init__(self, employees: list[Employee]) -> None:
-        self._employees = employees
+class FakeEmployeeReader:
+    def __init__(self, employee: EmployeeListItem | None = None) -> None:
+        self.employee = employee
+        self.get_calls: list[tuple[UUID, object]] = []
 
-    async def get_by_id(self, employee_id: UUID) -> Employee | None:
-        return next((item for item in self._employees if item.id == employee_id), None)
+    async def get_by_id(self, employee_id: UUID, org_unit_ids=None):
+        self.get_calls.append((employee_id, org_unit_ids))
+
+        if self.employee is not None and self.employee.id == employee_id:
+            return self.employee
+
+        return None
 
 
 class FakeEmployeeRoleReader:
@@ -61,15 +63,19 @@ class FakeEmployeeRoleReader:
         return self.items
 
 
-def make_employee() -> Employee:
-    return Employee.create(
+def make_employee() -> EmployeeListItem:
+    return EmployeeListItem(
+        id=uuid4(),
         user_id=uuid4(),
+        org_unit_id=uuid4(),
         first_name="Иван",
         last_name="Петров",
         middle_name=None,
         phone_number=None,
         position="Мясник",
         hired_at=date(2026, 1, 15),
+        dismissed_at=None,
+        is_active=True,
     )
 
 
@@ -87,65 +93,90 @@ def make_item() -> EmployeeRoleListItem:
 
 
 def build(
-    employees: list[Employee], *, allowed: bool = True
-) -> tuple[ListEmployeeRolesInteractor, FakeEmployeeRoleReader, FakeAccessService]:
-    reader = FakeEmployeeRoleReader()
-    access_service = FakeAccessService(allowed=allowed)
+    *,
+    scope: AccessScope,
+    employee: EmployeeListItem | None = None,
+) -> tuple[
+    ListEmployeeRolesInteractor, FakeEmployeeReader, FakeEmployeeRoleReader, UUID
+]:
+    reader = FakeEmployeeReader(employee)
+    role_reader = FakeEmployeeRoleReader()
+    access_service = FakeAccessService(scope)
     interactor = ListEmployeeRolesInteractor(
         identity_provider=FakeIdentityProvider(),
-        employee_repository=FakeEmployeeRepository(employees),
-        employee_role_reader=reader,
+        employee_reader=reader,
+        employee_role_reader=role_reader,
         access_service=access_service,
-        business_api=FakeBusinessAPI(uuid4()),
     )
 
-    return interactor, reader, access_service
+    unit_id = next(iter(scope.org_unit_ids), uuid4())
+
+    return interactor, reader, role_reader, unit_id
 
 
-async def test_requires_read_permission() -> None:
+async def test_without_scope_is_forbidden() -> None:
     employee = make_employee()
-    interactor, reader, _ = build([employee], allowed=False)
+    interactor, reader, role_reader, _ = build(
+        scope=AccessScope.of([]), employee=employee
+    )
 
     with pytest.raises(ForbiddenError):
         await interactor(ListEmployeeRolesQuery(employee_id=employee.id))
 
-    assert reader.calls == []
+    assert reader.get_calls == []
+    assert role_reader.calls == []
 
 
-async def test_checks_permission_at_company_level() -> None:
+async def test_passes_scope_filter_to_reader() -> None:
     employee = make_employee()
-    root_unit_id = uuid4()
-    reader = FakeEmployeeRoleReader()
-    access_service = FakeAccessService()
+    unit_id = uuid4()
+    reader = FakeEmployeeReader(employee)
+    role_reader = FakeEmployeeRoleReader()
     interactor = ListEmployeeRolesInteractor(
         identity_provider=FakeIdentityProvider(),
-        employee_repository=FakeEmployeeRepository([employee]),
-        employee_role_reader=reader,
-        access_service=access_service,
-        business_api=FakeBusinessAPI(root_unit_id),
+        employee_reader=reader,
+        employee_role_reader=role_reader,
+        access_service=FakeAccessService(AccessScope.of([unit_id])),
     )
 
     await interactor(ListEmployeeRolesQuery(employee_id=employee.id))
 
-    assert access_service.checked == [(READ_EMPLOYEES.code, root_unit_id)]
+    assert reader.get_calls == [(employee.id, frozenset({unit_id}))]
 
 
-async def test_unknown_employee_raises_not_found() -> None:
-    interactor, reader, _ = build([])
+async def test_company_wide_scope_has_no_filter() -> None:
+    employee = make_employee()
+    reader = FakeEmployeeReader(employee)
+    interactor = ListEmployeeRolesInteractor(
+        identity_provider=FakeIdentityProvider(),
+        employee_reader=reader,
+        employee_role_reader=FakeEmployeeRoleReader(),
+        access_service=FakeAccessService(AccessScope.company_wide()),
+    )
+
+    await interactor(ListEmployeeRolesQuery(employee_id=employee.id))
+
+    assert reader.get_calls == [(employee.id, None)]
+
+
+async def test_foreign_employee_is_not_found() -> None:
+    interactor, _reader, role_reader, _ = build(scope=AccessScope.of([uuid4()]))
 
     with pytest.raises(EmployeeNotFound):
         await interactor(ListEmployeeRolesQuery(employee_id=uuid4()))
 
-    assert reader.calls == []
+    assert role_reader.calls == []
 
 
 async def test_reads_roles_of_the_employee_user() -> None:
     employee = make_employee()
-    interactor, reader, _ = build([employee])
-    reader.items = [make_item()]
+    interactor, _, role_reader, _ = build(
+        scope=AccessScope.of([uuid4()]), employee=employee
+    )
+    role_reader.items = [make_item()]
 
     items = await interactor(ListEmployeeRolesQuery(employee_id=employee.id))
 
-    assert reader.calls == [employee.user_id]
+    assert role_reader.calls == [employee.user_id]
     assert [item.role_code for item in items] == ["SHOP_ADMIN"]
     assert items[0].status is RoleAssignmentStatus.ACTIVE

@@ -23,6 +23,7 @@ def test_registry_is_sorted_and_covers_every_module() -> None:
         "nomenclature",
         "price",
         "inventory",
+        "production",
         "staff",
     ):
         assert any(code.startswith(f"{module_code}.") for code in codes), module_code
@@ -34,12 +35,21 @@ def test_registry_matches_permissions_declared_in_modules() -> None:
     from myasnaya_derevnya.modules.catalog.domain import permissions as catalog
     from myasnaya_derevnya.modules.customer.domain import permissions as customer
     from myasnaya_derevnya.modules.inventory.domain import permissions as inventory
+    from myasnaya_derevnya.modules.production.domain import permissions as production
     from myasnaya_derevnya.modules.sales.domain import permissions as sales
     from myasnaya_derevnya.modules.staff.domain import permissions as staff
 
     declared = [
         value.code
-        for module in (business, catalog, customer, inventory, sales, staff)
+        for module in (
+            business,
+            catalog,
+            customer,
+            inventory,
+            production,
+            sales,
+            staff,
+        )
         for value in vars(module).values()
         if isinstance(value, Permission)
     ]

@@ -13,8 +13,7 @@
 </template>
 
 <script setup lang="ts">
-// Иконки рисуются линиями и наследуют цвет текста: не зависят от системы
-// и не тянут библиотеку ради десятка значков.
+
 const ICONS: Record<string, string> = {
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',

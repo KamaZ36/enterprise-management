@@ -4,6 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.modules.business.application.interactors.create_org_unit import (
     CreateOrgUnitInteractor,
 )
+from myasnaya_derevnya.modules.business.application.interactors.get_cafe_list import (
+    CafeListOrgUnitsInteractor,
+)
 from myasnaya_derevnya.modules.business.application.interactors.list_org_units import (
     ListOrgUnitsInteractor,
 )
@@ -26,25 +29,27 @@ from myasnaya_derevnya.modules.business.presentation.business_api import Busines
 
 
 class BusinessDepProvider(Provider):
-    # REPOSITORIES
     @provide(scope=Scope.REQUEST)
     def get_org_unit_repository(self, session: AsyncSession) -> OrgUnitRepository:
         return SQLAlchemyOrgUnitRepository(session)
 
-    # READERS
+
     @provide(scope=Scope.REQUEST)
     def get_org_unit_reader(self, session: AsyncSession) -> OrgUnitReader:
         return SQLAlchemyOrgUnitReader(session)
 
-    # OTHER
+
     @provide(scope=Scope.REQUEST)
     def get_business_api_facade(
         self, org_unit_repository: OrgUnitRepository
     ) -> BusinessAPI:
         return BusinessAPI(org_unit_repository=org_unit_repository)
 
-    # INTERACTORS
+
     create_org_unit_interactor = provide(CreateOrgUnitInteractor, scope=Scope.REQUEST)
 
     update_org_unit_interactor = provide(UpdateOrgUnitInteractor, scope=Scope.REQUEST)
     list_org_units_interactor = provide(ListOrgUnitsInteractor, scope=Scope.REQUEST)
+    cafe_list_org_units_interactor = provide(
+        CafeListOrgUnitsInteractor, scope=Scope.REQUEST
+    )

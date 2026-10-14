@@ -4,8 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.modules.customer.application.interactors.ensure_customer_profile import (
     EnsureCustomerProfileInteractor,
 )
-from myasnaya_derevnya.modules.customer.application.interactors.list_customers import (
+from myasnaya_derevnya.modules.customer.application.interactors.get_customer import (
     GetCustomerInteractor,
+)
+from myasnaya_derevnya.modules.customer.application.interactors.list_customers import (
     ListCustomersInteractor,
 )
 from myasnaya_derevnya.modules.customer.application.interactors.login_customer import (
@@ -34,17 +36,17 @@ class CustomerDepProvider(Provider):
     list_customers_interactor = provide(ListCustomersInteractor, scope=Scope.REQUEST)
     get_customer_interactor = provide(GetCustomerInteractor, scope=Scope.REQUEST)
 
-    # REPOSITORIES
+
     @provide(scope=Scope.REQUEST)
     def get_customer_repository(self, session: AsyncSession) -> CustomerRepository:
         return SQLAlchemyCustomerRepository(session)
 
-    # INTERACTORS
+
     ensure_customer_profile_interactor = provide(
         EnsureCustomerProfileInteractor, scope=Scope.REQUEST
     )
 
     login_customer_interactor = provide(LoginCustomerInteractor, scope=Scope.REQUEST)
 
-    # FACADE
+
     customer_api = provide(CustomerAPI, scope=Scope.REQUEST)

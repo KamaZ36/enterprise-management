@@ -2,5 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 
-onlyBuiltDependencies:
-  - esbuild
+# pnpm 11 заменил onlyBuiltDependencies на allowBuilds: старый ключ молча
+# игнорируется, из-за чего установка падала на ERR_PNPM_IGNORED_BUILDS.
+allowBuilds:
+  esbuild: true

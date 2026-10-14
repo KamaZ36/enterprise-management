@@ -6,6 +6,7 @@ export function useCurrentUser() {
   const api = useApi();
   const user = useState<CurrentUser | null>("current.user", () => null);
   const loading = useState<boolean>("current.user.loading", () => false);
+  const scopeId = useCookie<string | null>("scope_id", { default: () => null });
 
   async function load(force = false): Promise<CurrentUser | null> {
     if (user.value && !force) {
@@ -28,12 +29,28 @@ export function useCurrentUser() {
     }
   }
 
-  function can(permission: string): boolean {
-    if (!user.value) {
-      return false;
+
+  function permissions(): readonly string[] {
+    const current = user.value;
+    if (!current) {
+      return [];
     }
 
-    return user.value.permissions.includes(permission);
+    const selected = scopeId.value;
+    if (selected) {
+      const scope = (current.scopes ?? []).find((item) => item.id === selected);
+
+
+      if (scope && Array.isArray(scope.permissions)) {
+        return scope.permissions;
+      }
+    }
+
+    return current.permissions ?? [];
+  }
+
+  function can(permission: string): boolean {
+    return permissions().includes(permission);
   }
 
   function displayName(): string {

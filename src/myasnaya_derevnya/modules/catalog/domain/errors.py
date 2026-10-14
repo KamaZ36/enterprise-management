@@ -10,7 +10,6 @@ class CatalogDomainError(DomainError):
         return "Ошибка модуля Catalog"
 
 
-# НОМЕНКЛАТУРА И КАТЕГОРИИ
 @dataclass(slots=True, eq=False)
 class EmptyNameError(CatalogDomainError):
     def __str__(self) -> str:
@@ -39,7 +38,6 @@ class CategoryCannotBeParentOfItselfError(CatalogDomainError):
         return f"Циклическая зависимость: категория {self.category_id} не может быть родительской для самой себя"
 
 
-# ЦЕНЫ
 @dataclass(slots=True, eq=False)
 class NegativePriceValueError(CatalogDomainError):
     def __str__(self) -> str:

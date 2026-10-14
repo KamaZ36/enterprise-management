@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
+from fastapi.staticfiles import StaticFiles
 
 from myasnaya_derevnya.core.errors import (
     AppError,
@@ -16,8 +17,10 @@ from myasnaya_derevnya.core.errors import (
     UnauthorizedError,
     ValidationError,
 )
+from myasnaya_derevnya.core.media.paths import media_root
 from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.core.settings.cors import CorsSettings
+from myasnaya_derevnya.core.settings.media import MediaSettings
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import (
     login_router,
     logout_router,
@@ -27,6 +30,9 @@ from myasnaya_derevnya.modules.business.presentation.api.v1 import (
     router as business_router,
 )
 from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
+    media_router as catalog_media_router,
+)
+from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
     router as catalog_router,
 )
 from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
@@ -34,6 +40,9 @@ from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
 )
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
+)
+from myasnaya_derevnya.modules.production.presentation.api.v1 import (
+    router as production_router,
 )
 from myasnaya_derevnya.modules.sales.presentation.api.v1 import (
     router as sales_router,
@@ -55,7 +64,6 @@ STATUS_BY_CATEGORY: dict[type[AppError], int] = {
 
 
 async def api_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-
     if not isinstance(exc, ProjectError):
         return JSONResponse(
             status_code=500, content={"message": "Internal server error"}
@@ -101,9 +109,19 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(staff_router)
     app.include_router(business_router)
     app.include_router(catalog_router)
+    app.include_router(catalog_media_router)
     app.include_router(inventory_router)
+    app.include_router(production_router)
     app.include_router(customer_login_router)
     app.include_router(customers_router)
+
+
+def include_media(app: FastAPI) -> None:
+    settings = MediaSettings()
+    root = media_root(settings)
+    root.mkdir(parents=True, exist_ok=True)
+
+    app.mount(settings.media_url_prefix, StaticFiles(directory=root), name="media")
 
 
 def create_app() -> FastAPI:
@@ -121,6 +139,7 @@ def create_app() -> FastAPI:
     )
 
     include_routers(app)
+    include_media(app)
 
     return app
 

@@ -29,7 +29,6 @@ class OrderChannel(StrEnum):
     PHONE = "phone"
 
 
-# Куда из какого статуса можно перейти. Выданный и отменённый — конечные.
 TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
     OrderStatus.DRAFT: {OrderStatus.CONFIRMED, OrderStatus.CANCELLED},
     OrderStatus.CONFIRMED: {OrderStatus.PREPARING, OrderStatus.CANCELLED},
@@ -92,12 +91,6 @@ class OrderLine:
 
 
 class Order:
-    """Заказ кафе или магазина: черновик, который подтверждают и выдают.
-
-    Цена в позиции — копия цены на момент продажи, а не ссылка на прайс-лист:
-    иначе смена цены переписала бы историю заказов.
-    """
-
     def __init__(
         self,
         id_: UUID,
@@ -200,7 +193,6 @@ class Order:
 
     @property
     def contact_phone(self) -> str | None:
-        """Телефон на момент заказа. Это факт, а не ссылка на текущий профиль."""
         return self._contact_phone
 
     @property

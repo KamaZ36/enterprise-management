@@ -22,12 +22,9 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_bi
     SQLAlchemyPriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
-from myasnaya_derevnya.modules.inventory.application.commands import (
-    ReceiptLineCommand,
-    TransferLineCommand,
-)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
+    ReceiptLineCommand,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptCommand,
@@ -35,6 +32,7 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post i
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferCommand,
     CreateTransferInteractor,
+    TransferLineCommand,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.post import (
     PostTransferCommand,

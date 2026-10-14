@@ -23,11 +23,22 @@ export const CAN = {
   ordersOpen: ["order.read"],
   customersOpen: ["customer.read"],
   orderCreate: ["order.create", "nomenclature.read"],
+  techCardsOpen: ["production.tech_card.read"],
+  techCardCreate: [
+    "production.tech_card.manage",
+    "nomenclature.read",
+  ],
+  productionOrdersOpen: ["production.order.read"],
+  productionOrderCreate: [
+    "production.order.manage",
+    "inventory.warehouse.read",
+  ],
 } as const;
 
 export const SECTIONS = [
   { path: "/", title: "Главная", icon: "HomeFilled", permissions: [] },
   { module: "inventory", title: "Склад", icon: "OfficeBuilding" },
+  { module: "production", title: "Производство", icon: "Box" },
   { module: "catalog", title: "Справочники", icon: "Goods" },
   { module: "staff", title: "Персонал", icon: "User" },
   { module: "sales", title: "Заказы", icon: "Document" },

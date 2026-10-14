@@ -22,13 +22,7 @@ class BusinessAPI:
     async def org_unit_descendants_of(
         self, org_unit_ids: Iterable[UUID]
     ) -> frozenset[UUID]:
-        """Поддеревья указанных подразделений, включая их сами.
-
-        Нужно, чтобы расширить область видимости: роль выдана на группу
-        с потомками — значит в область входят все кафе внутри группы.
-        """
         return await self._org_unit_repository.descendants_of_many(org_unit_ids)
 
     async def org_unit_titles(self, org_unit_ids: Iterable[UUID]) -> dict[UUID, str]:
-        """Названия подразделений по идентификаторам — для контекста работы."""
         return await self._org_unit_repository.get_titles(org_unit_ids)

@@ -21,6 +21,7 @@ class SQLAlchemyCategoryRepository(CategoryRepository):
                 id=category.id,
                 name=category.name,
                 parent_id=category.parent_id,
+                sort_order=category.sort_order,
             )
         )
 
@@ -31,6 +32,7 @@ class SQLAlchemyCategoryRepository(CategoryRepository):
             .values(
                 name=category.name,
                 parent_id=category.parent_id,
+                sort_order=category.sort_order,
             )
         )
 
@@ -57,4 +59,5 @@ class SQLAlchemyCategoryRepository(CategoryRepository):
             id_=row["id"],
             name=row["name"],
             parent_id=row["parent_id"],
+            sort_order=row["sort_order"],
         )

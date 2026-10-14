@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from sqlalchemy import RowMapping, func, or_, select
@@ -15,7 +16,11 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.base im
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     TRANSFER_LINES_TABLE,
     TRANSFERS_TABLE,
+    WAREHOUSES_TABLE,
 )
+
+FROM_WAREHOUSES = WAREHOUSES_TABLE.alias("from_warehouses")
+TO_WAREHOUSES = WAREHOUSES_TABLE.alias("to_warehouses")
 
 
 class SQLAlchemyTransferReader(TransferReader):
@@ -25,17 +30,17 @@ class SQLAlchemyTransferReader(TransferReader):
     async def list(
         self,
         *,
-        warehouse_id: UUID | None = None,
+        warehouse_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[TransferListItem], int]:
         conditions = []
-        if warehouse_id is not None:
+        if warehouse_ids is not None:
             conditions.append(
                 or_(
-                    TRANSFERS_TABLE.c.from_warehouse_id == warehouse_id,
-                    TRANSFERS_TABLE.c.to_warehouse_id == warehouse_id,
+                    TRANSFERS_TABLE.c.from_warehouse_id.in_(warehouse_ids),
+                    TRANSFERS_TABLE.c.to_warehouse_id.in_(warehouse_ids),
                 )
             )
 
@@ -77,7 +82,23 @@ class SQLAlchemyTransferReader(TransferReader):
         return [self._to_list_item(row) for row in rows], int(total_documents or 0)
 
     async def get(self, transfer_id: UUID) -> TransferDetail | None:
-        stmt = select(TRANSFERS_TABLE).where(TRANSFERS_TABLE.c.id == transfer_id)
+        stmt = (
+            select(
+                TRANSFERS_TABLE,
+                FROM_WAREHOUSES.c.org_unit_id.label("from_org_unit_id"),
+                TO_WAREHOUSES.c.org_unit_id.label("to_org_unit_id"),
+            )
+            .select_from(
+                TRANSFERS_TABLE.outerjoin(
+                    FROM_WAREHOUSES,
+                    FROM_WAREHOUSES.c.id == TRANSFERS_TABLE.c.from_warehouse_id,
+                ).outerjoin(
+                    TO_WAREHOUSES,
+                    TO_WAREHOUSES.c.id == TRANSFERS_TABLE.c.to_warehouse_id,
+                )
+            )
+            .where(TRANSFERS_TABLE.c.id == transfer_id)
+        )
         row = (await self._session.execute(stmt)).mappings().one_or_none()
 
         if row is None:
@@ -99,6 +120,8 @@ class SQLAlchemyTransferReader(TransferReader):
             posted_at=row["posted_at"],
             comment=row["comment"],
             lines=[self._to_line(line) for line in line_rows],
+            org_unit_id=row["from_org_unit_id"],
+            to_org_unit_id=row["to_org_unit_id"],
         )
 
     def _to_list_item(self, row: RowMapping) -> TransferListItem:

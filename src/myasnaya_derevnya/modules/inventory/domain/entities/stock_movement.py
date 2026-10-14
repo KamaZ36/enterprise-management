@@ -21,12 +21,16 @@ class MovementType(StrEnum):
     INVENTORY_SURPLUS = "inventory_surplus"
     INVENTORY_SHORTAGE = "inventory_shortage"
 
+    PRODUCTION_OUT = "production_out"
+    PRODUCTION_IN = "production_in"
+
 
 INBOUND_TYPES = frozenset(
     {
         MovementType.RECEIPT,
         MovementType.TRANSFER_IN,
         MovementType.INVENTORY_SURPLUS,
+        MovementType.PRODUCTION_IN,
     }
 )
 

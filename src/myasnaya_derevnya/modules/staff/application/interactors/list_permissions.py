@@ -10,8 +10,6 @@ from myasnaya_derevnya.modules.staff.domain.permissions import READ_ROLES
 
 
 class ListPermissionsInteractor:
-    """Справочник прав проекта: из него собирается роль."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

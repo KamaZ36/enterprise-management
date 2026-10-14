@@ -14,3 +14,13 @@ class OrgUnitListItem:
     is_active: bool
     address: str | None
     phone_number: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CafeOrgUnitListItem:
+    id: UUID
+    type: OrgUnitType
+    code: str
+    name: str
+    address: str | None
+    phone_number: str | None

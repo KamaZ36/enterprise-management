@@ -6,9 +6,11 @@ import pytest
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.modules.inventory.application.dto import BalanceListItem
-from myasnaya_derevnya.modules.inventory.application.interactors.balances.read import (
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.get import (
     GetBalanceInteractor,
     GetBalanceQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.list import (
     ListBalancesInteractor,
     ListBalancesQuery,
 )

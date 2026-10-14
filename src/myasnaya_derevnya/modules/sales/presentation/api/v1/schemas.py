@@ -54,6 +54,12 @@ class CreateOrderSchema(BaseModel):
     lines: list[OrderLineCommandSchema] = []
 
 
+class UpdateOrderSchema(BaseModel):
+    planned_at: datetime | None = None
+    comment: str | None = None
+    lines: list[OrderLineCommandSchema] = []
+
+
 class CreatedOrderSchema(BaseModel):
     order_id: UUID
 
@@ -117,8 +123,6 @@ class OrderDetailSchema(BaseModel):
 
 
 class MyOrderListItemSchema(BaseModel):
-    """Строка списка для покупателя: без служебных полей."""
-
     id: UUID
     number: int | None
     status: str
@@ -150,13 +154,6 @@ class MyOrderListSchema(BaseModel):
 
 
 class MyOrderDetailSchema(BaseModel):
-    """Карточка для покупателя: состав, статус и сумма.
-
-    Сознательно нет того, что клиенту знать не нужно: кто из сотрудников оформил,
-    идентификатор профиля, контактный телефон. Отдельная схема — защита от того,
-    что служебное поле однажды добавится в общую и утечёт на сайт.
-    """
-
     id: UUID
     number: int | None
     status: str

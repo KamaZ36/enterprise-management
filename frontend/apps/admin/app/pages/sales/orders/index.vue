@@ -28,6 +28,9 @@
         />
       </el-select>
 
+      <el-button v-if="can('order.create')" type="primary" @click="openCreate">
+        Новый заказ
+      </el-button>
       <el-button :loading="pending" @click="reload">Обновить</el-button>
       <span style="color: #909399">Заказов: {{ total }}</span>
     </div>
@@ -76,6 +79,77 @@
       layout="prev, pager, next, total"
       @current-change="goToPage"
     />
+
+    <el-dialog v-model="createOpen" title="Новый заказ" width="720">
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="Точка">
+          <el-select
+            v-model="form.org_unit_id"
+            placeholder="Подразделение"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="unit in orgUnitOptions"
+              :key="unit.id"
+              :label="unit.name"
+              :value="unit.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="Канал">
+          <el-select v-model="form.channel" style="width: 100%">
+            <el-option
+              v-for="(title, code) in CHANNEL_TITLES"
+              :key="code"
+              :label="title"
+              :value="code"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="Позиции">
+          <OrderLinesEditor
+            v-model="form.lines"
+            :org-unit-id="form.org_unit_id"
+          />
+        </el-form-item>
+
+        <el-form-item label="К выдаче">
+          <el-date-picker
+            v-model="form.planned_at"
+            type="datetime"
+            value-format="YYYY-MM-DDTHH:mm:ssZ"
+            placeholder="Как можно скорее"
+            style="width: 100%"
+          />
+        </el-form-item>
+
+        <el-form-item label="Комментарий">
+          <el-input v-model="form.comment" type="textarea" :rows="2" />
+        </el-form-item>
+
+        <el-alert
+          v-if="createError"
+          :title="createError"
+          type="error"
+          :closable="false"
+          show-icon
+        />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="createOpen = false">Отмена</el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          :disabled="!form.org_unit_id || !form.lines.some((line) => line.nomenclature_id)"
+          @click="createOrder"
+        >
+          Создать
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -84,6 +158,7 @@ import type { components } from "@md/api-client";
 import { formatKopecks } from "@md/money";
 
 import { CAN } from "~/utils/access";
+import type { OrderLineDraft } from "~/utils/orderLines";
 
 definePageMeta({ permissions: CAN.ordersOpen });
 
@@ -117,14 +192,27 @@ const PAGE_SIZE = 50;
 const ACTIVE_STATUSES = ["draft", "confirmed", "preparing", "ready"];
 
 const api = useApi();
+const { can } = useCurrentUser();
 
 const items = ref<OrderListItem[]>([]);
 const total = ref(0);
 const page = ref(1);
 const statuses = ref<string[]>([...ACTIVE_STATUSES]);
-const { scopeId, load: loadScope } = useCurrentScope();
+const { scopes, scopeId, load: loadScope } = useCurrentScope();
 const pending = ref(false);
 const error = ref("");
+
+const createOpen = ref(false);
+const saving = ref(false);
+const createError = ref("");
+const orgUnitOptions = ref<{ id: string; name: string }[]>([]);
+const form = reactive({
+  org_unit_id: "",
+  channel: "pos" as "site" | "pos" | "phone",
+  planned_at: null as string | null,
+  comment: "",
+  lines: [] as OrderLineDraft[],
+});
 
 function formatTime(value: string): string {
   const date = new Date(value);
@@ -145,7 +233,6 @@ async function loadOrders(): Promise<void> {
     const { data, response } = await api.GET("/api/sales/orders", {
       params: {
         query: {
-          org_unit_id: scopeId.value ?? undefined,
           statuses: statuses.value.length ? statuses.value.join(",") : undefined,
           limit: PAGE_SIZE,
           offset: (page.value - 1) * PAGE_SIZE,
@@ -184,12 +271,93 @@ async function openOrder(row: OrderListItem): Promise<void> {
   await navigateTo(`/sales/orders/${row.id}`);
 }
 
+async function loadOrgUnits(): Promise<void> {
+  const options = new Map<string, string>();
+
+  for (const scope of scopes.value) {
+    options.set(scope.id, scope.title);
+  }
+
+  if (can("org_unit.read")) {
+    const { data, response } = await api.GET("/api/business/org-units", {});
+    if (response.ok && data) {
+      for (const unit of data) {
+        if (!options.has(unit.id)) {
+          options.set(unit.id, unit.name);
+        }
+      }
+    }
+  }
+
+  orgUnitOptions.value = [...options].map(([id, name]) => ({ id, name }));
+
+  if (!form.org_unit_id) {
+    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+  }
+}
+
+function openCreate(): void {
+  createError.value = "";
+
+  if (!form.org_unit_id) {
+    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+  }
+  if (!form.lines.length) {
+    form.lines = [{ nomenclature_id: "", quantity: "1" }];
+  }
+
+  createOpen.value = true;
+}
+
+async function createOrder(): Promise<void> {
+  saving.value = true;
+  createError.value = "";
+
+  try {
+    const { data, response, error: failure } = await api.POST(
+      "/api/sales/orders",
+      {
+        body: {
+          org_unit_id: form.org_unit_id,
+          channel: form.channel,
+          planned_at: form.planned_at,
+          comment: form.comment.trim() || null,
+          lines: form.lines
+            .filter((line) => line.nomenclature_id)
+            .map((line) => ({
+              nomenclature_id: line.nomenclature_id,
+              quantity: line.quantity,
+            })),
+        },
+      },
+    );
+
+    if (!response.ok || !data) {
+      const payload = failure as { message?: string } | undefined;
+      createError.value =
+        payload?.message ?? `Не удалось создать заказ: ${response.status}`;
+      return;
+    }
+
+    createOpen.value = false;
+    form.planned_at = null;
+    form.comment = "";
+    form.lines = [];
+    form.org_unit_id = "";
+
+    await navigateTo(`/sales/orders/${data.order_id}`);
+  } finally {
+    saving.value = false;
+  }
+}
+
 watch(scopeId, () => {
   void reload();
 });
 
 onMounted(async () => {
   await loadScope();
+  await loadOrgUnits();
   await loadOrders();
 });
 </script>

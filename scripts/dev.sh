@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Запуск всего проекта одной командой: база, миграции, бэкенд, админка, лендинг.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -36,7 +35,6 @@ wait_port() {
   return 1
 }
 
-# Порт открывается раньше, чем сервер готов отвечать: ждём именно ответ.
 wait_http() {
   local port="$1" name="$2" path="${3:-/}" tries="${4:-120}"
   for ((i = 0; i < tries; i++)); do
@@ -134,10 +132,15 @@ cmd_logs() {
   tail -n 40 -f "$LOG_DIR/$name.log"
 }
 
+cmd_backup() {
+  "$ROOT/scripts/db_backup.sh"
+}
+
 case "${1:-up}" in
   up)     cmd_up ;;
   down)   shift; cmd_down "${1:-}" ;;
   status) cmd_status ;;
   logs)   shift; cmd_logs "${1:-backend}" ;;
-  *)      echo "Использование: scripts/dev.sh [up|down [--all]|status|logs <сервис>]"; exit 1 ;;
+  backup) cmd_backup ;;
+  *)      echo "Использование: scripts/dev.sh [up|down [--all]|status|logs <сервис>|backup]"; exit 1 ;;
 esac

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
-from myasnaya_derevnya.modules.inventory.application.commands import ReceiptLineCommand
 from myasnaya_derevnya.modules.inventory.domain.entities.receipt import (
     Receipt,
     ReceiptLine,
@@ -19,6 +19,15 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.b
     WarehouseRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+
+@dataclass(frozen=True, slots=True)
+class ReceiptLineCommand:
+    nomenclature_id: UUID
+    quantity: Decimal
+    unit_cost: Decimal = Decimal(0)
+    lot_code: str | None = None
+    expires_at: date | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -11,7 +11,6 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-
     op.execute("CREATE SCHEMA IF NOT EXISTS auth")
     op.execute("CREATE SCHEMA IF NOT EXISTS business")
     op.execute("CREATE SCHEMA IF NOT EXISTS catalog")

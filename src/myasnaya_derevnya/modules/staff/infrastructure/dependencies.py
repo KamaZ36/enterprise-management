@@ -94,7 +94,7 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 class StaffDepProvider(Provider):
     staff_api = provide(StaffAPI, scope=Scope.REQUEST)
 
-    # REPOSITORIES
+
     @provide(scope=Scope.REQUEST)
     def get_role_repository(self, session: AsyncSession) -> RoleRepository:
         return SQLAlchemyRoleRepository(session)
@@ -113,7 +113,7 @@ class StaffDepProvider(Provider):
     def get_employee_role_reader(self, session: AsyncSession) -> EmployeeRoleReader:
         return SQLAlchemyEmployeeRoleReader(session)
 
-    # READERS
+
     @provide(scope=Scope.REQUEST)
     def get_role_reader(self, session: AsyncSession) -> RoleReader:
         return SQLAlchemyRoleReader(session)
@@ -122,12 +122,12 @@ class StaffDepProvider(Provider):
     def get_employee_reader(self, session: AsyncSession) -> EmployeeReader:
         return SQLAlchemyEmployeeReader(session)
 
-    # SERVICES
+
     access_policy = provide(AccessPolicy, scope=Scope.REQUEST)
 
     access_service = provide(AccessService, scope=Scope.REQUEST)
 
-    # INTERACTORS
+
     create_employee_interactor = provide(CreateEmployeeInteractor, scope=Scope.REQUEST)
 
     update_employee_interactor = provide(UpdateEmployeeInteractor, scope=Scope.REQUEST)

@@ -5,20 +5,18 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
 
 from myasnaya_derevnya.core.dependencies import container
-from myasnaya_derevnya.modules.inventory.application.commands import (
-    ReceiptLineCommand,
-    TransferLineCommand,
-    WriteOffLineCommand,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.balances.read import (
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.get import (
     GetBalanceInteractor,
     GetBalanceQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.balances.list import (
     ListBalancesInteractor,
     ListBalancesQuery,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
     CreateReceiptInteractor,
+    ReceiptLineCommand,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.get import (
     GetReceiptInteractor,
@@ -35,6 +33,7 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post i
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferCommand,
     CreateTransferInteractor,
+    TransferLineCommand,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.get import (
     GetTransferInteractor,
@@ -51,6 +50,7 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.post 
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.update import (
     UpdateTransferCommand,
     UpdateTransferInteractor,
+    UpdateTransferLineCommand,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.create import (
     CreateWarehouseCommand,
@@ -66,6 +66,7 @@ from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.upda
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
     CreateWriteOffCommand,
     CreateWriteOffInteractor,
+    WriteOffLineCommand,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.get import (
     GetWriteOffInteractor,
@@ -367,6 +368,19 @@ def _transfer_lines(lines: list[TransferLineSchema]) -> list[TransferLineCommand
     ]
 
 
+def _update_transfer_lines(
+    lines: list[TransferLineSchema],
+) -> list[UpdateTransferLineCommand]:
+    return [
+        UpdateTransferLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
 @router.post(
     "/transfers", description="Создать перемещение (черновик)", status_code=201
 )
@@ -433,7 +447,7 @@ async def update_transfer(
     command = UpdateTransferCommand(
         transfer_id=transfer_id,
         occurred_at=data.occurred_at,
-        lines=_transfer_lines(data.lines),
+        lines=_update_transfer_lines(data.lines),
         comment=data.comment,
     )
 

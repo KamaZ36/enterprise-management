@@ -165,6 +165,24 @@ async def test_full_receipt_flow_through_api(
     assert balances.status_code == 200
     assert balances.json()["total"] == 1
 
+    journal = await client.get(
+        "/api/inventory/receipts", params={"warehouse_id": warehouse_id}
+    )
+    assert journal.status_code == 200, journal.text
+    assert journal.json()["total"] == 1
+    assert journal.json()["items"][0]["id"] == receipt_id
+
+    card = await client.get(f"/api/inventory/receipts/{receipt_id}")
+    assert card.status_code == 200, card.text
+    assert card.json()["supplier_name"] == "Мясокомбинат"
+
+    transfers = await client.get("/api/inventory/transfers")
+    assert transfers.status_code == 200, transfers.text
+    assert transfers.json()["total"] == 0
+
+    write_offs = await client.get("/api/inventory/write-offs")
+    assert write_offs.status_code == 200, write_offs.text
+
     reposted = await client.post(f"/api/inventory/receipts/{receipt_id}/post")
     assert reposted.status_code == 409
     assert reposted.json()["error"] == "DocumentAlreadyPostedError"

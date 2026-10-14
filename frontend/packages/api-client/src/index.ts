@@ -9,7 +9,9 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 export function createApiClient(options: {
   baseUrl: string;
   getToken?: () => string | null;
+  getScopeId?: () => string | null;
   onUnauthorized?: () => void;
+  onForbidden?: () => void;
 }) {
   const client = createClient<paths>({ baseUrl: options.baseUrl });
 
@@ -19,12 +21,24 @@ export function createApiClient(options: {
       if (token) {
         request.headers.set("Authorization", `Bearer ${token}`);
       }
+
+      const scopeId = options.getScopeId?.();
+      if (scopeId) {
+        request.headers.set("X-Scope-Id", scopeId);
+      }
+
       return request;
     },
     onResponse({ request, response }) {
       const isLogin = request.url.includes("/api/auth/login");
       const isPasswordChange = request.url.includes("/api/auth/me/password");
       const hadToken = Boolean(request.headers.get("Authorization"));
+
+
+      if (response.status === 403 && hadToken && request.method !== "GET") {
+        options.onForbidden?.();
+      }
+
       if (
         response.status === 401 &&
         hadToken &&

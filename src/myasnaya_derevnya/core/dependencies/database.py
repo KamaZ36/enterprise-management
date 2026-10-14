@@ -16,7 +16,6 @@ from myasnaya_derevnya.core.database.transaction_manager.sqlalchemy import (
 
 
 class DatabaseProvider(Provider):
-    # POSTGRESQL
     @provide(scope=Scope.REQUEST)
     async def get_session(self) -> AsyncGenerator[AsyncSession]:
         async with async_session_maker() as session:
@@ -35,7 +34,7 @@ class DatabaseProvider(Provider):
     ) -> TransactionManager:
         return SQLAlchemyTransactionManager(session)
 
-    # HTTP
+
     @provide(scope=Scope.APP)
     def get_http_client(self) -> httpx.AsyncClient:
         return httpx.AsyncClient()

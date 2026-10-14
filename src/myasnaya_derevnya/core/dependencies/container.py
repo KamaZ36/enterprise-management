@@ -15,6 +15,9 @@ from myasnaya_derevnya.modules.customer.infrastructure.dependencies import (
 from myasnaya_derevnya.modules.inventory.infrastructure.dependencies import (
     InventoryDepProvider,
 )
+from myasnaya_derevnya.modules.production.infrastructure.dependencies import (
+    ProductionDepProvider,
+)
 from myasnaya_derevnya.modules.sales.infrastructure.dependencies import (
     SalesDepProvider,
 )
@@ -29,5 +32,6 @@ container = make_async_container(
     CatalogDepProvider(),
     CustomerDepProvider(),
     InventoryDepProvider(),
+    ProductionDepProvider(),
     SalesDepProvider(),
 )

@@ -19,7 +19,8 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 @dataclass(frozen=True, slots=True)
 class UpdateCategoryCommand:
     category_id: UUID
-    name: str
+    name: str | None = None
+    sort_order: int | None = None
 
 
 class UpdateCategoryInteractor:
@@ -50,14 +51,24 @@ class UpdateCategoryInteractor:
         if category is None:
             raise CategoryNotFound(command.category_id)
 
-        name = command.name.strip()
-        if name == category.name:
+        changed = False
+
+        if command.name is not None:
+            name = command.name.strip()
+
+            if name != category.name:
+                if await self._category_repository.check_exists_by_name(name):
+                    raise CategoryAlreadyExists(name)
+
+                category.rename(name)
+                changed = True
+
+        if command.sort_order is not None and command.sort_order != category.sort_order:
+            category.change_sort_order(command.sort_order)
+            changed = True
+
+        if not changed:
             return
-
-        if await self._category_repository.check_exists_by_name(name):
-            raise CategoryAlreadyExists(name)
-
-        category.rename(name)
 
         await self._category_repository.save(category)
         await self._transaction_manager.commit()

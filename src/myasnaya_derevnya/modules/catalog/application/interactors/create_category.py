@@ -18,6 +18,7 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 class CreateCategoryCommand:
     name: str
     parent_id: UUID | None
+    sort_order: int = 0
 
 
 class CreateCategoryInteractor:
@@ -46,7 +47,11 @@ class CreateCategoryInteractor:
         if await self._category_repository.check_exists_by_name(command.name):
             raise CategoryAlreadyExists(category_name=command.name)
 
-        category = Category.create(name=command.name, parent_id=command.parent_id)
+        category = Category.create(
+            name=command.name,
+            parent_id=command.parent_id,
+            sort_order=command.sort_order,
+        )
 
         await self._category_repository.add(category)
         await self._transaction_manager.commit()

@@ -21,8 +21,7 @@ class ListWarehousesInteractor:
     async def __call__(self) -> list[WarehouseListItem]:
         current_user_id = await self._identity_provider.get_current_user_id()
 
-        # Одна проверка области вместо запроса на каждый склад: и быстрее,
-        # и смысл тот же — менеджер кафе видит только свои склады.
+
         scope = await self._staff_api.scope_for(
             user_id=current_user_id, permission=READ_WAREHOUSES
         )

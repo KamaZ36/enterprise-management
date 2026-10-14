@@ -5,13 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.database.search import like_pattern
 from myasnaya_derevnya.modules.catalog.application.dto import (
+    AssortmentItem,
     PriceListEntry,
     PriceListPriceItem,
+)
+from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
+    UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature_prices.base import (
     NomenclaturePricesReader,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.tables import (
+    CATEGORIES_TABLE,
     NOMENCLATURES_TABLE,
     PRICE_LISTS_TABLE,
     PRICES_TABLE,
@@ -44,6 +49,64 @@ class SQLAlchemyPriceListsReader(NomenclaturePricesReader):
 
         return [
             PriceListEntry(id=row["id"], name=row["name"], is_active=row["is_active"])
+            for row in rows
+        ]
+
+    async def list_assortment(self, price_list_id: UUID) -> list[AssortmentItem]:
+        stmt = (
+            select(
+                NOMENCLATURES_TABLE.c.id,
+                NOMENCLATURES_TABLE.c.name,
+                NOMENCLATURES_TABLE.c.sku,
+                NOMENCLATURES_TABLE.c.unit,
+                NOMENCLATURES_TABLE.c.category_id,
+                NOMENCLATURES_TABLE.c.image_url,
+                NOMENCLATURES_TABLE.c.description,
+                CATEGORIES_TABLE.c.name.label("category_name"),
+                PRICES_TABLE.c.value,
+            )
+            .select_from(
+                NOMENCLATURES_TABLE.join(
+                    PRICES_TABLE,
+                    and_(
+                        PRICES_TABLE.c.nomenclature_id == NOMENCLATURES_TABLE.c.id,
+                        PRICES_TABLE.c.price_list_id == price_list_id,
+                    ),
+                )
+                .join(
+                    PRICE_LISTS_TABLE,
+                    PRICE_LISTS_TABLE.c.id == PRICES_TABLE.c.price_list_id,
+                )
+                .join(
+                    CATEGORIES_TABLE,
+                    CATEGORIES_TABLE.c.id == NOMENCLATURES_TABLE.c.category_id,
+                )
+            )
+            .where(
+                NOMENCLATURES_TABLE.c.is_active.is_(True),
+                PRICE_LISTS_TABLE.c.is_active.is_(True),
+            )
+
+            .order_by(
+                CATEGORIES_TABLE.c.sort_order.asc(),
+                NOMENCLATURES_TABLE.c.name.asc(),
+            )
+        )
+
+        rows = (await self._session.execute(stmt)).mappings().all()
+
+        return [
+            AssortmentItem(
+                nomenclature_id=row["id"],
+                name=row["name"],
+                sku=row["sku"],
+                unit=UnitOfMeasurement(row["unit"]),
+                value=row["value"],
+                category_id=row["category_id"],
+                category_name=row["category_name"],
+                image_url=row["image_url"],
+                description=row["description"],
+            )
             for row in rows
         ]
 

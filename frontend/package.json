@@ -8,7 +8,10 @@
     "api:types": "node scripts/generate-api-types.mjs",
     "typecheck:admin": "pnpm --filter @md/admin typecheck",
     "dev:landing": "pnpm --filter @md/landing dev",
-    "build:landing": "pnpm --filter @md/landing build"
+    "build:landing": "pnpm --filter @md/landing build",
+    "dev:cafe": "pnpm --filter @md/cafe dev",
+    "typecheck:cafe": "pnpm --filter @md/cafe typecheck",
+    "build:cafe": "pnpm --filter @md/cafe typecheck && pnpm --filter @md/cafe build"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0"

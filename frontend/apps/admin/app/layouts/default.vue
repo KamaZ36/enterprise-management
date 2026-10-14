@@ -27,6 +27,22 @@
       <el-header class="shell__header">
         <span class="shell__section">{{ sectionTitle }}</span>
 
+        <el-select
+          v-if="hasChoice"
+          :model-value="scopeId"
+          clearable
+          placeholder="Все точки"
+          class="scope"
+          @update:model-value="setScope"
+        >
+          <el-option
+            v-for="scope in scopes"
+            :key="scope.id"
+            :label="scope.title"
+            :value="scope.id"
+          />
+        </el-select>
+
         <div class="who">
           <div class="who__name">{{ currentName }}</div>
           <div class="who__position">{{ currentPosition }}</div>
@@ -88,15 +104,19 @@
 
 <script setup lang="ts">
 import { useAuth } from "~/composables/useAuth";
+import { useCurrentScope } from "~/composables/useCurrentScope";
 import { useCurrentUser } from "~/composables/useCurrentUser";
 
 const route = useRoute();
 const { signOut } = useAuth();
 const { user, load, can, displayName } = useCurrentUser();
+const { scopes, scopeId, hasChoice, setScope, load: loadScope } =
+  useCurrentScope();
 
-// Принудительно: после смены пользователя кэш держал бы прежние права.
-onMounted(() => {
-  void load(true);
+
+onMounted(async () => {
+  await load(true);
+  await loadScope();
 });
 
 import { SECTIONS } from "~/utils/access";
@@ -166,11 +186,10 @@ async function changePassword(): Promise<void> {
 const sections = SECTIONS;
 
 
-
 const visibleSections = computed(() => {
   const items: { path: string; title: string; icon: string }[] = [];
 
-  // Пока не знаем, кто пришёл, показывать нечего: иначе мелькают чужие разделы.
+
   if (!user.value) {
     return items;
   }
@@ -214,8 +233,6 @@ const activeMenu = computed(() => current.value?.path ?? route.path);
 const sectionTitle = computed(() => current.value?.title ?? "");
 const currentName = computed(() => displayName());
 const currentPosition = computed(() => user.value?.position ?? "");
-
-onMounted(load);
 </script>
 
 <style scoped>
@@ -273,6 +290,11 @@ onMounted(load);
 
 .shell__section {
   font-weight: 600;
+}
+
+.scope {
+  width: 220px;
+  margin-left: 16px;
 }
 
 .who {

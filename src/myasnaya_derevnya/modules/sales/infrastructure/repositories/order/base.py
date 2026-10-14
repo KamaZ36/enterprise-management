@@ -20,5 +20,4 @@ class OrderRepository(ABC):
 
     @abstractmethod
     async def next_number(self, org_unit_id: UUID, day: date) -> int:
-        """Следующий номер заказа для точки и дня: повар выкрикивает номер, не идентификатор."""
         raise NotImplementedError

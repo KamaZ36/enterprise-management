@@ -28,11 +28,6 @@ class AccessPolicy:
         permission: Permission,
         assignments: list[ResolvedAssignment],
     ) -> list[tuple[UUID | None, bool]]:
-        """Где это право действует: пары «подразделение + включая дочерние».
-
-        Отвечает на вопрос «где мне вообще можно», которого не хватало спискам:
-        can() говорит про одну точку, а списку нужно множество.
-        """
         return [
             (ra.assignment.org_unit_id, ra.assignment.include_descendants)
             for ra in assignments

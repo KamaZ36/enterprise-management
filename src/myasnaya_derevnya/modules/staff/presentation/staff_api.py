@@ -23,7 +23,6 @@ class StaffAPI:
     async def scopes_of(
         self, user_id: UUID, permission: Permission
     ) -> list[tuple[UUID | None, bool]]:
-        """Области, где у сотрудника есть это право: подразделение и признак потомков."""
         return await self._access_service.scopes_of(
             user_id=user_id, permission=permission
         )
@@ -34,7 +33,6 @@ class StaffAPI:
         )
 
     async def scope_for(self, user_id: UUID, permission: Permission) -> AccessScope:
-        """Где у сотрудника есть это право. Один вызов вместо разбора на месте."""
         return await self._access_service.scope_for(
             user_id=user_id, permission=permission
         )

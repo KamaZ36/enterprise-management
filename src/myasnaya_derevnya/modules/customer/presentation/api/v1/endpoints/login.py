@@ -3,12 +3,10 @@ from fastapi.responses import JSONResponse
 
 from myasnaya_derevnya.core.dependencies import container
 from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
-from myasnaya_derevnya.modules.customer.application.commands import (
-    LoginCustomerCommand,
-    RequestLoginCodeCommand,
-)
 from myasnaya_derevnya.modules.customer.application.interactors.login_customer import (
+    LoginCustomerCommand,
     LoginCustomerInteractor,
+    RequestLoginCodeCommand,
 )
 
 router = APIRouter(prefix="/api/customers", tags=["Клиенты"])

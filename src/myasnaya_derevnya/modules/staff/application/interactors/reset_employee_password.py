@@ -7,7 +7,6 @@ from myasnaya_derevnya.core.database.transaction_manager.base import Transaction
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
-from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
     AccessService,
 )
@@ -33,31 +32,29 @@ class ResetEmployeePasswordInteractor:
         identity_provider: IdentityProvider,
         employee_repository: EmployeeRepository,
         access_service: AccessService,
-        business_api: BusinessAPI,
         auth_api: AuthAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
         self._employee_repository = employee_repository
         self._access_service = access_service
-        self._business_api = business_api
         self._auth_api = auth_api
         self._transaction_manager = transaction_manager
 
     async def __call__(self, command: ResetEmployeePasswordCommand) -> dict[str, str]:
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
-
-        if not await self._access_service.can(
-            user_id=current_user_id,
-            permission=RESET_EMPLOYEE_PASSWORD,
-            org_unit_id=root_org_unit_id,
-        ):
-            raise ForbiddenError()
 
         employee = await self._employee_repository.get_by_id(command.employee_id)
         if employee is None:
             raise EmployeeNotFound()
+
+        allowed = await self._access_service.can(
+            user_id=current_user_id,
+            permission=RESET_EMPLOYEE_PASSWORD,
+            org_unit_id=employee.org_unit_id,
+        )
+        if not allowed:
+            raise ForbiddenError()
 
         password = self._generate_password()
         await self._auth_api.reset_employee_password(

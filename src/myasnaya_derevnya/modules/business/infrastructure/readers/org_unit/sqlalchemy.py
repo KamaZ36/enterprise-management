@@ -1,7 +1,10 @@
-from sqlalchemy import RowMapping, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from myasnaya_derevnya.modules.business.application.dto import OrgUnitListItem
+from myasnaya_derevnya.modules.business.application.dto import (
+    CafeOrgUnitListItem,
+    OrgUnitListItem,
+)
 from myasnaya_derevnya.modules.business.domain.entities.org_unit import OrgUnitType
 from myasnaya_derevnya.modules.business.infrastructure.readers.org_unit.base import (
     OrgUnitReader,
@@ -27,16 +30,35 @@ class SQLAlchemyOrgUnitReader(OrgUnitReader):
 
         rows = (await self._session.execute(stmt)).mappings().all()
 
-        return [self._to_dto(row) for row in rows]
+        return [
+            OrgUnitListItem(
+                id=row["id"],
+                parent_id=row["parent_id"],
+                type=OrgUnitType(row["type"]),
+                code=row["code"],
+                name=row["name"],
+                is_active=row["is_active"],
+                address=row["address"],
+                phone_number=row["phone_number"],
+            )
+            for row in rows
+        ]
 
-    def _to_dto(self, row: RowMapping) -> OrgUnitListItem:
-        return OrgUnitListItem(
-            id=row["id"],
-            parent_id=row["parent_id"],
-            type=OrgUnitType(row["type"]),
-            code=row["code"],
-            name=row["name"],
-            is_active=row["is_active"],
-            address=row["address"],
-            phone_number=row["phone_number"],
+    async def get_cafe_list(self) -> list[CafeOrgUnitListItem]:
+        stmt = select(ORG_UNITS_TABLE).where(
+            ORG_UNITS_TABLE.c.type == OrgUnitType.CAFE,
+            ORG_UNITS_TABLE.c.is_active == True,
         )
+        rows = (await self._session.execute(stmt)).mappings().all()
+
+        return [
+            CafeOrgUnitListItem(
+                id=row["id"],
+                type=OrgUnitType(row["type"]),
+                code=row["code"],
+                name=row["name"],
+                address=row["address"],
+                phone_number=row["phone_number"],
+            )
+            for row in rows
+        ]

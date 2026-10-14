@@ -69,6 +69,25 @@ export const MODULES: ModuleDefinition[
     ],
   },
   {
+    code: "production",
+    title: "Производство",
+    icon: "Box",
+    tabs: [
+      {
+        path: "/production/tech-cards",
+        title: "Техкарты",
+        icon: "Files",
+        permissions: CAN.techCardsOpen,
+      },
+      {
+        path: "/production/orders",
+        title: "Задания",
+        icon: "Box",
+        permissions: CAN.productionOrdersOpen,
+      },
+    ],
+  },
+  {
     code: "catalog",
     title: "Справочники",
     icon: "Goods",

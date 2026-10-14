@@ -19,8 +19,6 @@ class CancelOrderCommand:
 
 
 class CancelOrderInteractor:
-    """Отмена заказа. Выданный заказ отменить нельзя — это уже не отмена, а возврат."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

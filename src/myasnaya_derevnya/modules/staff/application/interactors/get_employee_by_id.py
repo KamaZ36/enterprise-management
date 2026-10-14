@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
@@ -35,19 +35,21 @@ class GetEmployeeByIdInteractor:
 
     async def __call__(self, query: GetEmployeeByIdQuery) -> EmployeeListItem:
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
 
-        allowed = await self._access_service.can(
-            user_id=current_user_id,
-            permission=READ_EMPLOYEES,
-            org_unit_id=root_org_unit_id,
+        scope = await self._access_service.scope_for(
+            user_id=current_user_id, permission=READ_EMPLOYEES
         )
-        if not allowed:
+        if scope.is_empty():
             raise ForbiddenError()
 
-        employee = await self._employee_reader.get_by_id(query.employee_id)
-
+        employee = await self._employee_reader.get_by_id(
+            query.employee_id, org_unit_ids=scope.narrow(None)
+        )
         if employee is None:
             raise EmployeeNotFound()
 
-        return employee
+        titles = await self._business_api.org_unit_titles({employee.org_unit_id})
+
+        return replace(
+            employee, org_unit_name=titles.get(employee.org_unit_id)
+        )

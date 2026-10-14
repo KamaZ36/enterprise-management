@@ -22,5 +22,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
+  useAccessNotice().forbidden(
+    "Нет доступа к этому разделу. Обратитесь к администратору.",
+  );
+
   return navigateTo("/no-access");
 });

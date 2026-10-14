@@ -185,6 +185,12 @@ onMounted(async () => {
   await loadWarehouses();
   await load();
 });
+
+const { scopeId } = useCurrentScope();
+watch(scopeId, async () => {
+  await loadWarehouses();
+  await load();
+});
 </script>
 
 <style scoped>

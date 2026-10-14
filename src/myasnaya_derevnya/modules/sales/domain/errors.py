@@ -4,8 +4,6 @@ from myasnaya_derevnya.core.errors import ConflictError, DomainError, NotFoundEr
 
 
 class SalesDomainError(DomainError):
-    """Нарушение правил заказа: вызывающий может исправить запрос."""
-
     def __str__(self) -> str:
         return "Ошибка правил заказа"
 
@@ -53,8 +51,6 @@ class OrderAlreadyClosedError(ConflictError):
 
 
 class NotSoldAtPointError(SalesDomainError):
-    """Позиции нет в прайс-листе точки: продать её нельзя, и цену взять негде."""
-
     def __init__(self, nomenclature_id: UUID) -> None:
         self._nomenclature_id = nomenclature_id
 

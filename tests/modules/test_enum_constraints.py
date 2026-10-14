@@ -33,13 +33,26 @@ from myasnaya_derevnya.modules.inventory.domain.value_objects.document_status im
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
     DocumentType,
 )
+from myasnaya_derevnya.modules.production.domain.value_objects.loss_kind import (
+    LossKind,
+)
+from myasnaya_derevnya.modules.production.domain.value_objects.order_status import (
+    ProductionOrderStatus,
+)
+from myasnaya_derevnya.modules.production.domain.value_objects.spec_line_role import (
+    OutputKind,
+    SpecLineRole,
+)
+from myasnaya_derevnya.modules.production.domain.value_objects.tech_card_basis import (
+    TechCardBasis,
+)
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignmentStatus,
 )
 
 pytestmark = pytest.mark.db
 
-# колонка → перечисление кода, значения которого база обязана принимать
+
 EXPECTED = {
     ("auth", "user_credentials", "credential_type"): UserCredentialType,
     ("auth", "user_identities", "identity_type"): UserIdentityType,
@@ -54,6 +67,14 @@ EXPECTED = {
     ("inventory", "transfers", "status"): DocumentStatus,
     ("inventory", "warehouses", "type"): WarehouseType,
     ("inventory", "write_offs", "status"): DocumentStatus,
+    ("production", "tech_cards", "basis"): TechCardBasis,
+    ("production", "tech_card_lines", "role"): SpecLineRole,
+    ("production", "tech_card_lines", "loss_kind"): LossKind,
+    ("production", "tech_card_lines", "output_kind"): OutputKind,
+    ("production", "production_orders", "status"): ProductionOrderStatus,
+    ("production", "production_order_lines", "role"): SpecLineRole,
+    ("production", "production_order_lines", "loss_kind"): LossKind,
+    ("production", "production_order_lines", "output_kind"): OutputKind,
     ("staff", "role_assignments", "status"): RoleAssignmentStatus,
 }
 

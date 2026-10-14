@@ -62,7 +62,6 @@ class FakeStaffAPI:
         return user_id in self._allowed
 
     async def scope_for(self, *, user_id: UUID, permission: object) -> AccessScope:
-        """В тестах область приходит уже расширенной: расширение — дело сервиса."""
         if user_id not in self._allowed:
             return AccessScope.of([])
 
@@ -196,7 +195,6 @@ async def test_staff_sees_all_orders() -> None:
 
 
 async def test_customer_cannot_use_staff_list() -> None:
-    # Служебный список стал строго служебным: у клиента своя дверь — /me/orders.
     user_id, customer_id = uuid7(), uuid7()
     listing, _, reader = build(user_id=user_id, profiles={user_id: customer_id})
 
@@ -345,7 +343,7 @@ async def test_another_customers_order_is_reported_as_not_found() -> None:
         catalog_api=FakeCatalogAPI(),  # type: ignore[arg-type]
     )
 
-    # «Нет доступа» подтвердило бы, что заказ существует. Отвечаем «не найден».
+
     with pytest.raises(OrderNotFoundError):
         await interactor(GetMyOrderQuery(order_id=order.id))
 

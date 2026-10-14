@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -10,6 +11,17 @@ from myasnaya_derevnya.modules.customer.domain.entities.customer import Customer
 from myasnaya_derevnya.modules.customer.infrastructure.repositories.customer.base import (
     CustomerRepository,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class RequestLoginCodeCommand:
+    phone: str
+
+
+@dataclass(frozen=True, slots=True)
+class LoginCustomerCommand:
+    phone: str
+    code: str
 
 
 class LoginCustomerInteractor:

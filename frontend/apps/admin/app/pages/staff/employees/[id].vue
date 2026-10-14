@@ -48,6 +48,9 @@
             {{ employee.is_active ? "работает" : "уволен" }}
           </el-tag>
         </el-descriptions-item>
+        <el-descriptions-item label="Работает в">
+          {{ employee.org_unit_name ?? orgUnitName(employee.org_unit_id) }}
+        </el-descriptions-item>
         <el-descriptions-item label="Телефон">
           {{ employee.phone_number ?? "—" }}
         </el-descriptions-item>
@@ -211,6 +214,21 @@
           <el-input v-model="editForm.phone_number" />
         </el-form-item>
 
+        <el-form-item label="Работает в">
+          <el-select
+            v-model="editForm.org_unit_id"
+            placeholder="Подразделение"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="unit in orgUnits"
+              :key="unit.id"
+              :label="unit.name"
+              :value="unit.id"
+            />
+          </el-select>
+        </el-form-item>
+
         <el-alert v-if="editError" :title="editError" type="error" :closable="false" show-icon />
       </el-form>
 
@@ -248,6 +266,7 @@ const editForm = reactive({
   middle_name: "",
   position: "",
   phone_number: "",
+  org_unit_id: "",
 });
 const roles = ref<EmployeeRole[]>([]);
 const dictionary = ref<Role[]>([]);
@@ -301,17 +320,19 @@ async function loadEmployee(): Promise<void> {
 }
 
 async function loadDictionaries(): Promise<void> {
-  const [rolesResponse, unitsResponse] = await Promise.all([
-    api.GET("/api/staff/employees/roles", {}),
-    api.GET("/api/business/org-units", {}),
-  ]);
-
-  if (rolesResponse.response.ok && rolesResponse.data) {
-    dictionary.value = rolesResponse.data;
+  if (can("staff.role.read")) {
+    const { data, response } = await api.GET("/api/staff/employees/roles", {});
+    if (response.ok && data) {
+      dictionary.value = data;
+    }
   }
-  if (unitsResponse.response.ok && unitsResponse.data) {
-    orgUnits.value = unitsResponse.data;
-    form.org_unit_id = unitsResponse.data[0]?.id ?? "";
+
+  if (can("org_unit.read")) {
+    const { data, response } = await api.GET("/api/business/org-units", {});
+    if (response.ok && data) {
+      orgUnits.value = data;
+      form.org_unit_id = data[0]?.id ?? "";
+    }
   }
 }
 
@@ -437,6 +458,7 @@ function openEdit(): void {
   editForm.middle_name = current.middle_name ?? "";
   editForm.position = current.position;
   editForm.phone_number = current.phone_number ?? "";
+  editForm.org_unit_id = current.org_unit_id;
   editOpen.value = true;
 }
 
@@ -459,6 +481,7 @@ async function saveEdit(): Promise<void> {
           middle_name: editForm.middle_name.trim() || null,
           position: editForm.position.trim(),
           phone_number: editForm.phone_number.trim() || null,
+          org_unit_id: editForm.org_unit_id,
         },
       },
     );

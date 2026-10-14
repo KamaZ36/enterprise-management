@@ -22,6 +22,7 @@
 
     <el-table v-loading="pending" :data="visible" empty-text="Категорий пока нет" class="page__table">
       <el-table-column prop="name" label="Название" min-width="280" />
+      <el-table-column prop="sort_order" label="Порядок" width="110" align="center" />
       <el-table-column label="Родитель" min-width="220">
         <template #default="{ row }">{{ parentName(row.parent_id) }}</template>
       </el-table-column>
@@ -41,6 +42,10 @@
         <el-form-item label="Название">
           <el-input v-model="form.name" placeholder="Мясо и птица" />
         </el-form-item>
+        <el-form-item label="Порядок">
+          <el-input-number v-model="form.sort_order" :min="0" :max="9999" style="width: 100%" />
+          <span class="hint">меньше — выше: и в справочнике, и в меню кафе</span>
+        </el-form-item>
         <el-alert v-if="createError" :title="createError" type="error" :closable="false" show-icon />
       </el-form>
 
@@ -56,6 +61,10 @@
       <el-form label-position="top" @submit.prevent>
         <el-form-item label="Название">
           <el-input v-model="editName" />
+        </el-form-item>
+        <el-form-item label="Порядок">
+          <el-input-number v-model="editSortOrder" :min="0" :max="9999" style="width: 100%" />
+          <span class="hint">меньше — выше: и в справочнике, и в меню кафе</span>
         </el-form-item>
         <el-alert v-if="editError" :title="editError" type="error" :closable="false" show-icon />
       </el-form>
@@ -90,8 +99,9 @@ const editOpen = ref(false);
 const editError = ref("");
 const editRow = ref<Category | null>(null);
 const editName = ref("");
+const editSortOrder = ref(0);
 
-const form = reactive({ name: "" });
+const form = reactive({ name: "", sort_order: 0 });
 
 const visible = computed(() => {
   const needle = filter.value.trim().toLowerCase();
@@ -133,6 +143,9 @@ function openCreate(): void {
   createError.value = "";
   notice.value = "";
   form.name = "";
+
+  form.sort_order =
+    categories.value.reduce((max, item) => Math.max(max, item.sort_order), 0) + 10;
   createOpen.value = true;
 }
 
@@ -142,7 +155,11 @@ async function save(): Promise<void> {
 
   try {
     const { response, error: failure } = await api.POST("/api/catalog/categories", {
-      body: { name: form.name.trim(), parent_id: null },
+      body: {
+        name: form.name.trim(),
+        parent_id: null,
+        sort_order: form.sort_order,
+      },
     });
 
     if (!response.ok) {
@@ -165,6 +182,7 @@ function openEdit(row: Category): void {
   notice.value = "";
   editRow.value = row;
   editName.value = row.name;
+  editSortOrder.value = row.sort_order;
   editOpen.value = true;
 }
 
@@ -180,7 +198,7 @@ async function saveEdit(): Promise<void> {
   try {
     const { response, error: failure } = await api.PATCH("/api/catalog/categories/{category_id}", {
       params: { path: { category_id: row.id } },
-      body: { name: editName.value.trim() },
+      body: { name: editName.value.trim(), sort_order: editSortOrder.value },
     });
 
     if (!response.ok) {
@@ -208,5 +226,11 @@ onMounted(load);
 
 .page__table {
   margin-top: 4px;
+}
+
+.hint {
+  margin-left: 10px;
+  color: #909399;
+  font-size: 12px;
 }
 </style>

@@ -65,11 +65,46 @@
     <div v-if="order" style="display: flex; gap: 12px; margin-top: 24px">
       <el-button
         v-if="order.status === 'draft' && can('order.update')"
+        :loading="acting"
+        @click="openEdit"
+      >
+        Изменить
+      </el-button>
+
+      <el-button
+        v-if="order.status === 'draft' && can('order.update')"
         type="primary"
         :loading="acting"
         @click="confirmOrder"
       >
         Подтвердить
+      </el-button>
+
+      <el-button
+        v-if="order.status === 'confirmed' && can('order.update')"
+        type="primary"
+        :loading="acting"
+        @click="startPreparing"
+      >
+        Готовится
+      </el-button>
+
+      <el-button
+        v-if="order.status === 'preparing' && can('order.update')"
+        type="success"
+        :loading="acting"
+        @click="markReady"
+      >
+        Готов
+      </el-button>
+
+      <el-button
+        v-if="order.status === 'ready' && can('order.update')"
+        type="success"
+        :loading="acting"
+        @click="completeOrder"
+      >
+        Выдан
       </el-button>
 
       <el-button
@@ -82,6 +117,47 @@
         Отменить
       </el-button>
     </div>
+
+    <el-dialog v-model="editOpen" title="Изменить черновик" width="720">
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="Позиции">
+          <OrderLinesEditor
+            v-model="editLines"
+            :org-unit-id="order?.org_unit_id"
+            :extra-options="knownLineOptions"
+          />
+        </el-form-item>
+
+        <el-form-item label="К выдаче">
+          <el-date-picker
+            v-model="editPlannedAt"
+            type="datetime"
+            value-format="YYYY-MM-DDTHH:mm:ssZ"
+            placeholder="Как можно скорее"
+            style="width: 100%"
+          />
+        </el-form-item>
+
+        <el-form-item label="Комментарий">
+          <el-input v-model="editComment" type="textarea" :rows="2" />
+        </el-form-item>
+
+        <el-alert
+          v-if="editError"
+          :title="editError"
+          type="error"
+          :closable="false"
+          show-icon
+        />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="editOpen = false">Отмена</el-button>
+        <el-button type="primary" :loading="saving" @click="saveEdit">
+          Сохранить
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -90,6 +166,7 @@ import type { components } from "@md/api-client";
 import { formatKopecks } from "@md/money";
 
 import { CAN } from "~/utils/access";
+import type { OrderLineDraft } from "~/utils/orderLines";
 
 definePageMeta({ permissions: CAN.ordersOpen });
 
@@ -171,17 +248,22 @@ async function loadOrder(): Promise<void> {
   }
 }
 
-async function act(action: "confirm" | "cancel"): Promise<void> {
+const ACTION_PATHS = {
+  confirm: "/api/sales/orders/{order_id}/confirm",
+  preparing: "/api/sales/orders/{order_id}/preparing",
+  ready: "/api/sales/orders/{order_id}/ready",
+  completed: "/api/sales/orders/{order_id}/completed",
+  cancel: "/api/sales/orders/{order_id}/cancel",
+} as const;
+
+type OrderAction = keyof typeof ACTION_PATHS;
+
+async function act(action: OrderAction): Promise<void> {
   acting.value = true;
   error.value = "";
 
   try {
-    const path =
-      action === "confirm"
-        ? "/api/sales/orders/{order_id}/confirm"
-        : "/api/sales/orders/{order_id}/cancel";
-
-    const { response } = await api.POST(path, {
+    const { response } = await api.POST(ACTION_PATHS[action], {
       params: { path: { order_id: orderId } },
     });
 
@@ -204,8 +286,90 @@ async function confirmOrder(): Promise<void> {
   await act("confirm");
 }
 
+async function startPreparing(): Promise<void> {
+  await act("preparing");
+}
+
+async function markReady(): Promise<void> {
+  await act("ready");
+}
+
 async function cancelOrder(): Promise<void> {
   await act("cancel");
+}
+
+async function completeOrder(): Promise<void> {
+  await act("completed");
+}
+
+const editOpen = ref(false);
+const editError = ref("");
+const saving = ref(false);
+const editLines = ref<OrderLineDraft[]>([]);
+const editPlannedAt = ref<string | null>(null);
+const editComment = ref("");
+
+const knownLineOptions = computed(() =>
+  (order.value?.lines ?? []).map((line) => ({
+    id: line.nomenclature_id,
+    name: line.nomenclature_name ?? line.nomenclature_id,
+  })),
+);
+
+function openEdit(): void {
+  const current = order.value;
+  if (!current) return;
+
+  editError.value = "";
+  editLines.value = current.lines.map((line) => ({
+    nomenclature_id: line.nomenclature_id,
+    quantity: String(line.quantity),
+  }));
+  editPlannedAt.value = current.planned_at ?? null;
+  editComment.value = current.comment ?? "";
+  editOpen.value = true;
+}
+
+async function saveEdit(): Promise<void> {
+  const current = order.value;
+  if (!current) return;
+
+  saving.value = true;
+  editError.value = "";
+
+  try {
+    const { response, error: failure } = await api.PATCH(
+      "/api/sales/orders/{order_id}",
+      {
+        params: { path: { order_id: orderId } },
+        body: {
+          planned_at: editPlannedAt.value || null,
+          comment: editComment.value.trim() || null,
+          lines: editLines.value
+            .filter((line) => line.nomenclature_id)
+            .map((line) => ({
+              nomenclature_id: line.nomenclature_id,
+              quantity: line.quantity,
+            })),
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const payload = failure as { message?: string } | undefined;
+      editError.value =
+        payload?.message ??
+        (response.status === 409
+          ? "Менять можно только черновик заказа"
+          : `Не удалось сохранить: ${response.status}`);
+      return;
+    }
+
+    editOpen.value = false;
+    await loadOrder();
+  } finally {
+    saving.value = false;
+  }
 }
 
 onMounted(loadOrder);

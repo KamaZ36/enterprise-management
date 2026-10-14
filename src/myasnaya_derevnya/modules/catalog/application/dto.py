@@ -17,6 +17,8 @@ class NomenclatureListItem:
     category_id: UUID
     category_name: str
     is_active: bool
+    image_url: str | None = None
+    description: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +26,7 @@ class CategoryListItem:
     id: UUID
     name: str
     parent_id: UUID | None
+    sort_order: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,3 +50,16 @@ class PriceListPriceItem:
     nomenclature_name: str
     sku: str
     value: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class AssortmentItem:
+    nomenclature_id: UUID
+    name: str
+    sku: str
+    unit: UnitOfMeasurement
+    value: int
+    category_id: UUID | None = None
+    category_name: str | None = None
+    image_url: str | None = None
+    description: str | None = None

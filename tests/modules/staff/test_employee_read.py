@@ -1,4 +1,3 @@
-"""Тест поиска сотрудников: слова находятся в любом порядке."""
 
 from datetime import date
 from uuid import uuid4
@@ -19,9 +18,12 @@ from myasnaya_derevnya.modules.staff.infrastructure.tables import EMPLOYEES_TABL
 pytestmark = pytest.mark.db
 
 
-def make_employee(*, first_name: str, last_name: str, position: str) -> Employee:
+def make_employee(
+    *, org_unit_id, first_name: str, last_name: str, position: str
+) -> Employee:
     return Employee.create(
         user_id=uuid4(),
+        org_unit_id=org_unit_id,
         first_name=first_name,
         last_name=last_name,
         middle_name=None,
@@ -31,16 +33,24 @@ def make_employee(*, first_name: str, last_name: str, position: str) -> Employee
     )
 
 
-async def test_words_are_matched_in_any_order(db_session: AsyncSession) -> None:
+async def test_words_are_matched_in_any_order(
+    db_session: AsyncSession, root_org_unit_id
+) -> None:
     marker = uuid4().hex[:8]
     repository = SQLAlchemyEmployeeRepository(db_session)
     reader = SQLAlchemyEmployeeReader(db_session)
 
     target = make_employee(
-        first_name=f"Имя{marker}", last_name=f"Фамилия{marker}", position="Обвальщик"
+        org_unit_id=root_org_unit_id,
+        first_name=f"Имя{marker}",
+        last_name=f"Фамилия{marker}",
+        position="Обвальщик",
     )
     other = make_employee(
-        first_name=f"Другой{marker}", last_name=f"Чужой{marker}", position="Мясник"
+        org_unit_id=root_org_unit_id,
+        first_name=f"Другой{marker}",
+        last_name=f"Чужой{marker}",
+        position="Мясник",
     )
     await repository.add(target)
     await repository.add(other)

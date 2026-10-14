@@ -149,3 +149,14 @@ async def test_every_endpoint_interactor_is_registered() -> None:
                 broken.append(f"{module_name}.{name}: {type(exc).__name__}: {exc}")
 
     assert broken == []
+
+
+def test_my_orders_list_uses_customer_schema() -> None:
+    schema = create_app().openapi()
+    response = schema["paths"]["/api/sales/me/orders"]["get"]["responses"]["200"]
+    ref = response["content"]["application/json"]["schema"]["$ref"]
+
+    assert ref.endswith("/MyOrderListSchema")
+
+    properties = schema["components"]["schemas"]["MyOrderListItemSchema"]["properties"]
+    assert "customer_id" not in properties

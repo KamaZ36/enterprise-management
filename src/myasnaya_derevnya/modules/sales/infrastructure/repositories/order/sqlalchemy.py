@@ -46,7 +46,7 @@ class SQLAlchemyOrderRepository(OrderRepository):
             update(ORDERS_TABLE).where(ORDERS_TABLE.c.id == order.id).values(**values)
         )
 
-        # Строки заменяются целиком: черновик правят как единое целое.
+
         await self._session.execute(
             delete(ORDER_LINES_TABLE).where(ORDER_LINES_TABLE.c.order_id == order.id)
         )

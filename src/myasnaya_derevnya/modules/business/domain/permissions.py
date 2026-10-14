@@ -1,4 +1,4 @@
-# ORG UNIT
+
 from myasnaya_derevnya.core.types.permission import Permission
 
 ORG_UNIT_CREATE = Permission(

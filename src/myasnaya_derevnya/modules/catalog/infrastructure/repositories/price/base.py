@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from uuid import UUID
 
 from myasnaya_derevnya.modules.catalog.domain.entities.price import Price
@@ -14,9 +15,9 @@ class PriceRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_nomenclature_and_list(
-        self, nomenclature_id: UUID, price_list_id: UUID
-    ) -> Price | None:
+    async def get_values_by_nomenclatures_and_list(
+        self, nomenclature_ids: Iterable[UUID], price_list_id: UUID
+    ) -> dict[UUID, int]:
         raise NotImplementedError
 
     @abstractmethod

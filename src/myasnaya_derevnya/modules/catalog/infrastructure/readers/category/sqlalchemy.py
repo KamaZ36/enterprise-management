@@ -18,6 +18,7 @@ class SQLAlchemyCategoryReader(CategoryReader):
             CATEGORIES_TABLE.c.id,
             CATEGORIES_TABLE.c.name,
             CATEGORIES_TABLE.c.parent_id,
+            CATEGORIES_TABLE.c.sort_order,
         )
 
         if search:
@@ -25,12 +26,18 @@ class SQLAlchemyCategoryReader(CategoryReader):
                 CATEGORIES_TABLE.c.name.ilike(like_pattern(search), escape="\\")
             )
 
-        stmt = stmt.order_by(CATEGORIES_TABLE.c.name.asc())
+
+        stmt = stmt.order_by(
+            CATEGORIES_TABLE.c.sort_order.asc(), CATEGORIES_TABLE.c.name.asc()
+        )
         rows = (await self._session.execute(stmt)).mappings().all()
 
         return [self._to_dto(row) for row in rows]
 
     def _to_dto(self, row: RowMapping) -> CategoryListItem:
         return CategoryListItem(
-            id=row["id"], name=row["name"], parent_id=row["parent_id"]
+            id=row["id"],
+            name=row["name"],
+            parent_id=row["parent_id"],
+            sort_order=row["sort_order"],
         )

@@ -22,15 +22,17 @@ class FakeIdentityProvider:
 
 
 class FakeBusinessAPI:
-    async def get_root_unit_id(self) -> UUID:
-        return uuid4()
+    async def org_unit_exists(self, org_unit_id: UUID) -> bool:
+        return True
 
 
 class FakeAccessService:
     def __init__(self, allowed: bool = True) -> None:
         self.allowed = allowed
+        self.checked: list[UUID | None] = []
 
     async def can(self, user_id: UUID, permission, org_unit_id: UUID | None) -> bool:
+        self.checked.append(org_unit_id)
         return self.allowed
 
 
@@ -57,6 +59,7 @@ class FakeTransactionManager:
 def make_employee() -> Employee:
     return Employee.create(
         user_id=uuid4(),
+        org_unit_id=uuid4(),
         first_name="Иван",
         last_name="Петров",
         middle_name="Сергеевич",
@@ -160,3 +163,51 @@ async def test_dismiss_and_restore() -> None:
     )
     assert employee.is_active is True
     assert employee.dismissed_at is None
+
+
+async def test_transfer_checks_both_points_and_moves() -> None:
+    employee = make_employee()
+    origin = employee.org_unit_id
+    target = uuid4()
+    access = FakeAccessService()
+    interactor = UpdateEmployeeInteractor(
+        identity_provider=FakeIdentityProvider(),
+        employee_repository=FakeEmployeeRepository(employee),
+        access_service=access,
+        business_api=FakeBusinessAPI(),
+        transaction_manager=FakeTransactionManager(),
+    )
+
+    await interactor(
+        UpdateEmployeeCommand(
+            employee_id=employee.id,
+            provided=frozenset({"org_unit_id"}),
+            org_unit_id=target,
+        )
+    )
+
+    assert employee.org_unit_id == target
+    assert set(access.checked) == {origin, target}
+
+
+async def test_transfer_without_permission_on_target_is_denied() -> None:
+    employee = make_employee()
+    origin = employee.org_unit_id
+    interactor = UpdateEmployeeInteractor(
+        identity_provider=FakeIdentityProvider(),
+        employee_repository=FakeEmployeeRepository(employee),
+        access_service=FakeAccessService(allowed=False),
+        business_api=FakeBusinessAPI(),
+        transaction_manager=FakeTransactionManager(),
+    )
+
+    with pytest.raises(ForbiddenError):
+        await interactor(
+            UpdateEmployeeCommand(
+                employee_id=employee.id,
+                provided=frozenset({"org_unit_id"}),
+                org_unit_id=uuid4(),
+            )
+        )
+
+    assert employee.org_unit_id == origin

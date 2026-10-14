@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from myasnaya_derevnya.modules.inventory.application.dto import (
+    BalanceListItem,
     ReceiptDetail,
     ReceiptListItem,
     TransferDetail,
@@ -13,9 +14,6 @@ from myasnaya_derevnya.modules.inventory.application.dto import (
     WarehouseListItem,
     WriteOffDetail,
     WriteOffListItem,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.balances.read import (
-    BalanceListItem,
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
     WarehouseType,

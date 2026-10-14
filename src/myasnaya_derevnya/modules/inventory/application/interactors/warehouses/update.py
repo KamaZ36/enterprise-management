@@ -52,8 +52,7 @@ class UpdateWarehouseInteractor:
         if warehouse is None:
             raise WarehouseNotFoundError(command.warehouse_id)
 
-        # Право проверяем на точке самого склада: у управляющего кафе прав
-        # на всю компанию нет, а на свой склад — есть.
+
         allowed = await self._staff_api.can(
             user_id=current_user_id,
             permission=MANAGE_WAREHOUSES,

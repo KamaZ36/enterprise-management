@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from uuid import UUID
 
 from sqlalchemy import RowMapping, select, update
@@ -39,20 +40,20 @@ class SQLAlchemyPriceRepository(PriceRepository):
             )
         )
 
-    async def get_by_nomenclature_and_list(
-        self, nomenclature_id: UUID, price_list_id: UUID
-    ) -> Price | None:
-        stmt = select(PRICES_TABLE).where(
-            PRICES_TABLE.c.nomenclature_id == nomenclature_id,
+    async def get_values_by_nomenclatures_and_list(
+        self, nomenclature_ids: Iterable[UUID], price_list_id: UUID
+    ) -> dict[UUID, int]:
+        ids = list(nomenclature_ids)
+        if not ids:
+            return {}
+
+        stmt = select(PRICES_TABLE.c.nomenclature_id, PRICES_TABLE.c.value).where(
+            PRICES_TABLE.c.nomenclature_id.in_(ids),
             PRICES_TABLE.c.price_list_id == price_list_id,
         )
-        result = await self._session.execute(stmt)
-        row = result.mappings().one_or_none()
+        rows = (await self._session.execute(stmt)).all()
 
-        if row is None:
-            return None
-
-        return self._to_entity(row)
+        return {row.nomenclature_id: row.value for row in rows}
 
     async def get_by_id(self, price_id: UUID) -> Price | None:
         stmt = select(PRICES_TABLE).where(PRICES_TABLE.c.id == price_id)

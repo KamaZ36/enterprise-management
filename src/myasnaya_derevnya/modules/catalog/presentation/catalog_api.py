@@ -11,7 +11,6 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.
 
 
 class CatalogAPI:
-    # цены для точки нужны заказу и витрине
     def __init__(
         self,
         get_point_prices_interactor: GetPointPricesInteractor,

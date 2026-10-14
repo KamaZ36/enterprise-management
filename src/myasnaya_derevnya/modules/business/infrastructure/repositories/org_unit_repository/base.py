@@ -34,7 +34,6 @@ class OrgUnitRepository(ABC):
     async def descendants_of_many(
         self, org_unit_ids: Iterable[UUID]
     ) -> frozenset[UUID]:
-        """Поддеревья сразу для нескольких подразделений, включая их сами."""
         raise NotImplementedError
 
     @abstractmethod

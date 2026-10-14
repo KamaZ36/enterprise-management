@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
-from myasnaya_derevnya.modules.inventory.application.commands import (
-    TransferLineCommand,
-)
 from myasnaya_derevnya.modules.inventory.domain.entities.transfer import (
     TransferLine,
 )
@@ -27,10 +25,17 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 @dataclass(frozen=True, slots=True)
+class UpdateTransferLineCommand:
+    nomenclature_id: UUID
+    quantity: Decimal
+    lot_code: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class UpdateTransferCommand:
     transfer_id: UUID
     occurred_at: datetime
-    lines: list[TransferLineCommand]
+    lines: list[UpdateTransferLineCommand]
     comment: str | None = None
 
 

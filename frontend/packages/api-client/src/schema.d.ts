@@ -65,7 +65,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Order
+         * @description Изменить черновик заказа
+         */
+        patch: operations["update_order_api_sales_orders__order_id__patch"];
         trace?: never;
     };
     "/api/sales/orders/{order_id}/confirm": {
@@ -82,6 +86,66 @@ export interface paths {
          * @description Подтвердить заказ
          */
         post: operations["confirm_order_api_sales_orders__order_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/orders/{order_id}/preparing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Preparing Order
+         * @description Заказ готовится
+         */
+        post: operations["start_preparing_order_api_sales_orders__order_id__preparing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/orders/{order_id}/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Order Ready
+         * @description Заказ готов
+         */
+        post: operations["mark_order_ready_api_sales_orders__order_id__ready_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/orders/{order_id}/completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Order
+         * @description Выдать заказ
+         */
+        post: operations["complete_order_api_sales_orders__order_id__completed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -456,6 +520,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/business/org-units/cafe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cafe List Org Units
+         * @description Список активных кафе
+         */
+        get: operations["cafe_list_org_units_api_business_org_units_cafe_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/business/org-units/{org_unit_id}": {
         parameters: {
             query?: never;
@@ -607,7 +691,7 @@ export interface paths {
         head?: never;
         /**
          * Update Category
-         * @description Переименовать категорию
+         * @description Изменить категорию
          */
         patch: operations["update_category_api_catalog_categories__category_id__patch"];
         trace?: never;
@@ -636,6 +720,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/org-units/{org_unit_id}/assortment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Point Assortment
+         * @description Ассортимент точки: что продаётся и по какой цене (витрина)
+         */
+        get: operations["get_point_assortment_api_catalog_org_units__org_unit_id__assortment_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/catalog/nomenclatures/{nomenclature_id}/prices": {
         parameters: {
             query?: never;
@@ -650,6 +754,26 @@ export interface paths {
         get: operations["list_nomenclature_prices_api_catalog_nomenclatures__nomenclature_id__prices_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Image
+         * @description Загрузить изображение (сжимаем и пересохраняем в WebP)
+         */
+        post: operations["upload_image_api_catalog_images_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -936,6 +1060,138 @@ export interface paths {
         patch: operations["update_transfer_api_inventory_transfers__transfer_id__patch"];
         trace?: never;
     };
+    "/api/production/tech-cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tech Cards
+         * @description Техкарты: все редакции
+         */
+        get: operations["list_tech_cards_api_production_tech_cards_get"];
+        put?: never;
+        /**
+         * Create Tech Card
+         * @description Создать техкарту или новую редакцию
+         */
+        post: operations["create_tech_card_api_production_tech_cards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/tech-cards/{tech_card_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Tech Card
+         * @description Техкарта: состав и нормы
+         */
+        get: operations["get_tech_card_api_production_tech_cards__tech_card_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Production Orders
+         * @description Производственные задания
+         */
+        get: operations["list_production_orders_api_production_orders_get"];
+        put?: never;
+        /**
+         * Create Production Order
+         * @description Создать производственное задание
+         */
+        post: operations["create_production_order_api_production_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Production Order
+         * @description Производственное задание: входы, выходы и потери
+         */
+        get: operations["get_production_order_api_production_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Production Order
+         * @description Ввести факт по строкам черновика
+         */
+        patch: operations["update_production_order_api_production_orders__order_id__patch"];
+        trace?: never;
+    };
+    "/api/production/orders/{order_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Production Order
+         * @description Провести задание
+         */
+        post: operations["post_production_order_api_production_orders__order_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/orders/{order_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Production Order
+         * @description Отменить черновик задания
+         */
+        post: operations["cancel_production_order_api_production_orders__order_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/customers/login/code": {
         parameters: {
             query?: never;
@@ -1035,6 +1291,40 @@ export interface components {
             /** Include Descendants */
             include_descendants: boolean;
         };
+        /**
+         * AssortmentItemSchema
+         * @description Позиция витрины: цена в копейках, как и везде в заказах.
+         *
+         *     Категория, фото и описание — то, из чего витрина кафе собирает разделы
+         *     меню и карточки блюд.
+         */
+        AssortmentItemSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Name */
+            name: string;
+            /** Sku */
+            sku: string;
+            unit: components["schemas"]["UnitOfMeasurement"];
+            /** Value */
+            value: number;
+            /** Category Id */
+            category_id?: string | null;
+            /** Category Name */
+            category_name?: string | null;
+            /** Image Url */
+            image_url?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** AssortmentListSchema */
+        AssortmentListSchema: {
+            /** Items */
+            items: components["schemas"]["AssortmentItemSchema"][];
+        };
         /** BalanceListSchema */
         BalanceListSchema: {
             /** Items */
@@ -1077,6 +1367,28 @@ export interface components {
              */
             price_list_id: string;
         };
+        /** Body_upload_image_api_catalog_images_post */
+        Body_upload_image_api_catalog_images_post: {
+            /** File */
+            file: string;
+        };
+        /** CafeOrgUnitSchema */
+        CafeOrgUnitSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            type: components["schemas"]["OrgUnitType"];
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Address */
+            address: string | null;
+            /** Phone Number */
+            phone_number: string | null;
+        };
         /** CategorySchema */
         CategorySchema: {
             /**
@@ -1088,6 +1400,11 @@ export interface components {
             name: string;
             /** Parent Id */
             parent_id: string | null;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
         };
         /** ChangePasswordSchema */
         ChangePasswordSchema: {
@@ -1102,6 +1419,11 @@ export interface components {
             name: string;
             /** Parent Id */
             parent_id: string | null;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
         };
         /** CreateCredentialEmployeeCommand */
         CreateCredentialEmployeeCommand: {
@@ -1130,6 +1452,8 @@ export interface components {
              * Format: date
              */
             hired_at: string;
+            /** Org Unit Id */
+            org_unit_id?: string | null;
         };
         /** CreateNomenclatureSchema */
         CreateNomenclatureSchema: {
@@ -1144,6 +1468,10 @@ export interface components {
              * Format: uuid
              */
             category_id: string;
+            /** Image Url */
+            image_url?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** CreateOrderSchema */
         CreateOrderSchema: {
@@ -1197,6 +1525,28 @@ export interface components {
             /** Price */
             price: number | string;
         };
+        /** CreateProductionOrderSchema */
+        CreateProductionOrderSchema: {
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Tech Card Id
+             * Format: uuid
+             */
+            tech_card_id: string;
+            /** Batch Count */
+            batch_count: number | string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Comment */
+            comment?: string | null;
+        };
         /** CreateReceiptSchema */
         CreateReceiptSchema: {
             /**
@@ -1238,6 +1588,23 @@ export interface components {
             permission_codes: string[];
             /** Grantable Role Ids */
             grantable_role_ids: string[];
+        };
+        /**
+         * CreateTechCardSchema
+         * @description Новая редакция: код тот же — версия поднимется сама.
+         */
+        CreateTechCardSchema: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            basis: components["schemas"]["TechCardBasis"];
+            /** Lines */
+            lines: components["schemas"]["TechCardLineInputSchema"][];
+            /** Valid From */
+            valid_from?: string | null;
+            /** Comment */
+            comment?: string | null;
         };
         /** CreateTransferSchema */
         CreateTransferSchema: {
@@ -1301,6 +1668,14 @@ export interface components {
              */
             order_id: string;
         };
+        /** CreatedProductionSchema */
+        CreatedProductionSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
         /** CurrentUserRoleSchema */
         CurrentUserRoleSchema: {
             /** Code */
@@ -1346,6 +1721,8 @@ export interface components {
             id: string;
             /** Title */
             title: string;
+            /** Permissions */
+            permissions: string[];
         };
         /** CustomerDetailSchema */
         CustomerDetailSchema: {
@@ -1453,6 +1830,13 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name?: string | null;
             /** First Name */
             first_name: string;
             /** Last Name */
@@ -1492,6 +1876,12 @@ export interface components {
             /** Code */
             code: string;
         };
+        /**
+         * LossKind
+         * @description Технологические потери: у каждой своя норма и свой разговор.
+         * @enum {string}
+         */
+        LossKind: "shrinkage" | "cooking" | "trimming" | "defrost" | "defect";
         /**
          * MyOrderDetailSchema
          * @description Карточка для покупателя: состав, статус и сумма.
@@ -1534,6 +1924,46 @@ export interface components {
             total: number;
             /** Lines */
             lines: components["schemas"]["OrderLineViewSchema"][];
+        };
+        /**
+         * MyOrderListItemSchema
+         * @description Строка списка для покупателя: без служебных полей.
+         */
+        MyOrderListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number | null;
+            /** Status */
+            status: string;
+            /** Channel */
+            channel: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Planned At */
+            planned_at: string | null;
+            /** Total */
+            total: number;
+            /** Line Count */
+            line_count: number;
+        };
+        /** MyOrderListSchema */
+        MyOrderListSchema: {
+            /** Items */
+            items: components["schemas"]["MyOrderListItemSchema"][];
+            /** Total */
+            total: number;
         };
         /** NomenclatureListSchema */
         NomenclatureListSchema: {
@@ -1587,6 +2017,10 @@ export interface components {
             category_name: string;
             /** Is Active */
             is_active: boolean;
+            /** Image Url */
+            image_url?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /**
          * NomenclatureType
@@ -1739,6 +2173,11 @@ export interface components {
          * @enum {string}
          */
         OrgUnitType: "root" | "production" | "group" | "cafe" | "shop";
+        /**
+         * OutputKind
+         * @enum {string}
+         */
+        OutputKind: "main" | "by_product";
         /** PermissionSchema */
         PermissionSchema: {
             /** Code */
@@ -1799,6 +2238,131 @@ export interface components {
             /** Value */
             value: number | null;
         };
+        /** ProductionOrderActualSchema */
+        ProductionOrderActualSchema: {
+            /**
+             * Line Id
+             * Format: uuid
+             */
+            line_id: string;
+            /** Quantity */
+            quantity: number | string;
+        };
+        /** ProductionOrderDetailSchema */
+        ProductionOrderDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Tech Card Id
+             * Format: uuid
+             */
+            tech_card_id: string;
+            /** Tech Card Code */
+            tech_card_code: string;
+            /** Tech Card Version */
+            tech_card_version: number;
+            status: components["schemas"]["ProductionOrderStatus"];
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Batch Count */
+            batch_count: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Lines */
+            lines: components["schemas"]["ProductionOrderLineSchema"][];
+            /** Comment */
+            comment?: string | null;
+            /** Posted At */
+            posted_at?: string | null;
+            /** Warehouse Name */
+            warehouse_name?: string | null;
+        };
+        /** ProductionOrderLineSchema */
+        ProductionOrderLineSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            role: components["schemas"]["SpecLineRole"];
+            /** Planned Quantity */
+            planned_quantity: string;
+            /** Actual Quantity */
+            actual_quantity: string;
+            /** Nomenclature Id */
+            nomenclature_id?: string | null;
+            /** Nomenclature Name */
+            nomenclature_name?: string | null;
+            loss_kind?: components["schemas"]["LossKind"] | null;
+            output_kind?: components["schemas"]["OutputKind"] | null;
+            /** Cost */
+            cost?: number | null;
+        };
+        /** ProductionOrderListItemSchema */
+        ProductionOrderListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Tech Card Id
+             * Format: uuid
+             */
+            tech_card_id: string;
+            /** Tech Card Code */
+            tech_card_code: string;
+            /** Tech Card Version */
+            tech_card_version: number;
+            status: components["schemas"]["ProductionOrderStatus"];
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Batch Count */
+            batch_count: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Posted At */
+            posted_at?: string | null;
+            /** Warehouse Name */
+            warehouse_name?: string | null;
+        };
+        /** ProductionOrderListSchema */
+        ProductionOrderListSchema: {
+            /** Items */
+            items: components["schemas"]["ProductionOrderListItemSchema"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * ProductionOrderStatus
+         * @enum {string}
+         */
+        ProductionOrderStatus: "draft" | "posted" | "cancelled";
         /** ReceiptDetailSchema */
         ReceiptDetailSchema: {
             /**
@@ -1943,6 +2507,107 @@ export interface components {
             /** Permission Codes */
             permission_codes: string[];
         };
+        /**
+         * SpecLineRole
+         * @enum {string}
+         */
+        SpecLineRole: "component" | "output" | "loss";
+        /**
+         * TechCardBasis
+         * @description Что задаёт норму: вход (разделка, обработка партии) или выход (рецептура).
+         * @enum {string}
+         */
+        TechCardBasis: "input" | "output";
+        /** TechCardDetailSchema */
+        TechCardDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Version */
+            version: number;
+            /** Name */
+            name: string;
+            basis: components["schemas"]["TechCardBasis"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Lines */
+            lines: components["schemas"]["TechCardLineSchema"][];
+            /** Valid From */
+            valid_from?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** TechCardLineInputSchema */
+        TechCardLineInputSchema: {
+            role: components["schemas"]["SpecLineRole"];
+            /** Quantity */
+            quantity: number | string;
+            /** Nomenclature Id */
+            nomenclature_id?: string | null;
+            loss_kind?: components["schemas"]["LossKind"] | null;
+            output_kind?: components["schemas"]["OutputKind"] | null;
+            /** Cost Coefficient */
+            cost_coefficient?: number | string | null;
+        };
+        /** TechCardLineSchema */
+        TechCardLineSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            role: components["schemas"]["SpecLineRole"];
+            /** Quantity */
+            quantity: string;
+            /** Nomenclature Id */
+            nomenclature_id?: string | null;
+            /** Nomenclature Name */
+            nomenclature_name?: string | null;
+            loss_kind?: components["schemas"]["LossKind"] | null;
+            output_kind?: components["schemas"]["OutputKind"] | null;
+            /** Cost Coefficient */
+            cost_coefficient?: string | null;
+        };
+        /** TechCardListItemSchema */
+        TechCardListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Version */
+            version: number;
+            /** Name */
+            name: string;
+            basis: components["schemas"]["TechCardBasis"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Line Count */
+            line_count: number;
+            /** Valid From */
+            valid_from?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** TechCardListSchema */
+        TechCardListSchema: {
+            /** Items */
+            items: components["schemas"]["TechCardListItemSchema"][];
+            /** Total */
+            total: number;
+        };
         /** TransferDetailSchema */
         TransferDetailSchema: {
             /**
@@ -2055,7 +2720,9 @@ export interface components {
         /** UpdateCategorySchema */
         UpdateCategorySchema: {
             /** Name */
-            name: string;
+            name?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
         };
         /** UpdateEmployeeSchema */
         UpdateEmployeeSchema: {
@@ -2071,6 +2738,8 @@ export interface components {
             position?: string | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Org Unit Id */
+            org_unit_id?: string | null;
         };
         /** UpdateNomenclatureSchema */
         UpdateNomenclatureSchema: {
@@ -2082,6 +2751,25 @@ export interface components {
             type?: components["schemas"]["NomenclatureType"] | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Image Url */
+            image_url?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /**
+         * UpdateOrderSchema
+         * @description Черновик присылают целиком: состав, время, комментарий.
+         */
+        UpdateOrderSchema: {
+            /** Planned At */
+            planned_at?: string | null;
+            /** Comment */
+            comment?: string | null;
+            /**
+             * Lines
+             * @default []
+             */
+            lines: components["schemas"]["OrderLineCommandSchema"][];
         };
         /** UpdateOrgUnitSchema */
         UpdateOrgUnitSchema: {
@@ -2093,6 +2781,11 @@ export interface components {
             phone_number?: string | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** UpdateProductionOrderSchema */
+        UpdateProductionOrderSchema: {
+            /** Actuals */
+            actuals: components["schemas"]["ProductionOrderActualSchema"][];
         };
         /** UpdateRoleSchema */
         UpdateRoleSchema: {
@@ -2124,6 +2817,20 @@ export interface components {
             type?: components["schemas"]["WarehouseType"] | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /**
+         * UploadedImageSchema
+         * @description Результат загрузки картинки: относительный адрес и что получилось.
+         */
+        UploadedImageSchema: {
+            /** Url */
+            url: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /** Size Bytes */
+            size_bytes: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -2402,7 +3109,135 @@ export interface operations {
             };
         };
     };
+    update_order_api_sales_orders__order_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrderSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     confirm_order_api_sales_orders__order_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_preparing_order_api_sales_orders__order_id__preparing_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_order_ready_api_sales_orders__order_id__ready_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_order_api_sales_orders__order_id__completed_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2484,7 +3319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OrderListSchema"];
+                    "application/json": components["schemas"]["MyOrderListSchema"];
                 };
             };
             /** @description Validation Error */
@@ -3151,6 +3986,26 @@ export interface operations {
             };
         };
     };
+    cafe_list_org_units_api_business_org_units_cafe_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CafeOrgUnitSchema"][];
+                };
+            };
+        };
+    };
     update_org_unit_api_business_org_units__org_unit_id__patch: {
         parameters: {
             query?: never;
@@ -3579,6 +4434,37 @@ export interface operations {
             };
         };
     };
+    get_point_assortment_api_catalog_org_units__org_unit_id__assortment_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssortmentListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_nomenclature_prices_api_catalog_nomenclatures__nomenclature_id__prices_get: {
         parameters: {
             query?: never;
@@ -3597,6 +4483,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NomenclaturePriceListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_image_api_catalog_images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_image_api_catalog_images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadedImageSchema"];
                 };
             };
             /** @description Validation Error */
@@ -4164,6 +5083,302 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateTransferSchema"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tech_cards_api_production_tech_cards_get: {
+        parameters: {
+            query?: {
+                /** @description Поиск по коду или названию */
+                search?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TechCardListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_tech_card_api_production_tech_cards_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTechCardSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedProductionSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tech_card_api_production_tech_cards__tech_card_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tech_card_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TechCardDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_production_orders_api_production_orders_get: {
+        parameters: {
+            query?: {
+                warehouse_id?: string | null;
+                /** @description Статусы через запятую */
+                statuses?: string | null;
+                occurred_from?: string | null;
+                occurred_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductionOrderListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_production_order_api_production_orders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductionOrderSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedProductionSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_production_order_api_production_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductionOrderDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_production_order_api_production_orders__order_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductionOrderSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_production_order_api_production_orders__order_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_production_order_api_production_orders__order_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

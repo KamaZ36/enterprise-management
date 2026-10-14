@@ -25,6 +25,10 @@ from myasnaya_derevnya.modules.catalog.application.interactors.create_price_list
     CreatePriceListCommand,
     CreatePriceListInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.get_point_assortment import (
+    GetPointAssortmentInteractor,
+    GetPointAssortmentQuery,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.list_categories import (
     ListCategoriesInteractor,
     ListCategoriesQuery,
@@ -37,9 +41,11 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclature
     ListNomenclaturesInteractor,
     ListNomenclaturesQuery,
 )
-from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
+from myasnaya_derevnya.modules.catalog.application.interactors.list_price_list_prices import (
     ListPriceListPricesInteractor,
     ListPriceListPricesQuery,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
     ListPriceListsInteractor,
 )
 from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
@@ -57,6 +63,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_bi
     PriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
+    AssortmentItemSchema,
+    AssortmentListSchema,
     BindPriceListSchema,
     CategorySchema,
     CreateCategorySchema,
@@ -89,6 +97,8 @@ async def create_nomenclature(
         unit=data.unit,
         type_=data.type,
         category_id=data.category_id,
+        image_url=data.image_url,
+        description=data.description,
     )
 
     async with container(context={Request: request}) as context:
@@ -102,7 +112,11 @@ async def create_nomenclature(
 
 @router.post("/categories", description="Создать категорию")
 async def create_category(request: Request, data: CreateCategorySchema) -> JSONResponse:
-    command = CreateCategoryCommand(name=data.name, parent_id=data.parent_id)
+    command = CreateCategoryCommand(
+        name=data.name,
+        parent_id=data.parent_id,
+        sort_order=data.sort_order,
+    )
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(CreateCategoryInteractor)
@@ -209,6 +223,8 @@ async def update_nomenclature(
         unit=data.unit,
         type_=data.type,
         is_active=data.is_active,
+        image_url=data.image_url,
+        description=data.description,
     )
 
     async with container(context={Request: request}) as context:
@@ -218,11 +234,15 @@ async def update_nomenclature(
     return JSONResponse(content={"message": "ok!"})
 
 
-@router.patch("/categories/{category_id}", description="Переименовать категорию")
+@router.patch("/categories/{category_id}", description="Изменить категорию")
 async def update_category(
     request: Request, category_id: UUID, data: UpdateCategorySchema
 ) -> JSONResponse:
-    command = UpdateCategoryCommand(category_id=category_id, name=data.name)
+    command = UpdateCategoryCommand(
+        category_id=category_id,
+        name=data.name,
+        sort_order=data.sort_order,
+    )
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(UpdateCategoryInteractor)
@@ -266,6 +286,23 @@ async def get_price_list_binding(
 
     return PriceListBindingSchema(
         org_unit_id=binding.org_unit_id, price_list_id=binding.price_list_id
+    )
+
+
+@router.get(
+    "/org-units/{org_unit_id}/assortment",
+    response_model=AssortmentListSchema,
+    description="Ассортимент точки: что продаётся и по какой цене (витрина)",
+)
+async def get_point_assortment(
+    request: Request, org_unit_id: UUID
+) -> AssortmentListSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetPointAssortmentInteractor)
+        items = await interactor(GetPointAssortmentQuery(org_unit_id=org_unit_id))
+
+    return AssortmentListSchema(
+        items=[AssortmentItemSchema.from_dto(item) for item in items]
     )
 
 

@@ -16,6 +16,9 @@ from myasnaya_derevnya.modules.catalog.application.interactors.create_price impo
 from myasnaya_derevnya.modules.catalog.application.interactors.create_price_list import (
     CreatePriceListInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.get_point_assortment import (
+    GetPointAssortmentInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
     GetPointPricesInteractor,
 )
@@ -28,8 +31,10 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclature
 from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclatures import (
     ListNomenclaturesInteractor,
 )
-from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
+from myasnaya_derevnya.modules.catalog.application.interactors.list_price_list_prices import (
     ListPriceListPricesInteractor,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
     ListPriceListsInteractor,
 )
 from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
@@ -37,6 +42,9 @@ from myasnaya_derevnya.modules.catalog.application.interactors.update_category i
 )
 from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclature import (
     UpdateNomenclatureInteractor,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.upload_image import (
+    UploadImageInteractor,
 )
 from myasnaya_derevnya.modules.catalog.domain.services.nomenclature_changes import (
     NomenclatureChangesPolicy,
@@ -97,6 +105,9 @@ from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAP
 
 class CatalogDepProvider(Provider):
     get_point_prices_interactor = provide(GetPointPricesInteractor, scope=Scope.REQUEST)
+    get_point_assortment_interactor = provide(
+        GetPointAssortmentInteractor, scope=Scope.REQUEST
+    )
 
     @provide(scope=Scope.REQUEST)
     def get_price_lists_reader(
@@ -127,7 +138,7 @@ class CatalogDepProvider(Provider):
 
     bind_price_list_interactor = provide(BindPriceListInteractor, scope=Scope.REQUEST)
 
-    # REPOSITORIES
+
     @provide(scope=Scope.REQUEST)
     def get_nomenclature_repository(
         self, session: AsyncSession
@@ -146,7 +157,7 @@ class CatalogDepProvider(Provider):
     def get_price_repository(self, session: AsyncSession) -> PriceRepository:
         return SQLAlchemyPriceRepository(session)
 
-    # READERS
+
     @provide(scope=Scope.REQUEST)
     def get_nomenclature_reader(self, session: AsyncSession) -> NomenclatureReader:
         return SQLAlchemyNomenclatureReader(session)
@@ -155,7 +166,7 @@ class CatalogDepProvider(Provider):
     def get_category_reader(self, session: AsyncSession) -> CategoryReader:
         return SQLAlchemyCategoryReader(session)
 
-    # FACADE
+
     @provide(scope=Scope.REQUEST)
     def get_catalog_api(
         self,
@@ -167,7 +178,7 @@ class CatalogDepProvider(Provider):
             nomenclature_repository=nomenclature_repository,
         )
 
-    # INTERACTOR
+
     create_nomenclature_interactor = provide(
         CreateNomenclatureInteractor, scope=Scope.REQUEST
     )
@@ -178,6 +189,8 @@ class CatalogDepProvider(Provider):
     update_nomenclature_interactor = provide(
         UpdateNomenclatureInteractor, scope=Scope.REQUEST
     )
+
+    upload_image_interactor = provide(UploadImageInteractor, scope=Scope.REQUEST)
 
     nomenclature_changes_policy = provide(
         NomenclatureChangesPolicy, scope=Scope.REQUEST

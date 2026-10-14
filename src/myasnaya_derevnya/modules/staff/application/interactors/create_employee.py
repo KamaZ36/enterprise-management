@@ -2,8 +2,9 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
+from myasnaya_derevnya.core.current_scope import CurrentScope
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
-from myasnaya_derevnya.core.errors import ForbiddenError
+from myasnaya_derevnya.core.errors import ForbiddenError, ValidationError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.core.types.phone_number import PhoneNumber
 from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
@@ -26,6 +27,7 @@ class CreateEmployeeCommand:
     phone_number: str | None
     position: str
     hired_at: date
+    org_unit_id: UUID | None = None
 
 
 class CreateEmployeeInteractor:
@@ -37,6 +39,7 @@ class CreateEmployeeInteractor:
         business_api: BusinessAPI,
         access_service: AccessService,
         auth_api: AuthAPI,
+        current_scope: CurrentScope,
     ) -> None:
         self._identity_provider = identity_provider
         self._employee_repository = employee_repository
@@ -44,15 +47,21 @@ class CreateEmployeeInteractor:
         self._business_api = business_api
         self._access_service = access_service
         self._auth_api = auth_api
+        self._current_scope = current_scope
 
     async def __call__(self, command: CreateEmployeeCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
-        root_org_unit_id = await self._business_api.get_root_unit_id()
-        if not await self._access_service.can(
+
+        org_unit_id = await self._resolve_org_unit(command)
+        if not await self._business_api.org_unit_exists(org_unit_id):
+            raise ValidationError()
+
+        allowed = await self._access_service.can(
             user_id=current_user_id,
             permission=MANAGE_EMPLOYEES,
-            org_unit_id=root_org_unit_id,
-        ):
+            org_unit_id=org_unit_id,
+        )
+        if not allowed:
             raise ForbiddenError()
 
         phone_number = (
@@ -63,6 +72,7 @@ class CreateEmployeeInteractor:
 
         employee = Employee.create(
             user_id=user_id,
+            org_unit_id=org_unit_id,
             first_name=command.first_name,
             last_name=command.last_name,
             middle_name=command.middle_name,
@@ -75,3 +85,13 @@ class CreateEmployeeInteractor:
         await self._transaction_manager.commit()
 
         return employee.id
+
+    async def _resolve_org_unit(self, command: CreateEmployeeCommand) -> UUID:
+        if command.org_unit_id is not None:
+            return command.org_unit_id
+
+        selected = self._current_scope.org_unit_id()
+        if selected is not None:
+            return selected
+
+        return await self._business_api.get_root_unit_id()

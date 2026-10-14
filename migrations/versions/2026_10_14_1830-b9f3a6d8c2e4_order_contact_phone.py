@@ -12,7 +12,6 @@ SCHEMA = "sales"
 
 
 def upgrade() -> None:
-    # Телефон на момент заказа: снимок, а не ссылка на профиль.
     op.add_column(
         "orders",
         sa.Column("contact_phone", sa.String(length=32), nullable=True),

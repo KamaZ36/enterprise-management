@@ -11,6 +11,7 @@ from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
 class EmployeeListItem:
     id: UUID
     user_id: UUID
+    org_unit_id: UUID
     first_name: str
     last_name: str
     middle_name: str | None
@@ -19,6 +20,7 @@ class EmployeeListItem:
     hired_at: date
     dismissed_at: date | None
     is_active: bool
+    org_unit_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,3 +78,4 @@ class PermissionItem:
 class CurrentUserScope:
     id: UUID
     title: str
+    permissions: frozenset[str]

@@ -20,8 +20,6 @@ class ConfirmOrderCommand:
 
 
 class ConfirmOrderInteractor:
-    """Подтверждение заказа: клиент подтверждает свой, сотрудник — любой на своей точке."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

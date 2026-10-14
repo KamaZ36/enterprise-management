@@ -17,6 +17,7 @@ class LotResolver:
         *,
         nomenclature_id: UUID,
         lot_code: str | None,
+        produced_at: date | None = None,
         expires_at: date | None = None,
         supplier_name: str | None = None,
     ) -> UUID | None:
@@ -30,6 +31,7 @@ class LotResolver:
         lot = StockLot.create(
             nomenclature_id=nomenclature_id,
             lot_code=lot_code,
+            produced_at=produced_at,
             expires_at=expires_at,
             supplier_name=supplier_name,
         )

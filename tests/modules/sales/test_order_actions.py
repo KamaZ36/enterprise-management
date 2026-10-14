@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from uuid import UUID, uuid7
 
 import pytest
@@ -7,9 +8,21 @@ from myasnaya_derevnya.modules.sales.application.interactors.cancel_order import
     CancelOrderCommand,
     CancelOrderInteractor,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.complete_order import (
+    CompleteOrderCommand,
+    CompleteOrderInteractor,
+)
 from myasnaya_derevnya.modules.sales.application.interactors.confirm_order import (
     ConfirmOrderCommand,
     ConfirmOrderInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.mark_order_ready import (
+    MarkOrderReadyCommand,
+    MarkOrderReadyInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.start_preparing_order import (
+    StartPreparingOrderCommand,
+    StartPreparingOrderInteractor,
 )
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
@@ -78,12 +91,23 @@ class FakeTransactionManager:
         self.commits += 1
 
 
+@dataclass(frozen=True, slots=True)
+class OrderActions:
+    confirm: ConfirmOrderInteractor
+    cancel: CancelOrderInteractor
+    preparing: StartPreparingOrderInteractor
+    ready: MarkOrderReadyInteractor
+    complete: CompleteOrderInteractor
+    repository: FakeOrderRepository
+    transactions: FakeTransactionManager
+
+
 def build(
     *,
     user_id: UUID,
     staff: set[UUID] | None = None,
     profiles: dict[UUID, UUID] | None = None,
-):
+) -> OrderActions:
     repository = FakeOrderRepository()
     access = OrderAccess(
         staff_api=FakeStaffAPI(staff or set()),  # type: ignore[arg-type]
@@ -92,20 +116,40 @@ def build(
     transactions = FakeTransactionManager()
     identity = FakeIdentityProvider(user_id)
 
-    confirm = ConfirmOrderInteractor(
-        identity_provider=identity,  # type: ignore[arg-type]
-        order_repository=repository,  # type: ignore[arg-type]
-        order_access=access,
-        transaction_manager=transactions,  # type: ignore[arg-type]
+    return OrderActions(
+        confirm=ConfirmOrderInteractor(
+            identity_provider=identity,  # type: ignore[arg-type]
+            order_repository=repository,  # type: ignore[arg-type]
+            order_access=access,
+            transaction_manager=transactions,  # type: ignore[arg-type]
+        ),
+        cancel=CancelOrderInteractor(
+            identity_provider=identity,  # type: ignore[arg-type]
+            order_repository=repository,  # type: ignore[arg-type]
+            order_access=access,
+            transaction_manager=transactions,  # type: ignore[arg-type]
+        ),
+        preparing=StartPreparingOrderInteractor(
+            identity_provider=identity,  # type: ignore[arg-type]
+            order_repository=repository,  # type: ignore[arg-type]
+            order_access=access,
+            transaction_manager=transactions,  # type: ignore[arg-type]
+        ),
+        ready=MarkOrderReadyInteractor(
+            identity_provider=identity,  # type: ignore[arg-type]
+            order_repository=repository,  # type: ignore[arg-type]
+            order_access=access,
+            transaction_manager=transactions,  # type: ignore[arg-type]
+        ),
+        complete=CompleteOrderInteractor(
+            identity_provider=identity,  # type: ignore[arg-type]
+            order_repository=repository,  # type: ignore[arg-type]
+            order_access=access,
+            transaction_manager=transactions,  # type: ignore[arg-type]
+        ),
+        repository=repository,
+        transactions=transactions,
     )
-    cancel = CancelOrderInteractor(
-        identity_provider=identity,  # type: ignore[arg-type]
-        order_repository=repository,  # type: ignore[arg-type]
-        order_access=access,
-        transaction_manager=transactions,  # type: ignore[arg-type]
-    )
-
-    return confirm, cancel, repository, transactions
 
 
 async def make_order(
@@ -124,61 +168,146 @@ async def make_order(
 
 async def test_staff_confirms_order_and_number_is_assigned() -> None:
     staff_id = uuid7()
-    confirm, _, repository, transactions = build(user_id=staff_id, staff={staff_id})
-    order = await make_order(repository, customer_id=uuid7())
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
 
-    await confirm(ConfirmOrderCommand(order_id=order.id))
+    await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
-    saved = repository.orders[order.id]
+    saved = actions.repository.orders[order.id]
     assert saved.status is OrderStatus.CONFIRMED
     assert saved.number == 1
-    assert transactions.commits == 1
+    assert actions.transactions.commits == 1
 
 
 async def test_customer_confirms_own_order() -> None:
     user_id, customer_id = uuid7(), uuid7()
-    confirm, _, repository, _ = build(user_id=user_id, profiles={user_id: customer_id})
-    order = await make_order(repository, customer_id=customer_id)
+    actions = build(user_id=user_id, profiles={user_id: customer_id})
+    order = await make_order(actions.repository, customer_id=customer_id)
 
-    await confirm(ConfirmOrderCommand(order_id=order.id))
+    await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
-    assert repository.orders[order.id].status is OrderStatus.CONFIRMED
+    assert actions.repository.orders[order.id].status is OrderStatus.CONFIRMED
 
 
 async def test_stranger_cannot_confirm_order() -> None:
     user_id = uuid7()
-    confirm, _, repository, _ = build(user_id=user_id, profiles={user_id: uuid7()})
-    order = await make_order(repository, customer_id=uuid7())
+    actions = build(user_id=user_id, profiles={user_id: uuid7()})
+    order = await make_order(actions.repository, customer_id=uuid7())
 
     with pytest.raises(ForbiddenError):
-        await confirm(ConfirmOrderCommand(order_id=order.id))
+        await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
-    assert repository.orders[order.id].status is OrderStatus.DRAFT
+    assert actions.repository.orders[order.id].status is OrderStatus.DRAFT
 
 
 async def test_confirming_twice_is_rejected() -> None:
     staff_id = uuid7()
-    confirm, _, repository, _ = build(user_id=staff_id, staff={staff_id})
-    order = await make_order(repository, customer_id=uuid7())
-    await confirm(ConfirmOrderCommand(order_id=order.id))
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
+    await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
     with pytest.raises(OrderStatusTransitionError):
-        await confirm(ConfirmOrderCommand(order_id=order.id))
+        await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
 
 async def test_owner_cancels_own_draft() -> None:
     user_id, customer_id = uuid7(), uuid7()
-    _, cancel, repository, _ = build(user_id=user_id, profiles={user_id: customer_id})
-    order = await make_order(repository, customer_id=customer_id)
+    actions = build(user_id=user_id, profiles={user_id: customer_id})
+    order = await make_order(actions.repository, customer_id=customer_id)
 
-    await cancel(CancelOrderCommand(order_id=order.id))
+    await actions.cancel(CancelOrderCommand(order_id=order.id))
 
-    assert repository.orders[order.id].status is OrderStatus.CANCELLED
+    assert actions.repository.orders[order.id].status is OrderStatus.CANCELLED
 
 
 async def test_unknown_order_is_reported() -> None:
     staff_id = uuid7()
-    confirm, _, _, _ = build(user_id=staff_id, staff={staff_id})
+    actions = build(user_id=staff_id, staff={staff_id})
 
     with pytest.raises(OrderNotFoundError):
-        await confirm(ConfirmOrderCommand(order_id=uuid7()))
+        await actions.confirm(ConfirmOrderCommand(order_id=uuid7()))
+
+
+async def test_staff_moves_confirmed_order_to_preparing() -> None:
+    staff_id = uuid7()
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
+    await actions.confirm(ConfirmOrderCommand(order_id=order.id))
+
+    await actions.preparing(StartPreparingOrderCommand(order_id=order.id))
+
+    assert actions.repository.orders[order.id].status is OrderStatus.PREPARING
+
+
+async def test_customer_cannot_start_preparing() -> None:
+    user_id, customer_id = uuid7(), uuid7()
+    actions = build(user_id=user_id, profiles={user_id: customer_id})
+    order = await make_order(actions.repository, customer_id=customer_id)
+    await actions.confirm(ConfirmOrderCommand(order_id=order.id))
+
+    with pytest.raises(ForbiddenError):
+        await actions.preparing(StartPreparingOrderCommand(order_id=order.id))
+
+    assert actions.repository.orders[order.id].status is OrderStatus.CONFIRMED
+
+
+async def test_staff_marks_preparing_order_ready() -> None:
+    staff_id = uuid7()
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
+    order.set_status(OrderStatus.CONFIRMED)
+    order.set_status(OrderStatus.PREPARING)
+    await actions.repository.save(order)
+
+    await actions.ready(MarkOrderReadyCommand(order_id=order.id))
+
+    assert actions.repository.orders[order.id].status is OrderStatus.READY
+
+
+async def test_cannot_start_preparing_a_draft() -> None:
+    staff_id = uuid7()
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
+
+    with pytest.raises(OrderStatusTransitionError):
+        await actions.preparing(StartPreparingOrderCommand(order_id=order.id))
+
+
+async def test_staff_completes_ready_order() -> None:
+    staff_id = uuid7()
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
+    order.set_status(OrderStatus.CONFIRMED)
+    order.set_status(OrderStatus.PREPARING)
+    order.set_status(OrderStatus.READY)
+    await actions.repository.save(order)
+
+    await actions.complete(CompleteOrderCommand(order_id=order.id))
+
+    saved = actions.repository.orders[order.id]
+    assert saved.status is OrderStatus.COMPLETED
+    assert saved.completed_at is not None
+
+
+async def test_customer_cannot_complete_order() -> None:
+    user_id, customer_id = uuid7(), uuid7()
+    actions = build(user_id=user_id, profiles={user_id: customer_id})
+    order = await make_order(actions.repository, customer_id=customer_id)
+    order.set_status(OrderStatus.CONFIRMED)
+    order.set_status(OrderStatus.PREPARING)
+    order.set_status(OrderStatus.READY)
+    await actions.repository.save(order)
+
+    with pytest.raises(ForbiddenError):
+        await actions.complete(CompleteOrderCommand(order_id=order.id))
+
+    assert actions.repository.orders[order.id].status is OrderStatus.READY
+
+
+async def test_cannot_complete_a_draft() -> None:
+    staff_id = uuid7()
+    actions = build(user_id=staff_id, staff={staff_id})
+    order = await make_order(actions.repository, customer_id=uuid7())
+
+    with pytest.raises(OrderStatusTransitionError):
+        await actions.complete(CompleteOrderCommand(order_id=order.id))

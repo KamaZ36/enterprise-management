@@ -10,7 +10,7 @@ class InvalidPhoneNumber(ValueError): ...
 class PhoneNumber:
     value: str
 
-    # E.164
+
     @classmethod
     def parse(cls, raw: str, default_region: str | None = "RU") -> PhoneNumber:
         cleaned = "".join(raw.split()).strip()

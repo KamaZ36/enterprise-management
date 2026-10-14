@@ -19,8 +19,6 @@ class ListMyOrdersQuery:
 
 
 class ListMyOrdersInteractor:
-    """Заказы покупателя: профиль берётся из сессии, из запроса — никогда."""
-
     def __init__(
         self,
         identity_provider: IdentityProvider,

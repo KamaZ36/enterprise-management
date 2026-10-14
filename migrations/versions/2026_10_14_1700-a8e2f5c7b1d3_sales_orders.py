@@ -72,7 +72,7 @@ def upgrade() -> None:
         schema=SCHEMA,
     )
 
-    # Замки на перечисления: база не примет значение, которого не знает код.
+
     op.create_check_constraint(
         "channel",
         "orders",

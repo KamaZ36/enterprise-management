@@ -34,6 +34,8 @@ class Nomenclature:
         category_id: UUID,
         created_at: datetime,
         is_active: bool = True,
+        image_url: str | None = None,
+        description: str | None = None,
     ) -> None:
         self._id = id
         self._sku = sku
@@ -43,6 +45,8 @@ class Nomenclature:
         self._category_id = category_id
         self._created_at = created_at
         self._is_active = is_active
+        self._image_url = image_url
+        self._description = description
 
     @classmethod
     def create(
@@ -52,6 +56,8 @@ class Nomenclature:
         unit: UnitOfMeasurement,
         type_: NomenclatureType,
         category_id: UUID,
+        image_url: str | None = None,
+        description: str | None = None,
     ) -> Nomenclature:
         if not name.strip():
             raise EmptyNameError()
@@ -66,6 +72,8 @@ class Nomenclature:
             type_=type_,
             category_id=category_id,
             created_at=get_datetime_utc(),
+            image_url=image_url,
+            description=description,
         )
 
     @property
@@ -100,10 +108,26 @@ class Nomenclature:
     def is_active(self) -> bool:
         return self._is_active
 
+    @property
+    def image_url(self) -> str | None:
+        return self._image_url
+
+    @property
+    def description(self) -> str | None:
+        return self._description
+
     def rename(self, name: str) -> None:
         if not name.strip():
             raise EmptyNameError()
         self._name = name.strip()
+
+    def change_image_url(self, image_url: str | None) -> None:
+        cleaned = image_url.strip() if image_url else None
+        self._image_url = cleaned or None
+
+    def change_description(self, description: str | None) -> None:
+        cleaned = description.strip() if description else None
+        self._description = cleaned or None
 
     def change_category(self, category_id: UUID) -> None:
         self._category_id = category_id

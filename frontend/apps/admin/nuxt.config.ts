@@ -32,6 +32,12 @@ export default defineNuxtConfig({
         target: process.env.NUXT_API_TARGET ?? "http://127.0.0.1:8000/api",
         changeOrigin: true,
       },
+
+
+      "/media": {
+        target: process.env.NUXT_MEDIA_TARGET ?? "http://127.0.0.1:8000/media",
+        changeOrigin: true,
+      },
     },
   },
   app: {

@@ -37,6 +37,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa:
     WRITE_OFF_LINES_TABLE,
     WRITE_OFFS_TABLE,
 )
+from myasnaya_derevnya.modules.production.infrastructure.tables import (  # noqa: F401
+    PRODUCTION_ORDER_LINES_TABLE,
+    PRODUCTION_ORDERS_TABLE,
+    TECH_CARD_LINES_TABLE,
+    TECH_CARDS_TABLE,
+)
 from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
     EMPLOYEES_TABLE,
     ROLE_ASSIGNMENTS_TABLE,
@@ -81,7 +87,6 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -95,7 +100,6 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-
     asyncio.run(run_async_migrations())
 
 
