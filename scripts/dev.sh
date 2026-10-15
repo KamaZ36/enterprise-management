@@ -37,14 +37,17 @@ compose_cmd() {
 }
 
 db_up() {
-  if docker ps --filter name=md-postgres --format '{{.Names}}' 2>/dev/null | grep -q md-postgres; then
-    ok "Postgres уже запущен"
+  # Базе всё равно, кто её поднял: compose, systemd или руками.
+  if port_open 5432; then
+    ok "Postgres уже слушает порт 5432"
     return 0
   fi
 
   local compose
   if ! compose="$(compose_cmd)"; then
-    bad "не нашёл ни «docker compose», ни «docker-compose» — поднимите Postgres сами"
+    bad "порт 5432 закрыт, и нет ни «docker compose», ни «docker-compose»"
+    printf '      Arch:   sudo pacman -S docker-compose\n'
+    printf '      Debian: sudo apt install docker-compose-v2\n'
     return 1
   fi
 
