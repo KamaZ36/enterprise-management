@@ -11,6 +11,7 @@ mkdir -p "$LOG_DIR"
 BACKEND_PORT=8000
 ADMIN_PORT=3000
 LANDING_PORT=3001
+CAFE_PORT=3002
 
 say() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 ok()  { printf '   ✓ %s\n' "$1"; }
@@ -65,6 +66,18 @@ start() {
 }
 
 cmd_up() {
+  say "Проверка окружения"
+  if [[ ! -f "$ROOT/.env" ]]; then
+    bad "нет файла .env — скопируйте .env.example в .env"
+    printf '      и заполните LOGIN_CODE_SECRET (без него приложение не стартует)\n'
+    return 1
+  fi
+  if [[ ! -x "$ROOT/.venv/bin/python" ]]; then
+    bad "нет виртуального окружения — выполните: uv sync --all-groups"
+    return 1
+  fi
+  ok "окружение на месте"
+
   say "База данных"
   docker compose up -d postgres >/dev/null
   wait_port 5432 "Postgres" 60 || return 1
@@ -82,12 +95,15 @@ cmd_up() {
   frontend_env
   start admin pnpm --dir frontend/apps/admin dev
   start landing pnpm --dir frontend/apps/landing dev
+  start cafe pnpm --dir frontend/apps/cafe dev
 
   wait_http "$ADMIN_PORT" "Админка" / 150 || true
   wait_http "$LANDING_PORT" "Лендинг" / 150 || true
+  wait_http "$CAFE_PORT" "Кафе" / 150 || true
 
   say "Готово"
   printf '   Админка:  http://127.0.0.1:%s   (вход admin / admin)\n' "$ADMIN_PORT"
+  printf '   Кафе:     http://127.0.0.1:%s\n' "$CAFE_PORT"
   printf '   Лендинг:  http://127.0.0.1:%s\n' "$LANDING_PORT"
   printf '   API:      http://127.0.0.1:%s/docs\n' "$BACKEND_PORT"
   printf '\n   Логи:     %s\n' "$LOG_DIR"
@@ -96,7 +112,7 @@ cmd_up() {
 
 cmd_down() {
   say "Остановка сервисов"
-  for name in landing admin backend; do
+  for name in landing cafe admin backend; do
     if pid="$(read_pid "$name")"; then
       kill "$pid" 2>/dev/null || true
       rm -f "$RUN_DIR/$name.pid"
@@ -116,7 +132,7 @@ cmd_down() {
 
 cmd_status() {
   say "Состояние"
-  for pair in "backend:$BACKEND_PORT" "admin:$ADMIN_PORT" "landing:$LANDING_PORT"; do
+  for pair in "backend:$BACKEND_PORT" "admin:$ADMIN_PORT" "landing:$LANDING_PORT" "cafe:$CAFE_PORT"; do
     name="${pair%%:*}"; port="${pair##*:}"
     if pid="$(read_pid "$name")"; then
       printf '   %-8s pid %-7s порт %s\n' "$name" "$pid" "$(port_open "$port" && echo открыт || echo закрыт)"
