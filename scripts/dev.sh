@@ -26,6 +26,36 @@ frontend_env() {
 
 port_open() { ss -tln 2>/dev/null | grep -q ":$1 "; }
 
+compose_cmd() {
+  if docker compose version >/dev/null 2>&1; then
+    echo "docker compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    echo "docker-compose"
+  else
+    return 1
+  fi
+}
+
+db_up() {
+  if docker ps --filter name=md-postgres --format '{{.Names}}' 2>/dev/null | grep -q md-postgres; then
+    ok "Postgres уже запущен"
+    return 0
+  fi
+
+  local compose
+  if ! compose="$(compose_cmd)"; then
+    bad "не нашёл ни «docker compose», ни «docker-compose» — поднимите Postgres сами"
+    return 1
+  fi
+
+  # shellcheck disable=SC2086
+  $compose up -d postgres >/dev/null 2>&1 || {
+    bad "не удалось поднять Postgres через «$compose»"
+    return 1
+  }
+  ok "Postgres запущен через «$compose»"
+}
+
 wait_port() {
   local port="$1" name="$2" tries="${3:-60}"
   for ((i = 0; i < tries; i++)); do
@@ -79,7 +109,7 @@ cmd_up() {
   ok "окружение на месте"
 
   say "База данных"
-  docker compose up -d postgres >/dev/null
+  db_up || return 1
   wait_port 5432 "Postgres" 60 || return 1
 
   say "Миграции"
@@ -123,7 +153,10 @@ cmd_down() {
     fi
   done
   if [[ "${1:-}" == "--all" ]]; then
-    docker compose stop postgres >/dev/null 2>&1 || true
+    if compose="$(compose_cmd)"; then
+      # shellcheck disable=SC2086
+      $compose stop postgres >/dev/null 2>&1 || true
+    fi
     ok "Postgres остановлен"
   else
     printf '   · Postgres оставлен работать (остановить: scripts/dev.sh down --all)\n'
