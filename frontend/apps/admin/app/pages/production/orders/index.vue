@@ -205,7 +205,6 @@ const PAGE_SIZE = 50;
 
 const api = useApi();
 const { can } = useCurrentUser();
-const { scopeId } = useCurrentScope();
 
 const items = ref<ProductionOrderListItem[]>([]);
 const warehouses = ref<Warehouse[]>([]);
@@ -360,10 +359,6 @@ async function createOrder(): Promise<void> {
     saving.value = false;
   }
 }
-
-watch(scopeId, () => {
-  void reload();
-});
 
 onMounted(async () => {
   await loadDictionaries();

@@ -152,10 +152,13 @@ async def create_warehouse(
 @router.get(
     "/warehouses", response_model=list[WarehouseSchema], description="Список складов"
 )
-async def list_warehouses(request: Request) -> list[WarehouseSchema]:
+async def list_warehouses(
+    request: Request,
+    org_unit_id: Annotated[UUID | None, Query()] = None,
+) -> list[WarehouseSchema]:
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListWarehousesInteractor)
-        warehouses = await interactor()
+        warehouses = await interactor(org_unit_id)
 
     return [WarehouseSchema.from_dto(warehouse) for warehouse in warehouses]
 

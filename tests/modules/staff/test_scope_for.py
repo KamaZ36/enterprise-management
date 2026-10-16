@@ -34,14 +34,6 @@ class FakeBusinessAPI:
         return self._descendants
 
 
-class FakeCurrentScope:
-    def __init__(self, org_unit_id: UUID | None = None) -> None:
-        self._org_unit_id = org_unit_id
-
-    def org_unit_id(self) -> UUID | None:
-        return self._org_unit_id
-
-
 class FakeRoleAssignmentRepository:
     def __init__(self, resolved: list[ResolvedAssignment]) -> None:
         self._resolved = resolved
@@ -83,8 +75,6 @@ def build(
     resolved: list[ResolvedAssignment],
     root_unit_id: UUID,
     descendants: set[UUID],
-    *,
-    current_scope: UUID | None = None,
 ) -> tuple[AccessService, FakeBusinessAPI]:
     business_api = FakeBusinessAPI(root_unit_id, descendants)
     service = AccessService(
@@ -92,7 +82,6 @@ def build(
         role_assignment_repository=FakeRoleAssignmentRepository(resolved),
         business_api=business_api,
         access_policy=AccessPolicy(),
-        current_scope=FakeCurrentScope(current_scope),  # type: ignore[arg-type]
     )
 
     return service, business_api
@@ -174,56 +163,12 @@ async def test_other_permission_gives_empty_scope() -> None:
     assert scope.is_empty()
 
 
-async def test_current_point_narrows_scope_to_it() -> None:
-    root, first, second = uuid4(), uuid4(), uuid4()
-    service, _ = build(
-        [make_resolved(first, include_descendants=False)],
-        root_unit_id=root,
-        descendants={root},
-        current_scope=first,
-    )
-
-    scope = await service.scope_for(user_id=uuid4(), permission=READ_EMPLOYEES)
-
-    assert scope.org_unit_ids == frozenset({first})
-    assert second not in scope.org_unit_ids
-
-
-async def test_current_point_outside_scope_gives_empty() -> None:
-    root, unit, foreign = uuid4(), uuid4(), uuid4()
-    service, _ = build(
-        [make_resolved(unit, include_descendants=False)],
-        root_unit_id=root,
-        descendants={root},
-        current_scope=foreign,
-    )
-
-    scope = await service.scope_for(user_id=uuid4(), permission=READ_EMPLOYEES)
-
-    assert scope.is_empty()
-
-
-async def test_current_point_narrows_company_wide() -> None:
-    root, child = uuid4(), uuid4()
-    service, _ = build(
-        [make_resolved(None, include_descendants=True)],
-        root_unit_id=root,
-        descendants={root, child},
-        current_scope=child,
-    )
-
-    scope = await service.scope_for(user_id=uuid4(), permission=READ_EMPLOYEES)
-
-    assert scope.org_unit_ids == frozenset({child})
-
-
-async def test_access_map_ignores_current_point() -> None:
+async def test_access_map_of_root_with_descendants_is_company_wide() -> None:
     root, child = uuid4(), uuid4()
     service, _ = build(
         [make_resolved(root, include_descendants=True)],
         root_unit_id=root,
         descendants={root, child},
-        current_scope=child,
     )
 
     access = await service.access_map(user_id=uuid4())

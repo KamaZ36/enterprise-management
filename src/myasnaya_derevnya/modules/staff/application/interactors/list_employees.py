@@ -1,4 +1,5 @@
 from dataclasses import dataclass, replace
+from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
@@ -18,6 +19,7 @@ class ListEmployeesQuery:
     limit: int = 20
     offset: int = 0
     search: str | None = None
+    org_unit_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,11 +52,15 @@ class ListEmployeesInteractor:
         if scope.is_empty():
             raise ForbiddenError()
 
+        org_unit_ids = scope.narrow(query.org_unit_id)
+        if org_unit_ids is not None and not org_unit_ids:
+            raise ForbiddenError()
+
         items, total = await self._employee_reader.list(
             limit=query.limit,
             offset=query.offset,
             search=query.search,
-            org_unit_ids=scope.narrow(None),
+            org_unit_ids=org_unit_ids,
         )
 
         return EmployeePage(

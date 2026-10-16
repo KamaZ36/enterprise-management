@@ -8,7 +8,6 @@ export function useApi() {
   const token = useState<string | null>("auth.token", () => null);
 
 
-  const scopeId = useCookie<string | null>("scope_id", { default: () => null });
   const { forbidden } = useAccessNotice();
 
   const baseUrl =
@@ -18,7 +17,6 @@ export function useApi() {
   return createApiClient({
     baseUrl,
     getToken: () => token.value,
-    getScopeId: () => scopeId.value,
     onForbidden: () => forbidden(),
     onUnauthorized: () => {
       token.value = null;

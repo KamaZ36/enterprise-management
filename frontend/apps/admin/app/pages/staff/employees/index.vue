@@ -6,6 +6,21 @@
     </p>
 
     <div class="page__toolbar">
+      <el-select
+        v-if="orgUnitOptions.length > 1"
+        v-model="unitFilter"
+        clearable
+        placeholder="Все точки"
+        style="width: 240px"
+        @change="onUnitFilterChange"
+      >
+        <el-option
+          v-for="unit in orgUnitOptions"
+          :key="unit.id"
+          :label="unit.name"
+          :value="unit.id"
+        />
+      </el-select>
       <el-input
         v-model="search"
         placeholder="Фамилия, имя, должность или телефон"
@@ -106,7 +121,7 @@
             style="width: 100%"
           >
             <el-option
-              v-for="unit in orgUnitOptions"
+              v-for="unit in formUnitOptions"
               :key="unit.id"
               :label="unit.name"
               :value="unit.id"
@@ -129,7 +144,12 @@
 
       <template #footer>
         <el-button @click="createOpen = false">Отмена</el-button>
-        <el-button type="primary" :loading="saving" @click="createEmployee">
+        <el-button
+          type="primary"
+          :loading="saving"
+          :disabled="!form.org_unit_id"
+          @click="createEmployee"
+        >
           Принять и выдать доступ
         </el-button>
       </template>
@@ -172,12 +192,13 @@ const PAGE_SIZE = 20;
 
 const api = useApi();
 const { can } = useCurrentUser();
-const { scopes, scopeId, load: loadScope } = useCurrentScope();
+const { units, withPermission, load: loadUnits } = useMyUnits();
 
 const items = ref<Employee[]>([]);
 const total = ref(0);
 const page = ref(1);
 const search = ref("");
+const unitFilter = ref<string | null>(null);
 const pending = ref(false);
 const error = ref("");
 
@@ -187,6 +208,19 @@ const saving = ref(false);
 const createError = ref("");
 const credentials = reactive({ username: "", password: "" });
 const orgUnitOptions = ref<{ id: string; name: string }[]>([]);
+
+// В форме приёма показываем только точки, где у пользователя есть право
+// принимать сотрудников. Для company-wide админа список назначений пуст —
+// тогда доступны все точки (бэкенд всё равно проверит право на цель).
+const formUnitOptions = computed(() => {
+  const manageable = withPermission("staff.employee.manage").map((unit) => unit.id);
+  if (!manageable.length) {
+    return orgUnitOptions.value;
+  }
+
+  const allowed = new Set(manageable);
+  return orgUnitOptions.value.filter((unit) => allowed.has(unit.id));
+});
 
 const today = new Date().toISOString().slice(0, 10);
 const form = reactive({
@@ -239,6 +273,7 @@ async function load(): Promise<void> {
           limit: PAGE_SIZE,
           offset: (page.value - 1) * PAGE_SIZE,
           search: search.value.trim() || undefined,
+          org_unit_id: unitFilter.value ?? undefined,
         },
       },
     });
@@ -262,8 +297,8 @@ async function loadOrgUnits(): Promise<void> {
   const options = new Map<string, string>();
 
 
-  for (const scope of scopes.value) {
-    options.set(scope.id, scope.title);
+  for (const unit of units.value) {
+    options.set(unit.id, unit.title);
   }
 
   if (can("org_unit.read")) {
@@ -280,7 +315,8 @@ async function loadOrgUnits(): Promise<void> {
   orgUnitOptions.value = [...options].map(([id, name]) => ({ id, name }));
 
   if (!form.org_unit_id) {
-    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+    form.org_unit_id =
+      formUnitOptions.value.length === 1 ? formUnitOptions.value[0]!.id : "";
   }
 }
 
@@ -288,7 +324,8 @@ function openCreate(): void {
   createError.value = "";
 
   if (!form.org_unit_id) {
-    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+    form.org_unit_id =
+      formUnitOptions.value.length === 1 ? formUnitOptions.value[0]!.id : "";
   }
 
   createOpen.value = true;
@@ -307,7 +344,7 @@ async function createEmployee(): Promise<void> {
         phone_number: form.phone_number.trim() || null,
         position: form.position.trim(),
         hired_at: form.hired_at,
-        org_unit_id: form.org_unit_id || undefined,
+        org_unit_id: form.org_unit_id,
       },
     });
 
@@ -354,17 +391,18 @@ async function createEmployee(): Promise<void> {
   }
 }
 
+function onUnitFilterChange(): void {
+  page.value = 1;
+  void load();
+}
+
 onMounted(async () => {
-  await loadScope();
+  await loadUnits();
   await loadOrgUnits();
   await load();
 });
 
 watch(page, load);
-watch(scopeId, () => {
-  page.value = 1;
-  void load();
-});
 </script>
 
 <style scoped>

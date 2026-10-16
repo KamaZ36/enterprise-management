@@ -136,6 +136,7 @@ async def revoke_role(request: Request, assignment_id: UUID) -> JSONResponse:
 @router.get("", response_model=EmployeeListSchema, description="Список сотрудников")
 async def list_employees(
     request: Request,
+    org_unit_id: Annotated[UUID | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
     search: Annotated[str | None, Query(max_length=100)] = None,
@@ -143,7 +144,9 @@ async def list_employees(
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListEmployeesInteractor)
         page = await interactor(
-            ListEmployeesQuery(limit=limit, offset=offset, search=search)
+            ListEmployeesQuery(
+                org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
+            )
         )
 
     return EmployeeListSchema(

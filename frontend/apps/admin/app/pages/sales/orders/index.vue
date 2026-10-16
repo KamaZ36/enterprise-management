@@ -13,6 +13,21 @@
 
     <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 16px 0">
       <el-select
+        v-if="orgUnitOptions.length > 1"
+        v-model="unitFilter"
+        clearable
+        placeholder="Все точки"
+        style="width: 240px"
+        @change="reload"
+      >
+        <el-option
+          v-for="unit in orgUnitOptions"
+          :key="unit.id"
+          :label="unit.name"
+          :value="unit.id"
+        />
+      </el-select>
+      <el-select
         v-model="statuses"
         multiple
         collapse-tags
@@ -198,7 +213,8 @@ const items = ref<OrderListItem[]>([]);
 const total = ref(0);
 const page = ref(1);
 const statuses = ref<string[]>([...ACTIVE_STATUSES]);
-const { scopes, scopeId, load: loadScope } = useCurrentScope();
+const unitFilter = ref<string | null>(null);
+const { units, load: loadUnits } = useMyUnits();
 const pending = ref(false);
 const error = ref("");
 
@@ -234,6 +250,7 @@ async function loadOrders(): Promise<void> {
       params: {
         query: {
           statuses: statuses.value.length ? statuses.value.join(",") : undefined,
+          org_unit_id: unitFilter.value ?? undefined,
           limit: PAGE_SIZE,
           offset: (page.value - 1) * PAGE_SIZE,
         },
@@ -274,8 +291,8 @@ async function openOrder(row: OrderListItem): Promise<void> {
 async function loadOrgUnits(): Promise<void> {
   const options = new Map<string, string>();
 
-  for (const scope of scopes.value) {
-    options.set(scope.id, scope.title);
+  for (const unit of units.value) {
+    options.set(unit.id, unit.title);
   }
 
   if (can("org_unit.read")) {
@@ -292,7 +309,8 @@ async function loadOrgUnits(): Promise<void> {
   orgUnitOptions.value = [...options].map(([id, name]) => ({ id, name }));
 
   if (!form.org_unit_id) {
-    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+    form.org_unit_id =
+      orgUnitOptions.value.length === 1 ? orgUnitOptions.value[0]!.id : "";
   }
 }
 
@@ -300,7 +318,8 @@ function openCreate(): void {
   createError.value = "";
 
   if (!form.org_unit_id) {
-    form.org_unit_id = scopeId.value ?? orgUnitOptions.value[0]?.id ?? "";
+    form.org_unit_id =
+      orgUnitOptions.value.length === 1 ? orgUnitOptions.value[0]!.id : "";
   }
   if (!form.lines.length) {
     form.lines = [{ nomenclature_id: "", quantity: "1" }];
@@ -351,12 +370,8 @@ async function createOrder(): Promise<void> {
   }
 }
 
-watch(scopeId, () => {
-  void reload();
-});
-
 onMounted(async () => {
-  await loadScope();
+  await loadUnits();
   await loadOrgUnits();
   await loadOrders();
 });

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from myasnaya_derevnya.core.current_scope import CurrentScope
 from myasnaya_derevnya.core.permissions import all_permissions
 from myasnaya_derevnya.core.types.permission import Permission
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
@@ -37,13 +36,11 @@ class AccessService:
         role_assignment_repository: RoleAssignmentRepository,
         business_api: BusinessAPI,
         access_policy: AccessPolicy,
-        current_scope: CurrentScope,
     ) -> None:
         self._role_repository = role_repository
         self._role_assignment_repository = role_assignment_repository
         self._business_api = business_api
         self._access_policy = access_policy
-        self._current_scope = current_scope
 
     async def can(
         self,
@@ -80,7 +77,7 @@ class AccessService:
             permission=permission, assignments=assignments
         )
 
-        return self._narrow_to_current(await self._resolve_scope(scopes))
+        return await self._resolve_scope(scopes)
 
     async def access_map(self, user_id: UUID) -> AccessMap:
         assignments = await self._role_assignment_repository.load_active_for_user(
@@ -185,16 +182,6 @@ class AccessService:
             exact |= set(expanded)
 
         return AccessScope.of(exact)
-
-    def _narrow_to_current(self, base: AccessScope) -> AccessScope:
-        requested = self._current_scope.org_unit_id()
-        if requested is None:
-            return base
-
-        if not base.covers(requested):
-            return AccessScope.of([])
-
-        return AccessScope.of([requested])
 
     async def _load_ancestors(self, org_unit_id: UUID | None) -> frozenset[UUID]:
         if org_unit_id is None:

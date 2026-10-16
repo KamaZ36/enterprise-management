@@ -5,6 +5,21 @@
 
     <ViewOnlyNotice view="inventory.warehouse.read" edit="inventory.warehouse.manage" />
     <div class="page__toolbar">
+      <el-select
+        v-if="filterUnits.length > 1"
+        v-model="unitFilter"
+        clearable
+        placeholder="Все точки"
+        style="width: 240px"
+        @change="load"
+      >
+        <el-option
+          v-for="unit in filterUnits"
+          :key="unit.id"
+          :label="unit.name"
+          :value="unit.id"
+        />
+      </el-select>
       <el-button
         v-if="canAll(CAN.warehouseCreate)"
         type="primary" @click="openCreate">
@@ -158,9 +173,11 @@ type OrgUnit = components["schemas"]["OrgUnitSchema"];
 
 const api = useApi();
 const { can } = useCurrentUser();
+const { units, load: loadUnits } = useMyUnits();
 
 const items = ref<Warehouse[]>([]);
 const orgUnits = ref<OrgUnit[]>([]);
+const unitFilter = ref<string | null>(null);
 const pending = ref(false);
 const error = ref("");
 const notice = ref("");
@@ -187,6 +204,12 @@ const form = reactive({
 function orgUnitName(orgUnitId: string): string {
   return orgUnits.value.find((unit) => unit.id === orgUnitId)?.name ?? "—";
 }
+
+const filterUnits = computed(() =>
+  units.value.length
+    ? units.value.map((unit) => ({ id: unit.id, name: unit.title }))
+    : orgUnits.value.map((unit) => ({ id: unit.id, name: unit.name })),
+);
 
 function reasonOf(status: number, fallback: string): string {
   if (status === 403) {
@@ -218,7 +241,9 @@ async function load(): Promise<void> {
   error.value = "";
 
   try {
-    const { data, response } = await api.GET("/api/inventory/warehouses", {});
+    const { data, response } = await api.GET("/api/inventory/warehouses", {
+      params: { query: { org_unit_id: unitFilter.value ?? undefined } },
+    });
     if (!response.ok || !data) {
       throw new Error(reasonOf(response.status, "Не удалось загрузить"));
     }
@@ -326,13 +351,9 @@ async function saveEdit(): Promise<void> {
 
 
 onMounted(async () => {
+  await loadUnits();
   await loadOrgUnits();
   await load();
-});
-
-const { scopeId } = useCurrentScope();
-watch(scopeId, () => {
-  void load();
 });
 </script>
 

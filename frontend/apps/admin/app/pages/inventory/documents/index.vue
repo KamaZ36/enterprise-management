@@ -1104,24 +1104,6 @@ watch(tab, async (value) => {
   }
 });
 
-const { scopeId } = useCurrentScope();
-watch(scopeId, async () => {
-  await loadWarehouses();
-
-  const stillAllowed = warehouses.value.some(
-    (item) => item.id === warehouseId.value,
-  );
-  if (!stillAllowed) {
-    warehouseId.value = null;
-  }
-
-  if (tab.value === "transfers") {
-    await loadTransfers();
-  } else {
-    await reload();
-  }
-});
-
 async function loadTransfers(): Promise<void> {
   pending.value = true;
 

@@ -45,6 +45,12 @@ class PriceListEntry:
 
 
 @dataclass(frozen=True, slots=True)
+class PriceListBindingItem:
+    org_unit_id: UUID
+    price_list_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class PriceListPriceItem:
     nomenclature_id: UUID
     nomenclature_name: str

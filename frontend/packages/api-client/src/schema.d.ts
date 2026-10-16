@@ -1291,13 +1291,7 @@ export interface components {
             /** Include Descendants */
             include_descendants: boolean;
         };
-        /**
-         * AssortmentItemSchema
-         * @description Позиция витрины: цена в копейках, как и везде в заказах.
-         *
-         *     Категория, фото и описание — то, из чего витрина кафе собирает разделы
-         *     меню и карточки блюд.
-         */
+        /** AssortmentItemSchema */
         AssortmentItemSchema: {
             /**
              * Nomenclature Id
@@ -1452,8 +1446,11 @@ export interface components {
              * Format: date
              */
             hired_at: string;
-            /** Org Unit Id */
-            org_unit_id?: string | null;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
         };
         /** CreateNomenclatureSchema */
         CreateNomenclatureSchema: {
@@ -1589,10 +1586,7 @@ export interface components {
             /** Grantable Role Ids */
             grantable_role_ids: string[];
         };
-        /**
-         * CreateTechCardSchema
-         * @description Новая редакция: код тот же — версия поднимется сама.
-         */
+        /** CreateTechCardSchema */
         CreateTechCardSchema: {
             /** Code */
             code: string;
@@ -1878,18 +1872,10 @@ export interface components {
         };
         /**
          * LossKind
-         * @description Технологические потери: у каждой своя норма и свой разговор.
          * @enum {string}
          */
         LossKind: "shrinkage" | "cooking" | "trimming" | "defrost" | "defect";
-        /**
-         * MyOrderDetailSchema
-         * @description Карточка для покупателя: состав, статус и сумма.
-         *
-         *     Сознательно нет того, что клиенту знать не нужно: кто из сотрудников оформил,
-         *     идентификатор профиля, контактный телефон. Отдельная схема — защита от того,
-         *     что служебное поле однажды добавится в общую и утечёт на сайт.
-         */
+        /** MyOrderDetailSchema */
         MyOrderDetailSchema: {
             /**
              * Id
@@ -1925,10 +1911,7 @@ export interface components {
             /** Lines */
             lines: components["schemas"]["OrderLineViewSchema"][];
         };
-        /**
-         * MyOrderListItemSchema
-         * @description Строка списка для покупателя: без служебных полей.
-         */
+        /** MyOrderListItemSchema */
         MyOrderListItemSchema: {
             /**
              * Id
@@ -2514,7 +2497,6 @@ export interface components {
         SpecLineRole: "component" | "output" | "loss";
         /**
          * TechCardBasis
-         * @description Что задаёт норму: вход (разделка, обработка партии) или выход (рецептура).
          * @enum {string}
          */
         TechCardBasis: "input" | "output";
@@ -2756,10 +2738,7 @@ export interface components {
             /** Description */
             description?: string | null;
         };
-        /**
-         * UpdateOrderSchema
-         * @description Черновик присылают целиком: состав, время, комментарий.
-         */
+        /** UpdateOrderSchema */
         UpdateOrderSchema: {
             /** Planned At */
             planned_at?: string | null;
@@ -2818,10 +2797,7 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
-        /**
-         * UploadedImageSchema
-         * @description Результат загрузки картинки: относительный адрес и что получилось.
-         */
+        /** UploadedImageSchema */
         UploadedImageSchema: {
             /** Url */
             url: string;
@@ -3524,6 +3500,7 @@ export interface operations {
     list_employees_api_staff_employees_get: {
         parameters: {
             query?: {
+                org_unit_id?: string | null;
                 limit?: number;
                 offset?: number;
                 search?: string | null;
@@ -4531,7 +4508,9 @@ export interface operations {
     };
     list_warehouses_api_inventory_warehouses_get: {
         parameters: {
-            query?: never;
+            query?: {
+                org_unit_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4545,6 +4524,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WarehouseSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

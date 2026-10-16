@@ -1,7 +1,6 @@
 from dishka import Provider, Scope, from_context, provide
 from fastapi import Request
 
-from myasnaya_derevnya.core.current_scope import CurrentScope
 from myasnaya_derevnya.core.identity_provider import IdentityProvider, SessionIdGetter
 from myasnaya_derevnya.core.media.paths import media_root
 from myasnaya_derevnya.core.media.storage import LocalDiskStorage, MediaStorage
@@ -32,10 +31,6 @@ class ServicesDepProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_session_id_getter(self, request: Request) -> SessionIdGetter:
         return HTTPSessionIDGetter(request)
-
-    @provide(scope=Scope.REQUEST)
-    def get_current_scope(self, request: Request) -> CurrentScope:
-        return CurrentScope(request)
 
     @provide(scope=Scope.REQUEST)
     def get_identity_provider(

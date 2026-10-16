@@ -148,6 +148,24 @@ async def test_list_company_wide_has_no_filter() -> None:
     assert reader.list_calls[0]["org_unit_ids"] is None
 
 
+async def test_list_filters_by_requested_unit() -> None:
+    unit_id = uuid4()
+    interactor, reader = build_list(AccessScope.of([unit_id]))
+
+    await interactor(ListEmployeesQuery(org_unit_id=unit_id))
+
+    assert reader.list_calls[0]["org_unit_ids"] == frozenset({unit_id})
+
+
+async def test_list_foreign_unit_is_forbidden() -> None:
+    interactor, reader = build_list(AccessScope.of([uuid4()]))
+
+    with pytest.raises(ForbiddenError):
+        await interactor(ListEmployeesQuery(org_unit_id=uuid4()))
+
+    assert reader.list_calls == []
+
+
 async def test_card_without_scope_is_forbidden() -> None:
     employee = make_employee()
     interactor, reader = build_get(AccessScope.of([]), employee)

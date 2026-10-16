@@ -22,6 +22,9 @@ from myasnaya_derevnya.modules.catalog.application.interactors.get_point_assortm
 from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
     GetPointPricesInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.get_price_list_binding import (
+    GetPriceListBindingInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.list_categories import (
     ListCategoriesInteractor,
 )
@@ -137,6 +140,9 @@ class CatalogDepProvider(Provider):
         return SQLAlchemyPriceListBindingRepository(session)
 
     bind_price_list_interactor = provide(BindPriceListInteractor, scope=Scope.REQUEST)
+    get_price_list_binding_interactor = provide(
+        GetPriceListBindingInteractor, scope=Scope.REQUEST
+    )
 
 
     @provide(scope=Scope.REQUEST)

@@ -29,6 +29,10 @@ from myasnaya_derevnya.modules.catalog.application.interactors.get_point_assortm
     GetPointAssortmentInteractor,
     GetPointAssortmentQuery,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.get_price_list_binding import (
+    GetPriceListBindingInteractor,
+    GetPriceListBindingQuery,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.list_categories import (
     ListCategoriesInteractor,
     ListCategoriesQuery,
@@ -58,9 +62,6 @@ from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclatu
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     NomenclatureType,
-)
-from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_binding.base import (
-    PriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
     AssortmentItemSchema,
@@ -277,9 +278,11 @@ async def bind_price_list(
 async def get_price_list_binding(
     request: Request, org_unit_id: UUID
 ) -> PriceListBindingSchema | None:
+    query = GetPriceListBindingQuery(org_unit_id=org_unit_id)
+
     async with container(context={Request: request}) as context:
-        repository = await context.get(PriceListBindingRepository)
-        binding = await repository.get_by_org_unit(org_unit_id)
+        interactor = await context.get(GetPriceListBindingInteractor)
+        binding = await interactor(query)
 
     if binding is None:
         return None

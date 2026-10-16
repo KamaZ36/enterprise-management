@@ -1,7 +1,7 @@
-from pydantic_settings import BaseSettings
+from myasnaya_derevnya.core.settings.base import BaseAppSettings
 
 
-class DatabaseSettings(BaseSettings):
+class DatabaseSettings(BaseAppSettings):
     db_user: str
     db_password: str
     db_host: str

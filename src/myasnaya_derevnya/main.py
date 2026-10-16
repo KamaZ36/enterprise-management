@@ -35,6 +35,9 @@ from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
 from myasnaya_derevnya.modules.catalog.presentation.api.v1 import (
     router as catalog_router,
 )
+from myasnaya_derevnya.modules.customer.presentation.api.v1.customers import (
+    router as customers_router,
+)
 from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
     login_router as customer_login_router,
 )
@@ -93,11 +96,6 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
 async def lifespan(app: FastAPI):
     await bootstrap_system()
     yield
-
-
-from myasnaya_derevnya.modules.customer.presentation.api.v1.customers import (
-    router as customers_router,
-)
 
 
 def include_routers(app: FastAPI) -> None:
