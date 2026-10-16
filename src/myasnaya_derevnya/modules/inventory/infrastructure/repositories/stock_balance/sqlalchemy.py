@@ -2,7 +2,7 @@ from collections.abc import Iterable, Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import RowMapping, exists, select, tuple_
+from sqlalchemy import RowMapping, select, tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,23 +36,23 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
             pg_insert(STOCK_BALANCES_TABLE)
             .values(
                 [
-                    {"warehouse_id": warehouse_id, "nomenclature_id": nomenclature_id}
-                    for warehouse_id, nomenclature_id in unique
+                    {"org_unit_id": org_unit_id, "nomenclature_id": nomenclature_id}
+                    for org_unit_id, nomenclature_id in unique
                 ]
             )
-            .on_conflict_do_nothing(index_elements=["warehouse_id", "nomenclature_id"])
+            .on_conflict_do_nothing(index_elements=["org_unit_id", "nomenclature_id"])
         )
 
         stmt = (
             select(STOCK_BALANCES_TABLE)
             .where(
                 tuple_(
-                    STOCK_BALANCES_TABLE.c.warehouse_id,
+                    STOCK_BALANCES_TABLE.c.org_unit_id,
                     STOCK_BALANCES_TABLE.c.nomenclature_id,
                 ).in_(unique)
             )
             .order_by(
-                STOCK_BALANCES_TABLE.c.warehouse_id,
+                STOCK_BALANCES_TABLE.c.org_unit_id,
                 STOCK_BALANCES_TABLE.c.nomenclature_id,
             )
             .with_for_update()
@@ -60,7 +60,7 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
         rows = (await self._session.execute(stmt)).mappings().all()
 
         return {
-            (row["warehouse_id"], row["nomenclature_id"]): self._to_entity(row)
+            (row["org_unit_id"], row["nomenclature_id"]): self._to_entity(row)
             for row in rows
         }
 
@@ -70,7 +70,7 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
 
         values = [
             {
-                "warehouse_id": balance.warehouse_id,
+                "org_unit_id": balance.org_unit_id,
                 "nomenclature_id": balance.nomenclature_id,
                 "quantity": balance.quantity,
                 "average_unit_cost": balance.average_unit_cost.quantize(
@@ -85,7 +85,7 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
         stmt = pg_insert(STOCK_BALANCES_TABLE).values(values)
         await self._session.execute(
             stmt.on_conflict_do_update(
-                index_elements=["warehouse_id", "nomenclature_id"],
+                index_elements=["org_unit_id", "nomenclature_id"],
                 set_={
                     "quantity": stmt.excluded.quantity,
                     "average_unit_cost": stmt.excluded.average_unit_cost,
@@ -95,21 +95,11 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
             )
         )
 
-    async def has_any_for_warehouse(self, warehouse_id: UUID) -> bool:
-        stmt = select(
-            exists().where(
-                STOCK_BALANCES_TABLE.c.warehouse_id == warehouse_id,
-                STOCK_BALANCES_TABLE.c.quantity != 0,
-            )
-        )
-
-        return bool(await self._session.scalar(stmt))
-
     async def get(
-        self, warehouse_id: UUID, nomenclature_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID
     ) -> StockBalance | None:
         stmt = select(STOCK_BALANCES_TABLE).where(
-            STOCK_BALANCES_TABLE.c.warehouse_id == warehouse_id,
+            STOCK_BALANCES_TABLE.c.org_unit_id == org_unit_id,
             STOCK_BALANCES_TABLE.c.nomenclature_id == nomenclature_id,
         )
         row = (await self._session.execute(stmt)).mappings().one_or_none()
@@ -119,10 +109,10 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
 
         return self._to_entity(row)
 
-    async def list_by_warehouse(self, warehouse_id: UUID) -> list[StockBalance]:
+    async def list_by_org_unit(self, org_unit_id: UUID) -> list[StockBalance]:
         stmt = (
             select(STOCK_BALANCES_TABLE)
-            .where(STOCK_BALANCES_TABLE.c.warehouse_id == warehouse_id)
+            .where(STOCK_BALANCES_TABLE.c.org_unit_id == org_unit_id)
             .order_by(STOCK_BALANCES_TABLE.c.nomenclature_id.asc())
         )
         rows = (await self._session.execute(stmt)).mappings().all()
@@ -131,7 +121,7 @@ class SQLAlchemyStockBalanceRepository(StockBalanceRepository):
 
     def _to_entity(self, row: RowMapping) -> StockBalance:
         return StockBalance(
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             nomenclature_id=row["nomenclature_id"],
             quantity=row["quantity"],
             total_value=Money(kopecks=row["total_value"]),

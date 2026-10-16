@@ -100,7 +100,7 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
     def _order_values(self, order: ProductionOrder) -> dict[str, object]:
         return {
             "id": order.id,
-            "warehouse_id": order.warehouse_id,
+            "org_unit_id": order.org_unit_id,
             "tech_card_id": order.tech_card_id,
             "tech_card_code": order.tech_card_code,
             "tech_card_version": order.tech_card_version,
@@ -132,7 +132,7 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
     def _to_entity(self, row, lines) -> ProductionOrder:
         return ProductionOrder(
             id=row["id"],
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             tech_card_id=row["tech_card_id"],
             tech_card_code=row["tech_card_code"],
             tech_card_version=row["tech_card_version"],

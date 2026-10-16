@@ -6,17 +6,15 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.inventory.domain.entities.receipt import (
     Receipt,
     ReceiptLine,
 )
-from myasnaya_derevnya.modules.inventory.domain.errors import WarehouseNotFoundError
+from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.base import (
     ReceiptRepository,
-)
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
-    WarehouseRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
@@ -32,7 +30,7 @@ class ReceiptLineCommand:
 
 @dataclass(frozen=True, slots=True)
 class CreateReceiptCommand:
-    warehouse_id: UUID
+    org_unit_id: UUID
     occurred_at: datetime
     lines: list[ReceiptLineCommand]
     supplier_name: str | None = None
@@ -44,13 +42,13 @@ class CreateReceiptInteractor:
     def __init__(
         self,
         identity_provider: IdentityProvider,
-        warehouse_repository: WarehouseRepository,
+        business_api: BusinessAPI,
         receipt_repository: ReceiptRepository,
         staff_api: StaffAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
-        self._warehouse_repository = warehouse_repository
+        self._business_api = business_api
         self._receipt_repository = receipt_repository
         self._staff_api = staff_api
         self._transaction_manager = transaction_manager
@@ -58,20 +56,20 @@ class CreateReceiptInteractor:
     async def __call__(self, command: CreateReceiptCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
 
-        warehouse = await self._warehouse_repository.get_by_id(command.warehouse_id)
-        if warehouse is None:
-            raise WarehouseNotFoundError(command.warehouse_id)
+        location = await self._business_api.stock_location(command.org_unit_id)
+        if location is None:
+            raise LocationNotFoundError(command.org_unit_id)
 
         allowed = await self._staff_api.can(
             user_id=current_user_id,
             permission=CREATE_DOCUMENT,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()
 
         receipt = Receipt.create(
-            warehouse_id=command.warehouse_id,
+            org_unit_id=command.org_unit_id,
             occurred_at=command.occurred_at,
             created_by=current_user_id,
             supplier_name=command.supplier_name,

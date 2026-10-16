@@ -6,18 +6,18 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import (
+    BusinessAPI,
+    StockLocation,
+)
 from myasnaya_derevnya.modules.inventory.domain.entities.transfer import (
     Transfer,
     TransferLine,
 )
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import Warehouse
-from myasnaya_derevnya.modules.inventory.domain.errors import WarehouseNotFoundError
+from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.base import (
     TransferRepository,
-)
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
-    WarehouseRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
@@ -31,8 +31,8 @@ class TransferLineCommand:
 
 @dataclass(frozen=True, slots=True)
 class CreateTransferCommand:
-    from_warehouse_id: UUID
-    to_warehouse_id: UUID
+    from_org_unit_id: UUID
+    to_org_unit_id: UUID
     occurred_at: datetime
     lines: list[TransferLineCommand]
     comment: str | None = None
@@ -42,13 +42,13 @@ class CreateTransferInteractor:
     def __init__(
         self,
         identity_provider: IdentityProvider,
-        warehouse_repository: WarehouseRepository,
+        business_api: BusinessAPI,
         transfer_repository: TransferRepository,
         staff_api: StaffAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
-        self._warehouse_repository = warehouse_repository
+        self._business_api = business_api
         self._transfer_repository = transfer_repository
         self._staff_api = staff_api
         self._transaction_manager = transaction_manager
@@ -56,23 +56,21 @@ class CreateTransferInteractor:
     async def __call__(self, command: CreateTransferCommand) -> UUID:
         current_user_id = await self._identity_provider.get_current_user_id()
 
-        from_warehouse = await self._warehouse_repository.get_by_id(
-            command.from_warehouse_id
+        from_location = await self._business_api.stock_location(
+            command.from_org_unit_id
         )
-        if from_warehouse is None:
-            raise WarehouseNotFoundError(command.from_warehouse_id)
+        if from_location is None:
+            raise LocationNotFoundError(command.from_org_unit_id)
 
-        to_warehouse = await self._warehouse_repository.get_by_id(
-            command.to_warehouse_id
-        )
-        if to_warehouse is None:
-            raise WarehouseNotFoundError(command.to_warehouse_id)
+        to_location = await self._business_api.stock_location(command.to_org_unit_id)
+        if to_location is None:
+            raise LocationNotFoundError(command.to_org_unit_id)
 
-        await self._ensure_allowed(current_user_id, (from_warehouse, to_warehouse))
+        await self._ensure_allowed(current_user_id, (from_location, to_location))
 
         transfer = Transfer.create(
-            from_warehouse_id=command.from_warehouse_id,
-            to_warehouse_id=command.to_warehouse_id,
+            from_org_unit_id=command.from_org_unit_id,
+            to_org_unit_id=command.to_org_unit_id,
             occurred_at=command.occurred_at,
             created_by=current_user_id,
             comment=command.comment,
@@ -92,13 +90,13 @@ class CreateTransferInteractor:
         return transfer.id
 
     async def _ensure_allowed(
-        self, user_id: UUID, warehouses: tuple[Warehouse, ...]
+        self, user_id: UUID, locations: tuple[StockLocation, ...]
     ) -> None:
-        for warehouse in warehouses:
+        for location in locations:
             allowed = await self._staff_api.can(
                 user_id=user_id,
                 permission=CREATE_DOCUMENT,
-                org_unit_id=warehouse.org_unit_id,
+                org_unit_id=location.id,
             )
             if not allowed:
                 raise ForbiddenError()

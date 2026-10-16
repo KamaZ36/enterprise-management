@@ -15,22 +15,22 @@ from myasnaya_derevnya.utils import get_datetime_utc
 class StockBalance:
     def __init__(
         self,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         quantity: Decimal,
         total_value: Money,
         updated_at: datetime,
     ) -> None:
-        self._warehouse_id = warehouse_id
+        self._org_unit_id = org_unit_id
         self._nomenclature_id = nomenclature_id
         self._quantity = quantity
         self._total_value = total_value
         self._updated_at = updated_at
 
     @classmethod
-    def empty(cls, warehouse_id: UUID, nomenclature_id: UUID) -> StockBalance:
+    def empty(cls, org_unit_id: UUID, nomenclature_id: UUID) -> StockBalance:
         return cls(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_id=nomenclature_id,
             quantity=Decimal(0),
             total_value=Money.zero(),
@@ -38,8 +38,8 @@ class StockBalance:
         )
 
     @property
-    def warehouse_id(self) -> UUID:
-        return self._warehouse_id
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def nomenclature_id(self) -> UUID:
@@ -78,7 +78,7 @@ class StockBalance:
             raise EmptyMovementError()
         if quantity > self._quantity:
             raise InsufficientStockError(
-                warehouse_id=self._warehouse_id,
+                org_unit_id=self._org_unit_id,
                 nomenclature_id=self._nomenclature_id,
                 available=self._quantity,
                 requested=quantity,
@@ -106,7 +106,7 @@ class StockBalance:
             raise EmptyMovementError()
         if quantity > self._quantity:
             raise InsufficientStockError(
-                warehouse_id=self._warehouse_id,
+                org_unit_id=self._org_unit_id,
                 nomenclature_id=self._nomenclature_id,
                 available=self._quantity,
                 requested=quantity,

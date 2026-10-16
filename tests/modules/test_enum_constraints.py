@@ -15,7 +15,6 @@ from myasnaya_derevnya.modules.business.domain.entities.org_unit import (
     OrgUnitType,
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.customer.domain.entities.customer import (
@@ -23,9 +22,6 @@ from myasnaya_derevnya.modules.customer.domain.entities.customer import (
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_movement import (
     MovementType,
-)
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
-    WarehouseType,
 )
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_status import (
     DocumentStatus,
@@ -58,14 +54,12 @@ EXPECTED = {
     ("auth", "user_identities", "identity_type"): UserIdentityType,
     ("auth", "users", "status"): UserStatus,
     ("business", "org_units", "type"): OrgUnitType,
-    ("catalog", "nomenclatures", "type"): NomenclatureType,
     ("catalog", "nomenclatures", "unit"): UnitOfMeasurement,
     ("customer", "customers", "status"): CustomerStatus,
     ("inventory", "receipts", "status"): DocumentStatus,
     ("inventory", "stock_movements", "movement_type"): MovementType,
     ("inventory", "stock_postings", "document_type"): DocumentType,
     ("inventory", "transfers", "status"): DocumentStatus,
-    ("inventory", "warehouses", "type"): WarehouseType,
     ("inventory", "write_offs", "status"): DocumentStatus,
     ("production", "tech_cards", "basis"): TechCardBasis,
     ("production", "tech_card_lines", "role"): SpecLineRole,

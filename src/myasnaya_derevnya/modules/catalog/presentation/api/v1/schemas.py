@@ -9,7 +9,6 @@ from myasnaya_derevnya.modules.catalog.application.dto import (
     NomenclatureListItem,
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
     UnitOfMeasurement,
 )
 
@@ -18,7 +17,6 @@ class CreateNomenclatureSchema(BaseModel):
     sku: str
     name: str
     unit: UnitOfMeasurement
-    type: NomenclatureType
     category_id: UUID
     image_url: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)
@@ -28,7 +26,6 @@ class NomenclatureSchema(BaseModel):
     id: UUID
     sku: str
     name: str
-    type: NomenclatureType
     unit: UnitOfMeasurement
     category_id: UUID
     category_name: str
@@ -42,7 +39,6 @@ class NomenclatureSchema(BaseModel):
             id=item.id,
             sku=item.sku,
             name=item.name,
-            type=item.type,
             unit=item.unit,
             category_id=item.category_id,
             category_name=item.category_name,
@@ -76,7 +72,6 @@ class UpdateNomenclatureSchema(BaseModel):
     name: str | None = None
     category_id: UUID | None = None
     unit: UnitOfMeasurement | None = None
-    type: NomenclatureType | None = None
     is_active: bool | None = None
     image_url: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)

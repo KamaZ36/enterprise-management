@@ -40,11 +40,6 @@
     <el-table v-loading="pending" :data="items" stripe border>
       <el-table-column prop="sku" label="Артикул" width="180" />
       <el-table-column prop="name" label="Название" min-width="260" />
-      <el-table-column label="Тип" width="190">
-        <template #default="{ row }">
-          {{ label(NOMENCLATURE_TYPES, row.type) }}
-        </template>
-      </el-table-column>
       <el-table-column label="Ед." width="90">
         <template #default="{ row }">{{ label(UNITS, row.unit) }}</template>
       </el-table-column>
@@ -150,16 +145,6 @@
           <el-form-item label="Название">
             <el-input v-model="form.name" placeholder="Говядина лопатка" />
           </el-form-item>
-          <el-form-item label="Тип">
-            <el-select v-model="form.type" style="width: 100%">
-              <el-option
-                v-for="(title, code) in NOMENCLATURE_TYPES"
-                :key="code"
-                :label="title"
-                :value="code"
-              />
-            </el-select>
-          </el-form-item>
           <el-form-item label="Единица измерения">
             <el-select v-model="form.unit" style="width: 100%">
               <el-option
@@ -246,16 +231,6 @@
         </el-form-item>
 
         <div class="form-grid">
-          <el-form-item label="Тип">
-            <el-select v-model="editForm.type" style="width: 100%">
-              <el-option
-                v-for="(title, code) in NOMENCLATURE_TYPES"
-                :key="code"
-                :label="title"
-                :value="code"
-              />
-            </el-select>
-          </el-form-item>
           <el-form-item label="Единица измерения">
             <el-select v-model="editForm.unit" style="width: 100%">
               <el-option
@@ -372,7 +347,6 @@ const editForm = reactive({
   name: "",
   category_id: "",
   unit: "kg" as Nomenclature["unit"],
-  type: "raw_material" as Nomenclature["type"],
   is_active: true,
   image_url: "",
   description: "",
@@ -384,7 +358,6 @@ const createError = ref("");
 const form = reactive({
   sku: "",
   name: "",
-  type: "raw_material",
   unit: "kg",
   category_id: "",
   image_url: "",
@@ -457,7 +430,6 @@ function openCreate(): void {
   notice.value = "";
   form.sku = "";
   form.name = "";
-  form.type = "raw_material";
   form.unit = "kg";
   form.category_id = categories.value[0]?.id ?? "";
   form.image_url = "";
@@ -475,7 +447,6 @@ async function createNomenclature(): Promise<void> {
         sku: form.sku.trim(),
         name: form.name.trim(),
         unit: form.unit as Nomenclature["unit"],
-        type: form.type as Nomenclature["type"],
         category_id: form.category_id,
         image_url: form.image_url.trim() || null,
         description: form.description.trim() || null,
@@ -546,7 +517,6 @@ function openEdit(row: Nomenclature): void {
   editForm.name = row.name;
   editForm.category_id = row.category_id;
   editForm.unit = row.unit;
-  editForm.type = row.type;
   editForm.is_active = row.is_active;
   editForm.image_url = row.image_url ?? "";
   editForm.description = row.description ?? "";
@@ -569,9 +539,6 @@ async function saveEdit(): Promise<void> {
   }
   if (editForm.unit !== row.unit) {
     body.unit = editForm.unit;
-  }
-  if (editForm.type !== row.type) {
-    body.type = editForm.type;
   }
   if (editForm.is_active !== row.is_active) {
     body.is_active = editForm.is_active;

@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.core.database.transaction_manager.sqlalchemy import (
     SQLAlchemyTransactionManager,
 )
+from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_repository.sqlalchemy import (
+    SQLAlchemyOrgUnitRepository,
+)
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
     GetPointPricesInteractor,
 )
@@ -52,9 +56,6 @@ from myasnaya_derevnya.modules.inventory.application.services.stock_ledger impor
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
     MovingAverageCostPolicy,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.sqlalchemy import (
-    SQLAlchemyWarehouseReader,
-)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.sqlalchemy import (
     SQLAlchemyReceiptRepository,
 )
@@ -73,14 +74,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movem
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_posting.sqlalchemy import (
     SQLAlchemyStockPostingRepository,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.sqlalchemy import (
-    SQLAlchemyWarehouseRepository,
-)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.sqlalchemy import (
     SQLAlchemyWriteOffRepository,
-)
-from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
-    InventoryAPI,
 )
 from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
     AccessScope,
@@ -96,14 +91,6 @@ class FakeIdentityProvider:
 
     async def get_current_session_id(self) -> UUID:
         return self._user_id
-
-
-class FakeBusinessAPI:
-    def __init__(self, root_unit_id: UUID) -> None:
-        self._root_unit_id = root_unit_id
-
-    async def get_root_unit_id(self) -> UUID:
-        return self._root_unit_id
 
 
 class FakeStaffAPI:
@@ -128,6 +115,12 @@ class FakeStaffAPI:
         return self.scope
 
 
+def business_api(session: AsyncSession) -> BusinessAPI:
+    """Настоящий BusinessAPI на настоящем репозитории подразделений."""
+
+    return BusinessAPI(org_unit_repository=SQLAlchemyOrgUnitRepository(session))
+
+
 @dataclass(frozen=True, slots=True)
 class InventoryInteractors:
     create_receipt: CreateReceiptInteractor
@@ -143,8 +136,8 @@ def build_interactors(
     identity = FakeIdentityProvider(uuid4())
     staff_api = FakeStaffAPI(allowed=allowed)
     transaction_manager = SQLAlchemyTransactionManager(session)
+    api = business_api(session)
 
-    warehouses = SQLAlchemyWarehouseRepository(session)
     receipts = SQLAlchemyReceiptRepository(session)
     write_offs = SQLAlchemyWriteOffRepository(session)
 
@@ -153,7 +146,7 @@ def build_interactors(
     return InventoryInteractors(
         create_receipt=CreateReceiptInteractor(
             identity_provider=identity,
-            warehouse_repository=warehouses,
+            business_api=api,
             receipt_repository=receipts,
             staff_api=staff_api,
             transaction_manager=transaction_manager,
@@ -169,7 +162,7 @@ def build_interactors(
         ),
         create_write_off=CreateWriteOffInteractor(
             identity_provider=identity,
-            warehouse_repository=warehouses,
+            business_api=api,
             write_off_repository=write_offs,
             staff_api=staff_api,
             transaction_manager=transaction_manager,
@@ -177,7 +170,6 @@ def build_interactors(
         post_write_off=PostWriteOffInteractor(
             identity_provider=identity,
             write_off_repository=write_offs,
-            warehouse_repository=warehouses,
             staff_api=staff_api,
             preconditions=preconditions,
             lot_resolver=lot_resolver,
@@ -191,11 +183,10 @@ def build_interactors(
 def build_posting(
     session: AsyncSession,
 ) -> tuple[PostingPreconditions, LotResolver, StockLedger]:
-    warehouses = SQLAlchemyWarehouseRepository(session)
     lots = SQLAlchemyStockLotRepository(session)
 
     preconditions = PostingPreconditions(
-        warehouse_repository=warehouses,
+        business_api=business_api(session),
         catalog_api=CatalogAPI(
             get_point_prices_interactor=GetPointPricesInteractor(
                 binding_repository=SQLAlchemyPriceListBindingRepository(session),
@@ -232,22 +223,8 @@ def build_sale_interactor(session: AsyncSession) -> PostSaleInteractor:
     return PostSaleInteractor(preconditions=preconditions, ledger=ledger)
 
 
-def build_inventory_api(session: AsyncSession) -> InventoryAPI:
-    interactors = build_interactors(session)
-
-    return InventoryAPI(
-        create_receipt_interactor=interactors.create_receipt,
-        post_receipt_interactor=interactors.post_receipt,
-        post_production_interactor=build_production_interactor(session),
-        post_sale_interactor=build_sale_interactor(session),
-        balance_repository=SQLAlchemyStockBalanceRepository(session),
-        warehouse_repository=SQLAlchemyWarehouseRepository(session),
-        warehouse_reader=SQLAlchemyWarehouseReader(session),
-    )
-
-
 async def movement_totals(
-    session: AsyncSession, warehouse_id: UUID, nomenclature_id: UUID
+    session: AsyncSession, org_unit_id: UUID, nomenclature_id: UUID
 ) -> tuple[Decimal, int]:
     row = (
         await session.execute(
@@ -255,10 +232,10 @@ async def movement_totals(
                 "select coalesce(sum(quantity), 0) as quantity,"
                 " coalesce(sum(total_cost), 0) as total_cost"
                 " from inventory.stock_movements"
-                " where warehouse_id = :warehouse_id"
+                " where org_unit_id = :org_unit_id"
                 " and nomenclature_id = :nomenclature_id"
             ),
-            {"warehouse_id": warehouse_id, "nomenclature_id": nomenclature_id},
+            {"org_unit_id": org_unit_id, "nomenclature_id": nomenclature_id},
         )
     ).one()
 

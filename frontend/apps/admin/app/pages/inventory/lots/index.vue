@@ -2,26 +2,26 @@
   <div class="page">
     <h1 class="page__title">Партии</h1>
     <p class="page__subtitle">
-      Партии на складе: срок годности, количество и себестоимость каждой партии
+      Партии в подразделениях: срок годности, количество и себестоимость каждой партии
     </p>
 
     <el-alert
-      v-if="!canAll(CAN.warehouseRead)"
-      title="Нет права видеть склады"
-      description="Партии ведутся в разрезе склада — попросите доступ к складам."
+      v-if="!canAll(CAN.lotsOpen)"
+      title="Нет права видеть партии"
+      description="Попросите доступ к партиям."
       type="warning"
       :closable="false"
       show-icon
       class="page__error"
     />
-    <div v-if="canAll(CAN.warehouseRead)" class="page__toolbar">
+    <div v-if="canAll(CAN.lotsOpen)" class="page__toolbar">
       <el-select
-        v-model="warehouseId"
-        placeholder="Выберите склад"
+        v-model="locationId"
+        placeholder="Выберите точку"
         style="width: 280px"
         @change="load"
       >
-        <WarehouseOptions :warehouses="warehouses" />
+        <LocationOptions :locations="locations" />
       </el-select>
       <el-input
         v-model="filter"
@@ -54,7 +54,7 @@
     />
 
     <el-table
-      v-if="canAll(CAN.warehouseRead)"
+      v-if="canAll(CAN.lotsOpen)"
       v-loading="pending"
       :data="lots"
       empty-text="Партий нет"
@@ -119,7 +119,7 @@ import { formatKopecks, formatQuantity } from "@md/money";
 
 import { formatDate, shortId } from "~/utils/format";
 
-type Warehouse = components["schemas"]["WarehouseSchema"];
+type Location = components["schemas"]["LocationSchema"];
 type LotBalance = components["schemas"]["LotBalanceSchema"];
 
 const WARNING_DAYS = 14;
@@ -127,9 +127,9 @@ const WARNING_DAYS = 14;
 const api = useApi();
 const { can } = useCurrentUser();
 
-const warehouses = ref<Warehouse[]>([]);
+const locations = ref<Location[]>([]);
 const lots = ref<LotBalance[]>([]);
-const warehouseId = ref("");
+const locationId = ref("");
 const filter = ref("");
 const onlyExpiring = ref(false);
 const pending = ref(false);
@@ -188,21 +188,21 @@ function expiringBefore(): string | undefined {
   return date.toISOString().slice(0, 10);
 }
 
-async function loadWarehouses(): Promise<void> {
-  if (!canAll(CAN.warehouseRead)) {
+async function loadLocations(): Promise<void> {
+  if (!canAll(CAN.lotsOpen)) {
     return;
   }
 
-  const { data, response } = await api.GET("/api/inventory/warehouses", {});
+  const { data, response } = await api.GET("/api/inventory/locations", {});
 
   if (response.ok && data) {
-    warehouses.value = data;
-    warehouseId.value = data[0]?.id ?? "";
+    locations.value = data;
+    locationId.value = data[0]?.id ?? "";
   }
 }
 
 async function load(): Promise<void> {
-  if (!warehouseId.value) {
+  if (!locationId.value) {
     return;
   }
 
@@ -211,10 +211,10 @@ async function load(): Promise<void> {
 
   try {
     const { response, data, error: failure } = await api.GET(
-      "/api/inventory/warehouses/{warehouse_id}/lots",
+      "/api/inventory/locations/{org_unit_id}/lots",
       {
         params: {
-          path: { warehouse_id: warehouseId.value },
+          path: { org_unit_id: locationId.value },
           query: {
             search: filter.value.trim() || undefined,
             expiring_before: expiringBefore(),
@@ -240,7 +240,7 @@ async function load(): Promise<void> {
 }
 
 onMounted(async () => {
-  await loadWarehouses();
+  await loadLocations();
   await load();
 });
 </script>

@@ -10,7 +10,6 @@ class NomenclatureReader(ABC):
         self,
         *,
         search: str | None = None,
-        type_code: str | None = None,
         category_id: UUID | None = None,
         limit: int = 20,
         offset: int = 0,

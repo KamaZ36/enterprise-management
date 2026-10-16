@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -14,9 +14,16 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.list i
     ListBalancesInteractor,
     ListBalancesQuery,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.locations.list import (
+    ListLocationsInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.lots.list import (
     ListLotBalancesInteractor,
     ListLotBalancesQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.movements.list import (
+    ListMovementsInteractor,
+    ListMovementsQuery,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
@@ -57,17 +64,6 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.updat
     UpdateTransferInteractor,
     UpdateTransferLineCommand,
 )
-from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.create import (
-    CreateWarehouseCommand,
-    CreateWarehouseInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.list import (
-    ListWarehousesInteractor,
-)
-from myasnaya_derevnya.modules.inventory.application.interactors.warehouses.update import (
-    UpdateWarehouseCommand,
-    UpdateWarehouseInteractor,
-)
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
     CreateWriteOffCommand,
     CreateWriteOffInteractor,
@@ -90,10 +86,12 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     BalanceSchema,
     CreateReceiptSchema,
     CreateTransferSchema,
-    CreateWarehouseSchema,
     CreateWriteOffSchema,
+    LocationSchema,
     LotBalanceListSchema,
     LotBalanceSchema,
+    MovementItemSchema,
+    MovementListSchema,
     ReceiptDetailSchema,
     ReceiptLineSchema,
     ReceiptListItemSchema,
@@ -103,8 +101,6 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     TransferListItemSchema,
     TransferListSchema,
     UpdateTransferSchema,
-    UpdateWarehouseSchema,
-    WarehouseSchema,
     WriteOffDetailSchema,
     WriteOffLineSchema,
     WriteOffListItemSchema,
@@ -138,42 +134,23 @@ def _write_off_lines(lines: list[WriteOffLineSchema]) -> list[WriteOffLineComman
     ]
 
 
-@router.post("/warehouses", description="Создать склад", status_code=201)
-async def create_warehouse(
-    request: Request, data: CreateWarehouseSchema
-) -> JSONResponse:
-    command = CreateWarehouseCommand(
-        org_unit_id=data.org_unit_id,
-        code=data.code,
-        name=data.name,
-        type=data.type,
-    )
-
-    async with container(context={Request: request}) as context:
-        interactor = await context.get(CreateWarehouseInteractor)
-        warehouse_id = await interactor(command)
-
-    return JSONResponse(status_code=201, content={"warehouse_id": str(warehouse_id)})
-
-
 @router.get(
-    "/warehouses", response_model=list[WarehouseSchema], description="Список складов"
+    "/locations",
+    response_model=list[LocationSchema],
+    description="Список складских локаций (подразделений)",
 )
-async def list_warehouses(
-    request: Request,
-    org_unit_id: Annotated[UUID | None, Query()] = None,
-) -> list[WarehouseSchema]:
+async def list_locations(request: Request) -> list[LocationSchema]:
     async with container(context={Request: request}) as context:
-        interactor = await context.get(ListWarehousesInteractor)
-        warehouses = await interactor(org_unit_id)
+        interactor = await context.get(ListLocationsInteractor)
+        locations = await interactor()
 
-    return [WarehouseSchema.from_dto(warehouse) for warehouse in warehouses]
+    return [LocationSchema.from_dto(location) for location in locations]
 
 
 @router.post("/receipts", description="Создать поступление (черновик)", status_code=201)
 async def create_receipt(request: Request, data: CreateReceiptSchema) -> JSONResponse:
     command = CreateReceiptCommand(
-        warehouse_id=data.warehouse_id,
+        org_unit_id=data.org_unit_id,
         occurred_at=data.occurred_at,
         lines=_receipt_lines(data.lines),
         supplier_name=data.supplier_name,
@@ -202,7 +179,7 @@ async def create_write_off(
     request: Request, data: CreateWriteOffSchema
 ) -> JSONResponse:
     command = CreateWriteOffCommand(
-        warehouse_id=data.warehouse_id,
+        org_unit_id=data.org_unit_id,
         occurred_at=data.occurred_at,
         lines=_write_off_lines(data.lines),
         reason=data.reason,
@@ -226,19 +203,19 @@ async def post_write_off(request: Request, write_off_id: UUID) -> JSONResponse:
 
 
 @router.get(
-    "/warehouses/{warehouse_id}/balances",
+    "/locations/{org_unit_id}/balances",
     response_model=BalanceListSchema,
-    description="Остатки склада",
+    description="Остатки локации",
 )
 async def list_balances(
     request: Request,
-    warehouse_id: UUID,
+    org_unit_id: UUID,
     search: Annotated[str | None, Query(max_length=100)] = None,
 ) -> BalanceListSchema:
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListBalancesInteractor)
         items = await interactor(
-            ListBalancesQuery(warehouse_id=warehouse_id, search=search)
+            ListBalancesQuery(org_unit_id=org_unit_id, search=search)
         )
 
     return BalanceListSchema(
@@ -248,14 +225,14 @@ async def list_balances(
 
 
 @router.get(
-    "/warehouses/{warehouse_id}/balances/{nomenclature_id}",
+    "/locations/{org_unit_id}/balances/{nomenclature_id}",
     response_model=BalanceSchema,
     description="Остаток и себестоимость по номенклатуре",
 )
 async def get_balance(
-    request: Request, warehouse_id: UUID, nomenclature_id: UUID
+    request: Request, org_unit_id: UUID, nomenclature_id: UUID
 ) -> BalanceSchema:
-    query = GetBalanceQuery(warehouse_id=warehouse_id, nomenclature_id=nomenclature_id)
+    query = GetBalanceQuery(org_unit_id=org_unit_id, nomenclature_id=nomenclature_id)
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(GetBalanceInteractor)
@@ -265,19 +242,19 @@ async def get_balance(
 
 
 @router.get(
-    "/warehouses/{warehouse_id}/lots",
+    "/locations/{org_unit_id}/lots",
     response_model=LotBalanceListSchema,
     description="Остатки по партиям со сроками годности",
 )
 async def list_lot_balances(
     request: Request,
-    warehouse_id: UUID,
+    org_unit_id: UUID,
     search: Annotated[str | None, Query(max_length=100)] = None,
     expiring_before: date | None = None,
     include_empty: bool = False,
 ) -> LotBalanceListSchema:
     query = ListLotBalancesQuery(
-        warehouse_id=warehouse_id,
+        org_unit_id=org_unit_id,
         search=search,
         expiring_before=expiring_before,
         include_empty=include_empty,
@@ -293,6 +270,51 @@ async def list_lot_balances(
     )
 
 
+def _movement_types(raw: str | None) -> tuple[str, ...]:
+    if not raw:
+        return ()
+    return tuple(token.strip() for token in raw.split(",") if token.strip())
+
+
+@router.get(
+    "/movements",
+    response_model=MovementListSchema,
+    description="Регистр движений: приход и расход по локациям",
+)
+async def list_movements(
+    request: Request,
+    org_unit_id: UUID | None = None,
+    nomenclature_id: UUID | None = None,
+    movement_types: Annotated[
+        str | None, Query(description="Типы движений через запятую")
+    ] = None,
+    occurred_from: datetime | None = None,
+    occurred_to: datetime | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> MovementListSchema:
+    query = ListMovementsQuery(
+        org_unit_id=org_unit_id,
+        nomenclature_id=nomenclature_id,
+        movement_types=_movement_types(movement_types),
+        occurred_from=occurred_from,
+        occurred_to=occurred_to,
+        limit=limit,
+        offset=offset,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListMovementsInteractor)
+        page = await interactor(query)
+
+    return MovementListSchema(
+        items=[MovementItemSchema.from_dto(item) for item in page.items],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
 @router.get(
     "/receipts",
     response_model=ReceiptListSchema,
@@ -300,13 +322,13 @@ async def list_lot_balances(
 )
 async def list_receipts(
     request: Request,
-    warehouse_id: UUID | None = None,
+    org_unit_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
     search: str | None = None,
 ) -> ReceiptListSchema:
     query = ListReceiptsQuery(
-        warehouse_id=warehouse_id, limit=limit, offset=offset, search=search
+        org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
     )
 
     async with container(context={Request: request}) as context:
@@ -341,13 +363,13 @@ async def get_receipt(request: Request, receipt_id: UUID) -> ReceiptDetailSchema
 )
 async def list_write_offs(
     request: Request,
-    warehouse_id: UUID | None = None,
+    org_unit_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
     search: str | None = None,
 ) -> WriteOffListSchema:
     query = ListWriteOffsQuery(
-        warehouse_id=warehouse_id, limit=limit, offset=offset, search=search
+        org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
     )
 
     async with container(context={Request: request}) as context:
@@ -373,27 +395,6 @@ async def get_write_off(request: Request, write_off_id: UUID) -> WriteOffDetailS
         detail = await interactor(GetWriteOffQuery(write_off_id=write_off_id))
 
     return WriteOffDetailSchema.from_dto(detail)
-
-
-@router.patch(
-    "/warehouses/{warehouse_id}",
-    description="Изменить склад",
-)
-async def update_warehouse(
-    request: Request, warehouse_id: UUID, data: UpdateWarehouseSchema
-) -> JSONResponse:
-    command = UpdateWarehouseCommand(
-        warehouse_id=warehouse_id,
-        name=data.name,
-        type_=data.type,
-        is_active=data.is_active,
-    )
-
-    async with container(context={Request: request}) as context:
-        interactor = await context.get(UpdateWarehouseInteractor)
-        await interactor(command)
-
-    return JSONResponse(content={"message": "ok!"})
 
 
 def _transfer_lines(lines: list[TransferLineSchema]) -> list[TransferLineCommand]:
@@ -425,8 +426,8 @@ def _update_transfer_lines(
 )
 async def create_transfer(request: Request, data: CreateTransferSchema) -> JSONResponse:
     command = CreateTransferCommand(
-        from_warehouse_id=data.from_warehouse_id,
-        to_warehouse_id=data.to_warehouse_id,
+        from_org_unit_id=data.from_org_unit_id,
+        to_org_unit_id=data.to_org_unit_id,
         occurred_at=data.occurred_at,
         lines=_transfer_lines(data.lines),
         comment=data.comment,
@@ -455,13 +456,13 @@ async def post_transfer(request: Request, transfer_id: UUID) -> JSONResponse:
 )
 async def list_transfers(
     request: Request,
-    warehouse_id: UUID | None = None,
+    org_unit_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
     search: str | None = None,
 ) -> TransferListSchema:
     query = ListTransfersQuery(
-        warehouse_id=warehouse_id, limit=limit, offset=offset, search=search
+        org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
     )
 
     async with container(context={Request: request}) as context:

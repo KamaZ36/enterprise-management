@@ -56,7 +56,7 @@ def make_card() -> TechCard:
 
 def make_order(batch_count: str = "1") -> ProductionOrder:
     return ProductionOrder.create(
-        warehouse_id=uuid4(),
+        org_unit_id=uuid4(),
         tech_card=make_card(),
         batch_count=Decimal(batch_count),
         occurred_at=get_datetime_utc(),
@@ -109,7 +109,7 @@ def test_losses_are_split_between_planned_kinds() -> None:
         ],
     )
     order = ProductionOrder.create(
-        warehouse_id=uuid4(),
+        org_unit_id=uuid4(),
         tech_card=card,
         batch_count=Decimal(1),
         occurred_at=get_datetime_utc(),

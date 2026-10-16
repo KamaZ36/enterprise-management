@@ -7,6 +7,8 @@ TEST_PREFIX = "PYTEST-"
 INVENTORY_TABLES = (
     "inventory.stock_movements",
     "inventory.stock_postings",
+    "inventory.transfer_lines",
+    "inventory.transfers",
     "inventory.receipt_lines",
     "inventory.receipts",
     "inventory.write_off_lines",
@@ -14,7 +16,6 @@ INVENTORY_TABLES = (
     "inventory.stock_lot_balances",
     "inventory.stock_lots",
     "inventory.stock_balances",
-    "inventory.warehouses",
 )
 
 

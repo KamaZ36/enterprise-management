@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
     PostedProduction,
     PostProductionCommand,
@@ -25,14 +26,11 @@ from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale
     PostSaleInteractor,
     SaleLineCommand,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.base import (
-    WarehouseReader,
-)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_balance.base import (
     StockBalanceRepository,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
-    WarehouseRepository,
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movement.base import (
+    StockMovementRepository,
 )
 
 
@@ -46,12 +44,11 @@ class ReceiptLine:
 
 
 @dataclass(frozen=True, slots=True)
-class WarehouseInfo:
+class LocationInfo:
+    """Складская локация (подразделение), которой оперирует inventory."""
+
     id: UUID
-    code: str
     name: str
-    type: str
-    org_unit_id: UUID
     is_active: bool
 
 
@@ -77,9 +74,6 @@ class SaleLine:
     quantity: Decimal
 
 
-SALES_WAREHOUSE_PREFERENCE: tuple[str, ...] = ("shop", "finished")
-
-
 class InventoryAPI:
     def __init__(
         self,
@@ -88,21 +82,21 @@ class InventoryAPI:
         post_production_interactor: PostProductionInteractor,
         post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
-        warehouse_repository: WarehouseRepository,
-        warehouse_reader: WarehouseReader,
+        movement_repository: StockMovementRepository,
+        business_api: BusinessAPI,
     ) -> None:
         self._create_receipt_interactor = create_receipt_interactor
         self._post_receipt_interactor = post_receipt_interactor
         self._post_production_interactor = post_production_interactor
         self._post_sale_interactor = post_sale_interactor
         self._balance_repository = balance_repository
-        self._warehouse_repository = warehouse_repository
-        self._warehouse_reader = warehouse_reader
+        self._movement_repository = movement_repository
+        self._business_api = business_api
 
     async def post_receipt(
         self,
         *,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: datetime,
         lines: Iterable[ReceiptLine],
         supplier_name: str | None = None,
@@ -111,7 +105,7 @@ class InventoryAPI:
     ) -> UUID:
         receipt_id = await self._create_receipt_interactor(
             CreateReceiptCommand(
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 occurred_at=occurred_at,
                 supplier_name=supplier_name,
                 supplier_document_number=supplier_document_number,
@@ -134,67 +128,51 @@ class InventoryAPI:
         return receipt_id
 
     async def average_unit_cost(
-        self, warehouse_id: UUID, nomenclature_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID
     ) -> Decimal | None:
-        balance = await self._balance_repository.get(warehouse_id, nomenclature_id)
+        balance = await self._balance_repository.get(org_unit_id, nomenclature_id)
 
         if balance is None:
             return None
 
         return balance.average_unit_cost
 
-    async def get_warehouse(self, warehouse_id: UUID) -> WarehouseInfo | None:
-        warehouse = await self._warehouse_repository.get_by_id(warehouse_id)
-        if warehouse is None:
+    async def has_movements(self, nomenclature_id: UUID) -> bool:
+        """Есть ли по номенклатуре складские движения.
+
+        Нужен каталогу: менять единицу измерения у номенклатуры с движениями
+        нельзя.
+        """
+        return await self._movement_repository.count_for_nomenclature(
+            nomenclature_id
+        ) > 0
+
+    async def get_location(self, org_unit_id: UUID) -> LocationInfo | None:
+        location = await self._business_api.stock_location(org_unit_id)
+        if location is None:
             return None
 
-        return WarehouseInfo(
-            id=warehouse.id,
-            code=warehouse.code,
-            name=warehouse.name,
-            type=warehouse.type.value,
-            org_unit_id=warehouse.org_unit_id,
-            is_active=warehouse.is_active,
+        return LocationInfo(
+            id=location.id,
+            name=location.name,
+            is_active=location.is_active,
         )
 
-    async def list_warehouses(self) -> list[WarehouseInfo]:
+    async def list_locations(self) -> list[LocationInfo]:
         return [
-            WarehouseInfo(
-                id=warehouse.id,
-                code=warehouse.code,
-                name=warehouse.name,
-                type=warehouse.type.value,
-                org_unit_id=warehouse.org_unit_id,
-                is_active=warehouse.is_active,
+            LocationInfo(
+                id=location.id,
+                name=location.name,
+                is_active=location.is_active,
             )
-            for warehouse in await self._warehouse_reader.list_all()
+            for location in await self._business_api.stock_locations()
         ]
-
-    async def default_sales_warehouse(self, org_unit_id: UUID) -> WarehouseInfo | None:
-        """Склад списания продаж по умолчанию для точки.
-
-        Приоритет: торговый зал (``shop``), затем ``finished``. Если подходящего
-        склада нет — возвращает ``None`` (продажа проходит без списания).
-        """
-        warehouses = [
-            warehouse
-            for warehouse in await self.list_warehouses()
-            if warehouse.org_unit_id == org_unit_id and warehouse.is_active
-        ]
-        warehouses.sort(key=lambda warehouse: warehouse.code)
-
-        for warehouse_type in SALES_WAREHOUSE_PREFERENCE:
-            for warehouse in warehouses:
-                if warehouse.type == warehouse_type:
-                    return warehouse
-
-        return None
 
     async def post_production(
         self,
         *,
         document_id: UUID,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: datetime,
         issues: Iterable[ProductionIssue],
         receipts: Iterable[ProductionReceipt],
@@ -203,7 +181,7 @@ class InventoryAPI:
         return await self._post_production_interactor(
             PostProductionCommand(
                 document_id=document_id,
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 occurred_at=occurred_at,
                 issues=tuple(
                     ProductionIssueCommand(
@@ -232,7 +210,7 @@ class InventoryAPI:
         self,
         *,
         document_id: UUID,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: datetime,
         lines: Iterable[SaleLine],
         posted_by: UUID | None = None,
@@ -241,7 +219,7 @@ class InventoryAPI:
         posted = await self._post_sale_interactor(
             PostSaleCommand(
                 document_id=document_id,
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 occurred_at=occurred_at,
                 lines=tuple(
                     SaleLineCommand(

@@ -26,7 +26,7 @@ class SQLAlchemyProductionOrderReader(ProductionOrderReader):
     async def list(
         self,
         *,
-        warehouse_ids: Sequence[UUID] | None,
+        org_unit_ids: Sequence[UUID] | None,
         statuses: Sequence[str] | None,
         occurred_from: datetime | None,
         occurred_to: datetime | None,
@@ -35,9 +35,9 @@ class SQLAlchemyProductionOrderReader(ProductionOrderReader):
     ) -> tuple[list[ProductionOrderListItem], int]:
         conditions = []
 
-        if warehouse_ids is not None:
+        if org_unit_ids is not None:
             conditions.append(
-                PRODUCTION_ORDERS_TABLE.c.warehouse_id.in_(list(warehouse_ids))
+                PRODUCTION_ORDERS_TABLE.c.org_unit_id.in_(list(org_unit_ids))
             )
         if statuses:
             conditions.append(PRODUCTION_ORDERS_TABLE.c.status.in_(list(statuses)))
@@ -75,7 +75,7 @@ class SQLAlchemyProductionOrderReader(ProductionOrderReader):
             [
                 ProductionOrderListItem(
                     id=row["id"],
-                    warehouse_id=row["warehouse_id"],
+                    org_unit_id=row["org_unit_id"],
                     tech_card_id=row["tech_card_id"],
                     tech_card_code=row["tech_card_code"],
                     tech_card_version=row["tech_card_version"],

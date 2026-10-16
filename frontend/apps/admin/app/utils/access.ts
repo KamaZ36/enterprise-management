@@ -1,22 +1,12 @@
 export const CAN = {
-  documentsOpen: [
-    "inventory.document.read",
-    "inventory.warehouse.read",
-    "nomenclature.read",
-  ],
-  documentsCreate: [
-    "inventory.document.create",
-    "inventory.warehouse.read",
-    "nomenclature.read",
-  ],
-  warehouseRead: ["inventory.warehouse.read"],
-  warehouseCreate: ["inventory.warehouse.manage", "org_unit.read"],
-  warehouseEdit: ["inventory.warehouse.manage"],
-  balancesOpen: ["inventory.balance.read", "inventory.warehouse.read"],
-  lotsOpen: ["inventory.balance.read", "inventory.warehouse.read"],
+  documentsOpen: ["inventory.document.read", "nomenclature.read"],
+  documentsCreate: ["inventory.document.create", "nomenclature.read"],
+  balancesOpen: ["inventory.balance.read"],
+  lotsOpen: ["inventory.balance.read"],
+  movementsOpen: ["inventory.balance.read"],
   nomenclaturesOpen: ["nomenclature.read", "category.read"],
   nomenclatureCreate: ["nomenclature.create", "category.read"],
-  orgUnitsOpen: ["org_unit.read", "inventory.warehouse.read"],
+  orgUnitsOpen: ["org_unit.read"],
   employeesOpen: ["staff.employee.read"],
   employeeEdit: ["staff.employee.manage"],
   employeeResetPassword: ["staff.employee.reset_password"],
@@ -30,10 +20,7 @@ export const CAN = {
     "nomenclature.read",
   ],
   productionOrdersOpen: ["production.order.read"],
-  productionOrderCreate: [
-    "production.order.manage",
-    "inventory.warehouse.read",
-  ],
+  productionOrderCreate: ["production.order.manage"],
 } as const;
 
 export const SECTIONS = [

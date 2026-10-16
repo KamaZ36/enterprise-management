@@ -24,7 +24,6 @@ ORDERS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("org_unit_id", UUID, nullable=False),
-    Column("warehouse_id", UUID, nullable=True),
     Column("channel", String(16), nullable=False),
     Column("created_by", UUID, nullable=False),
     Column("customer_id", UUID, nullable=True),

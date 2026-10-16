@@ -6,32 +6,31 @@ from pydantic import BaseModel, Field
 
 from myasnaya_derevnya.modules.inventory.application.dto import (
     BalanceListItem,
+    LocationListItem,
     LotBalanceListItem,
+    MovementListItem,
     ReceiptDetail,
     ReceiptListItem,
     TransferDetail,
     TransferLineItem,
     TransferListItem,
-    WarehouseListItem,
     WriteOffDetail,
     WriteOffListItem,
 )
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
-    WarehouseType,
-)
 
 
-class CreateWarehouseSchema(BaseModel):
-    org_unit_id: UUID
-    code: str
+class LocationSchema(BaseModel):
+    id: UUID
     name: str
-    type: WarehouseType
+    is_active: bool
 
-
-class UpdateWarehouseSchema(BaseModel):
-    name: str | None = None
-    type: WarehouseType | None = None
-    is_active: bool | None = None
+    @classmethod
+    def from_dto(cls, location: LocationListItem) -> LocationSchema:
+        return cls(
+            id=location.id,
+            name=location.name,
+            is_active=location.is_active,
+        )
 
 
 class ReceiptLineSchema(BaseModel):
@@ -43,7 +42,7 @@ class ReceiptLineSchema(BaseModel):
 
 
 class CreateReceiptSchema(BaseModel):
-    warehouse_id: UUID
+    org_unit_id: UUID
     occurred_at: datetime
     lines: list[ReceiptLineSchema] = Field(min_length=1)
     supplier_name: str | None = None
@@ -58,39 +57,15 @@ class WriteOffLineSchema(BaseModel):
 
 
 class CreateWriteOffSchema(BaseModel):
-    warehouse_id: UUID
+    org_unit_id: UUID
     occurred_at: datetime
     lines: list[WriteOffLineSchema] = Field(min_length=1)
     reason: str | None = None
     comment: str | None = None
 
 
-class WarehouseSchema(BaseModel):
-    id: UUID
-    org_unit_id: UUID
-    org_unit_name: str | None = Field(
-        default=None, description="Название подразделения-владельца склада"
-    )
-    code: str
-    name: str
-    type: WarehouseType
-    is_active: bool
-
-    @classmethod
-    def from_dto(cls, warehouse: WarehouseListItem) -> WarehouseSchema:
-        return cls(
-            id=warehouse.id,
-            org_unit_id=warehouse.org_unit_id,
-            org_unit_name=warehouse.org_unit_name,
-            code=warehouse.code,
-            name=warehouse.name,
-            type=warehouse.type,
-            is_active=warehouse.is_active,
-        )
-
-
 class BalanceSchema(BaseModel):
-    warehouse_id: UUID
+    org_unit_id: UUID
     nomenclature_id: UUID
     nomenclature_name: str | None = None
     quantity: Decimal
@@ -106,7 +81,7 @@ class BalanceSchema(BaseModel):
     @classmethod
     def from_dto(cls, item: BalanceListItem) -> BalanceSchema:
         return cls(
-            warehouse_id=item.warehouse_id,
+            org_unit_id=item.org_unit_id,
             nomenclature_id=item.nomenclature_id,
             nomenclature_name=item.nomenclature_name,
             quantity=item.quantity,
@@ -121,7 +96,7 @@ class BalanceListSchema(BaseModel):
 
 
 class LotBalanceSchema(BaseModel):
-    warehouse_id: UUID
+    org_unit_id: UUID
     nomenclature_id: UUID
     nomenclature_name: str | None = None
     lot_id: UUID
@@ -142,7 +117,7 @@ class LotBalanceSchema(BaseModel):
     @classmethod
     def from_dto(cls, item: LotBalanceListItem) -> LotBalanceSchema:
         return cls(
-            warehouse_id=item.warehouse_id,
+            org_unit_id=item.org_unit_id,
             nomenclature_id=item.nomenclature_id,
             nomenclature_name=item.nomenclature_name,
             lot_id=item.lot_id,
@@ -161,9 +136,49 @@ class LotBalanceListSchema(BaseModel):
     total: int
 
 
+class MovementItemSchema(BaseModel):
+    id: UUID
+    occurred_at: datetime
+    org_unit_id: UUID
+    location_name: str | None = None
+    nomenclature_id: UUID
+    nomenclature_name: str | None = None
+    lot_id: UUID | None = None
+    lot_code: str | None = None
+    movement_type: str
+    quantity: Decimal
+    total_cost_kopecks: int | None = Field(
+        default=None,
+        description="Сумма движения в копейках. null — нет права видеть стоимость",
+    )
+
+    @classmethod
+    def from_dto(cls, item: MovementListItem) -> MovementItemSchema:
+        return cls(
+            id=item.id,
+            occurred_at=item.occurred_at,
+            org_unit_id=item.org_unit_id,
+            location_name=item.location_name,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            lot_id=item.lot_id,
+            lot_code=item.lot_code,
+            movement_type=item.movement_type,
+            quantity=item.quantity,
+            total_cost_kopecks=item.total_cost_kopecks,
+        )
+
+
+class MovementListSchema(BaseModel):
+    items: list[MovementItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
 class ReceiptListItemSchema(BaseModel):
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -176,7 +191,7 @@ class ReceiptListItemSchema(BaseModel):
     def from_dto(cls, item: ReceiptListItem) -> ReceiptListItemSchema:
         return cls(
             id=item.id,
-            warehouse_id=item.warehouse_id,
+            org_unit_id=item.org_unit_id,
             status=item.status,
             occurred_at=item.occurred_at,
             posted_at=item.posted_at,
@@ -220,7 +235,7 @@ class ReceiptListSchema(BaseModel):
 
 class ReceiptDetailSchema(BaseModel):
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -233,7 +248,7 @@ class ReceiptDetailSchema(BaseModel):
     def from_dto(cls, detail: ReceiptDetail) -> ReceiptDetailSchema:
         return cls(
             id=detail.id,
-            warehouse_id=detail.warehouse_id,
+            org_unit_id=detail.org_unit_id,
             status=detail.status,
             occurred_at=detail.occurred_at,
             posted_at=detail.posted_at,
@@ -246,7 +261,7 @@ class ReceiptDetailSchema(BaseModel):
 
 class WriteOffListItemSchema(BaseModel):
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -257,7 +272,7 @@ class WriteOffListItemSchema(BaseModel):
     def from_dto(cls, item: WriteOffListItem) -> WriteOffListItemSchema:
         return cls(
             id=item.id,
-            warehouse_id=item.warehouse_id,
+            org_unit_id=item.org_unit_id,
             status=item.status,
             occurred_at=item.occurred_at,
             posted_at=item.posted_at,
@@ -293,7 +308,7 @@ class WriteOffListSchema(BaseModel):
 
 class WriteOffDetailSchema(BaseModel):
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -305,7 +320,7 @@ class WriteOffDetailSchema(BaseModel):
     def from_dto(cls, detail: WriteOffDetail) -> WriteOffDetailSchema:
         return cls(
             id=detail.id,
-            warehouse_id=detail.warehouse_id,
+            org_unit_id=detail.org_unit_id,
             status=detail.status,
             occurred_at=detail.occurred_at,
             posted_at=detail.posted_at,
@@ -322,8 +337,8 @@ class TransferLineSchema(BaseModel):
 
 
 class CreateTransferSchema(BaseModel):
-    from_warehouse_id: UUID
-    to_warehouse_id: UUID
+    from_org_unit_id: UUID
+    to_org_unit_id: UUID
     occurred_at: datetime
     lines: list[TransferLineSchema] = Field(min_length=1)
     comment: str | None = None
@@ -331,8 +346,8 @@ class CreateTransferSchema(BaseModel):
 
 class TransferListItemSchema(BaseModel):
     id: UUID
-    from_warehouse_id: UUID
-    to_warehouse_id: UUID
+    from_org_unit_id: UUID
+    to_org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -343,8 +358,8 @@ class TransferListItemSchema(BaseModel):
     def from_dto(cls, item: TransferListItem) -> TransferListItemSchema:
         return cls(
             id=item.id,
-            from_warehouse_id=item.from_warehouse_id,
-            to_warehouse_id=item.to_warehouse_id,
+            from_org_unit_id=item.from_org_unit_id,
+            to_org_unit_id=item.to_org_unit_id,
             status=item.status,
             occurred_at=item.occurred_at,
             posted_at=item.posted_at,
@@ -380,8 +395,8 @@ class TransferListSchema(BaseModel):
 
 class TransferDetailSchema(BaseModel):
     id: UUID
-    from_warehouse_id: UUID
-    to_warehouse_id: UUID
+    from_org_unit_id: UUID
+    to_org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -392,8 +407,8 @@ class TransferDetailSchema(BaseModel):
     def from_dto(cls, detail: TransferDetail) -> TransferDetailSchema:
         return cls(
             id=detail.id,
-            from_warehouse_id=detail.from_warehouse_id,
-            to_warehouse_id=detail.to_warehouse_id,
+            from_org_unit_id=detail.from_org_unit_id,
+            to_org_unit_id=detail.to_org_unit_id,
             status=detail.status,
             occurred_at=detail.occurred_at,
             posted_at=detail.posted_at,

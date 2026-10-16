@@ -11,8 +11,8 @@ from myasnaya_derevnya.modules.production.application.dto import (
     ProductionOrderLineItem,
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
+    ProductionLocationNotFoundError,
     ProductionOrderNotFoundError,
-    ProductionWarehouseNotFoundError,
 )
 from myasnaya_derevnya.modules.production.domain.permissions import READ_ORDERS
 from myasnaya_derevnya.modules.production.infrastructure.repositories.production_order.base import (
@@ -43,14 +43,14 @@ class GetProductionOrderInteractor:
         if order is None:
             raise ProductionOrderNotFoundError(order_id)
 
-        warehouse = await self._inventory_api.get_warehouse(order.warehouse_id)
-        if warehouse is None:
-            raise ProductionWarehouseNotFoundError(order.warehouse_id)
+        location = await self._inventory_api.get_location(order.org_unit_id)
+        if location is None:
+            raise ProductionLocationNotFoundError(order.org_unit_id)
 
         allowed = await self._staff_api.can(
             user_id=user_id,
             permission=READ_ORDERS,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()
@@ -65,8 +65,8 @@ class GetProductionOrderInteractor:
 
         return ProductionOrderDetail(
             id=order.id,
-            warehouse_id=order.warehouse_id,
-            warehouse_name=warehouse.name,
+            org_unit_id=order.org_unit_id,
+            location_name=location.name,
             tech_card_id=order.tech_card_id,
             tech_card_code=order.tech_card_code,
             tech_card_version=order.tech_card_version,

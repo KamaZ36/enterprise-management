@@ -2,7 +2,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from uuid import UUID
 
-from myasnaya_derevnya.modules.business.domain.entities.org_unit import OrgUnit
+from myasnaya_derevnya.modules.business.domain.entities.org_unit import (
+    OrgUnit,
+    OrgUnitType,
+)
 
 
 class OrgUnitRepository(ABC):
@@ -16,6 +19,10 @@ class OrgUnitRepository(ABC):
 
     @abstractmethod
     async def get_by_id(self, org_unit_id: UUID) -> OrgUnit | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_by_types(self, types: Iterable[OrgUnitType]) -> list[OrgUnit]:
         raise NotImplementedError
 
     @abstractmethod

@@ -64,15 +64,15 @@ class PostReceiptInteractor:
             raise DocumentAlreadyPostedError(receipt.id)
 
         lines = receipt.lines
-        warehouse = await self._preconditions.ensure_ready(
-            warehouse_id=receipt.warehouse_id,
+        location = await self._preconditions.ensure_ready(
+            org_unit_id=receipt.org_unit_id,
             nomenclature_ids=[line.nomenclature_id for line in lines],
         )
 
         allowed = await self._staff_api.can(
             user_id=current_user_id,
             permission=POST_DOCUMENT,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()
@@ -82,16 +82,16 @@ class PostReceiptInteractor:
         async with self._ledger.posting(
             document_type=DocumentType.RECEIPT,
             document_id=receipt.id,
-            warehouse_id=receipt.warehouse_id,
+            org_unit_id=receipt.org_unit_id,
             occurred_at=receipt.occurred_at,
             posted_by=current_user_id,
         ) as posting:
             await posting.lock(
                 balance_keys=[
-                    (receipt.warehouse_id, line.nomenclature_id) for line in lines
+                    (receipt.org_unit_id, line.nomenclature_id) for line in lines
                 ],
                 lot_keys=[
-                    (receipt.warehouse_id, line.nomenclature_id, lot_id)
+                    (receipt.org_unit_id, line.nomenclature_id, lot_id)
                     for line, lot_id in zip(lines, lot_ids, strict=True)
                     if lot_id is not None
                 ],
@@ -99,7 +99,7 @@ class PostReceiptInteractor:
 
             for line, lot_id in zip(lines, lot_ids, strict=True):
                 await posting.receive(
-                    warehouse_id=receipt.warehouse_id,
+                    org_unit_id=receipt.org_unit_id,
                     nomenclature_id=line.nomenclature_id,
                     quantity=line.quantity,
                     cost=line.total_cost,

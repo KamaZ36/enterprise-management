@@ -1,25 +1,25 @@
 <template>
   <div class="page">
     <h1 class="page__title">Остатки</h1>
-    <p class="page__subtitle">Что и сколько лежит на складе и по какой себестоимости</p>
+    <p class="page__subtitle">Что и сколько лежит в подразделениях и по какой себестоимости</p>
 
     <el-alert
-      v-if="!canAll(CAN.warehouseRead)"
-      title="Нет права видеть склады"
-      description="Остатки ведутся в разрезе склада — попросите доступ к складам."
+      v-if="!canAll(CAN.balancesOpen)"
+      title="Нет права видеть остатки"
+      description="Попросите доступ к остаткам."
       type="warning"
       :closable="false"
       show-icon
       class="page__error"
     />
-    <div v-if="canAll(CAN.warehouseRead)" class="page__toolbar">
+    <div v-if="canAll(CAN.balancesOpen)" class="page__toolbar">
       <el-select
-        v-model="warehouseId"
-        placeholder="Выберите склад"
+        v-model="locationId"
+        placeholder="Выберите точку"
         style="width: 320px"
         @change="load"
       >
-        <WarehouseOptions :warehouses="warehouses" />
+        <LocationOptions :locations="locations" />
       </el-select>
       <el-input
         v-model="filter"
@@ -49,7 +49,7 @@
     />
 
     <el-table
-      v-if="canAll(CAN.warehouseRead)"
+      v-if="canAll(CAN.balancesOpen)"
       v-loading="pending"
       :data="balances"
       empty-text="Остатков нет"
@@ -100,15 +100,15 @@ import { formatKopecks, formatQuantity } from "@md/money";
 
 import { shortId } from "~/utils/format";
 
-type Warehouse = components["schemas"]["WarehouseSchema"];
+type Location = components["schemas"]["LocationSchema"];
 type Balance = components["schemas"]["BalanceSchema"];
 
 const api = useApi();
 const { can } = useCurrentUser();
 
-const warehouses = ref<Warehouse[]>([]);
+const locations = ref<Location[]>([]);
 const balances = ref<Balance[]>([]);
-const warehouseId = ref("");
+const locationId = ref("");
 const filter = ref("");
 const pending = ref(false);
 const loaded = ref(false);
@@ -128,21 +128,21 @@ function onSearch(): void {
   }, 300);
 }
 
-async function loadWarehouses(): Promise<void> {
-  if (!canAll(CAN.warehouseRead)) {
+async function loadLocations(): Promise<void> {
+  if (!canAll(CAN.balancesOpen)) {
     return;
   }
 
-  const { data, response } = await api.GET("/api/inventory/warehouses", {});
+  const { data, response } = await api.GET("/api/inventory/locations", {});
 
   if (response.ok && data) {
-    warehouses.value = data;
-    warehouseId.value = data[0]?.id ?? "";
+    locations.value = data;
+    locationId.value = data[0]?.id ?? "";
   }
 }
 
 async function load(): Promise<void> {
-  if (!warehouseId.value) {
+  if (!locationId.value) {
     return;
   }
 
@@ -151,10 +151,10 @@ async function load(): Promise<void> {
 
   try {
     const { response, data, error: failure } = await api.GET(
-      "/api/inventory/warehouses/{warehouse_id}/balances",
+      "/api/inventory/locations/{org_unit_id}/balances",
       {
         params: {
-          path: { warehouse_id: warehouseId.value },
+          path: { org_unit_id: locationId.value },
           query: { search: filter.value.trim() || undefined },
         },
       },
@@ -177,7 +177,7 @@ async function load(): Promise<void> {
 }
 
 onMounted(async () => {
-  await loadWarehouses();
+  await loadLocations();
   await load();
 });
 </script>

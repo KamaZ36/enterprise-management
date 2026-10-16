@@ -30,7 +30,7 @@ def make_line(quantity: str = "10", unit_cost: str = "450") -> ReceiptLine:
 
 def make_receipt(lines: list[ReceiptLine] | None = None) -> Receipt:
     return Receipt.create(
-        warehouse_id=uuid4(),
+        org_unit_id=uuid4(),
         occurred_at=get_datetime_utc(),
         supplier_name="Мясокомбинат",
         supplier_document_number="УПД-42",
@@ -119,7 +119,7 @@ def test_line_with_non_positive_quantity_is_rejected() -> None:
 def test_naive_occurred_at_is_rejected() -> None:
     with pytest.raises(TimezoneRequiredError):
         Receipt.create(
-            warehouse_id=uuid4(),
+            org_unit_id=uuid4(),
             occurred_at=datetime(2026, 10, 1, 9, 0),
             lines=[make_line()],
         )
@@ -129,7 +129,7 @@ def test_occurred_at_is_independent_from_registration_time() -> None:
     occurred_at = datetime(2026, 10, 1, 9, 0, tzinfo=UTC)
 
     receipt = Receipt.create(
-        warehouse_id=uuid4(), occurred_at=occurred_at, lines=[make_line()]
+        org_unit_id=uuid4(), occurred_at=occurred_at, lines=[make_line()]
     )
 
     assert receipt.occurred_at == occurred_at

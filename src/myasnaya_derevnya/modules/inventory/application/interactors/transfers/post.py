@@ -4,6 +4,7 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import StockLocation
 from myasnaya_derevnya.modules.inventory.application.services.posting_preconditions import (
     PostingPreconditions,
 )
@@ -11,7 +12,6 @@ from myasnaya_derevnya.modules.inventory.application.services.transfer_posting i
     TransferPosting,
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.transfer import Transfer
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import Warehouse
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
     TransferNotFoundError,
@@ -54,8 +54,8 @@ class PostTransferInteractor:
         if not transfer.is_draft:
             raise DocumentAlreadyPostedError(transfer.id)
 
-        warehouses = await self._ensure_warehouses_ready(transfer)
-        await self._ensure_allowed(current_user_id, warehouses)
+        locations = await self._ensure_locations_ready(transfer)
+        await self._ensure_allowed(current_user_id, locations)
 
         await self._transfer_posting.post(transfer=transfer, posted_by=current_user_id)
 
@@ -63,26 +63,30 @@ class PostTransferInteractor:
         await self._transfer_repository.save(transfer)
         await self._transaction_manager.commit()
 
-    async def _ensure_warehouses_ready(self, transfer: Transfer) -> list[Warehouse]:
+    async def _ensure_locations_ready(
+        self, transfer: Transfer
+    ) -> list[StockLocation]:
         nomenclature_ids = [line.nomenclature_id for line in transfer.lines]
 
         return [
             await self._preconditions.ensure_ready(
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 nomenclature_ids=nomenclature_ids,
             )
-            for warehouse_id in (
-                transfer.from_warehouse_id,
-                transfer.to_warehouse_id,
+            for org_unit_id in (
+                transfer.from_org_unit_id,
+                transfer.to_org_unit_id,
             )
         ]
 
-    async def _ensure_allowed(self, user_id: UUID, warehouses: list[Warehouse]) -> None:
-        for warehouse in warehouses:
+    async def _ensure_allowed(
+        self, user_id: UUID, locations: list[StockLocation]
+    ) -> None:
+        for location in locations:
             allowed = await self._staff_api.can(
                 user_id=user_id,
                 permission=POST_DOCUMENT,
-                org_unit_id=warehouse.org_unit_id,
+                org_unit_id=location.id,
             )
             if not allowed:
                 raise ForbiddenError()

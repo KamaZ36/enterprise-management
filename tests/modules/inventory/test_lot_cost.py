@@ -49,7 +49,7 @@ OCCURRED_AT = datetime(2026, 10, 1, 12, 0, tzinfo=UTC)
 
 async def receive(
     session: AsyncSession,
-    warehouse_id: UUID,
+    org_unit_id: UUID,
     nomenclature_id: UUID,
     quantity: str,
     unit_cost: str,
@@ -59,7 +59,7 @@ async def receive(
     interactors = build_interactors(session)
     receipt_id = await interactors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             occurred_at=OCCURRED_AT,
             lines=[
                 ReceiptLineCommand(
@@ -77,7 +77,7 @@ async def receive(
 
 async def write_off(
     session: AsyncSession,
-    warehouse_id: UUID,
+    org_unit_id: UUID,
     nomenclature_id: UUID,
     quantity: str,
     lot_code: str | None = None,
@@ -85,7 +85,7 @@ async def write_off(
     interactors = build_interactors(session)
     write_off_id = await interactors.create_write_off(
         CreateWriteOffCommand(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             occurred_at=OCCURRED_AT,
             lines=[
                 WriteOffLineCommand(
@@ -99,9 +99,9 @@ async def write_off(
     await interactors.post_write_off(PostWriteOffCommand(write_off_id=write_off_id))
 
 
-async def balance_of(session: AsyncSession, warehouse_id: UUID, nomenclature_id: UUID):
+async def balance_of(session: AsyncSession, org_unit_id: UUID, nomenclature_id: UUID):
     return await SQLAlchemyStockBalanceRepository(session).get(
-        warehouse_id, nomenclature_id
+        org_unit_id, nomenclature_id
     )
 
 
@@ -122,9 +122,9 @@ async def lot_rows(session: AsyncSession, nomenclature_id: UUID) -> dict:
 
 
 async def test_write_off_uses_lot_cost_and_fefo(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     meat = await make_nomenclature()
 
     await receive(
@@ -148,9 +148,9 @@ async def test_write_off_uses_lot_cost_and_fefo(
 
 
 async def test_write_off_splits_across_lots_by_fefo(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     meat = await make_nomenclature()
 
     await receive(
@@ -174,9 +174,9 @@ async def test_write_off_splits_across_lots_by_fefo(
 
 
 async def test_non_lot_stock_uses_average_cost(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     packaging = await make_nomenclature()
 
     await receive(db_session, warehouse.id, packaging.id, "10", "100")
@@ -191,9 +191,9 @@ async def test_non_lot_stock_uses_average_cost(
 
 
 async def test_production_transfers_lot_cost_to_output(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     meat = await make_nomenclature()
     sausage = await make_nomenclature()
 
@@ -208,7 +208,7 @@ async def test_production_transfers_lot_cost_to_output(
     posted = await interactor(
         PostProductionCommand(
             document_id=uuid4(),
-            warehouse_id=warehouse.id,
+            org_unit_id=warehouse.id,
             occurred_at=OCCURRED_AT,
             issues=(
                 ProductionIssueCommand(
@@ -237,9 +237,9 @@ async def test_production_transfers_lot_cost_to_output(
 
 
 async def test_sale_writes_off_by_fefo_and_returns_cost(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     sausage = await make_nomenclature()
 
     await receive(
@@ -265,7 +265,7 @@ async def test_sale_writes_off_by_fefo_and_returns_cost(
     posted = await interactor(
         PostSaleCommand(
             document_id=uuid4(),
-            warehouse_id=warehouse.id,
+            org_unit_id=warehouse.id,
             occurred_at=OCCURRED_AT,
             lines=(
                 SaleLineCommand(
@@ -286,9 +286,9 @@ async def test_sale_writes_off_by_fefo_and_returns_cost(
 
 
 async def test_sale_without_enough_stock_is_rejected(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     sausage = await make_nomenclature()
 
     await receive(db_session, warehouse.id, sausage.id, "10", "500", "K-01")
@@ -299,7 +299,7 @@ async def test_sale_without_enough_stock_is_rejected(
         await interactor(
             PostSaleCommand(
                 document_id=uuid4(),
-                warehouse_id=warehouse.id,
+                org_unit_id=warehouse.id,
                 occurred_at=OCCURRED_AT,
                 lines=(
                     SaleLineCommand(
@@ -311,9 +311,9 @@ async def test_sale_without_enough_stock_is_rejected(
 
 
 async def test_lot_reader_orders_by_expiry_and_filters(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     meat = await make_nomenclature()
 
     await receive(
@@ -326,16 +326,16 @@ async def test_lot_reader_orders_by_expiry_and_filters(
 
     reader = SQLAlchemyLotBalanceReader(db_session)
 
-    items = await reader.list_by_warehouse(warehouse.id, with_cost=True)
+    items = await reader.list_by_org_unit(warehouse.id, with_cost=True)
     assert [item.lot_code for item in items] == ["M-10", "M-20"]
     assert all(item.unit_cost is not None for item in items)
     assert all(item.total_value_kopecks is not None for item in items)
 
-    expiring = await reader.list_by_warehouse(
+    expiring = await reader.list_by_org_unit(
         warehouse.id, with_cost=True, expiring_before=date(2026, 10, 15)
     )
     assert [item.lot_code for item in expiring] == ["M-10"]
 
-    hidden_cost = await reader.list_by_warehouse(warehouse.id, with_cost=False)
+    hidden_cost = await reader.list_by_org_unit(warehouse.id, with_cost=False)
     assert all(item.unit_cost is None for item in hidden_cost)
     assert all(item.total_value_kopecks is None for item in hidden_cost)

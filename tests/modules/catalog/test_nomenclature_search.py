@@ -4,9 +4,6 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.catalog.domain.entities.category import Category
-from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
-)
 from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature.sqlalchemy import (
     SQLAlchemyNomenclatureReader,
 )
@@ -80,7 +77,7 @@ async def test_search_treats_percent_as_literal(
     assert "50%" in items[0].name
 
 
-async def test_filters_by_type_and_category(
+async def test_filters_by_category(
     db_session: AsyncSession, make_nomenclature
 ) -> None:
     marker = uuid4().hex[:6]
@@ -96,34 +93,23 @@ async def test_filters_by_type_and_category(
     await make_nomenclature(
         name=f"Сырьё {marker}",
         sku=f"{TEST_PREFIX}{marker}-1",
-        type_=NomenclatureType.RAW_MATERIAL,
         category_id=category.id,
     )
     await make_nomenclature(
         name=f"Готовое {marker}",
         sku=f"{TEST_PREFIX}{marker}-2",
-        type_=NomenclatureType.FINISHED_GOOD,
         category_id=category.id,
     )
     await make_nomenclature(
         name=f"Чужое {marker}",
         sku=f"{TEST_PREFIX}{marker}-3",
-        type_=NomenclatureType.RAW_MATERIAL,
         category_id=other_category.id,
     )
 
-    only_raw, raw_total = await reader(db_session).list(
-        search=marker, type_code=NomenclatureType.RAW_MATERIAL.value, limit=50
-    )
     only_category, category_total = await reader(db_session).list(
         search=marker, category_id=category.id, limit=50
     )
 
-    assert raw_total == 2
-    assert {item.sku for item in only_raw} == {
-        f"{TEST_PREFIX}{marker}-1",
-        f"{TEST_PREFIX}{marker}-3",
-    }
     assert category_total == 2
     assert {item.sku for item in only_category} == {
         f"{TEST_PREFIX}{marker}-1",

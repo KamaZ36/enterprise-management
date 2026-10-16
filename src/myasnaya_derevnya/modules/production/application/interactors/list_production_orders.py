@@ -17,7 +17,7 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 @dataclass(frozen=True, slots=True)
 class ListProductionOrdersQuery:
-    warehouse_id: UUID | None = None
+    org_unit_id: UUID | None = None
     statuses: tuple[str, ...] | None = None
     occurred_from: datetime | None = None
     occurred_to: datetime | None = None
@@ -49,16 +49,16 @@ class ListProductionOrdersInteractor:
         if scope.is_empty():
             raise ForbiddenError()
 
-        warehouse_ids = await self._visible_warehouse_ids(scope)
+        org_unit_ids = await self._visible_org_unit_ids(scope)
 
-        if query.warehouse_id is not None:
-            if warehouse_ids is not None and query.warehouse_id not in warehouse_ids:
+        if query.org_unit_id is not None:
+            if org_unit_ids is not None and query.org_unit_id not in org_unit_ids:
                 raise ForbiddenError()
 
-            warehouse_ids = [query.warehouse_id]
+            org_unit_ids = [query.org_unit_id]
 
         items, total = await self._order_reader.list(
-            warehouse_ids=warehouse_ids,
+            org_unit_ids=org_unit_ids,
             statuses=query.statuses,
             occurred_from=query.occurred_from,
             occurred_to=query.occurred_to,
@@ -68,27 +68,27 @@ class ListProductionOrdersInteractor:
 
         names: dict[UUID, str] = {}
         if items:
-            for warehouse_id in {item.warehouse_id for item in items}:
-                warehouse = await self._inventory_api.get_warehouse(warehouse_id)
-                if warehouse is not None:
-                    names[warehouse_id] = warehouse.name
+            for org_unit_id in {item.org_unit_id for item in items}:
+                location = await self._inventory_api.get_location(org_unit_id)
+                if location is not None:
+                    names[org_unit_id] = location.name
 
             items = [
-                replace(item, warehouse_name=names.get(item.warehouse_id))
+                replace(item, location_name=names.get(item.org_unit_id))
                 for item in items
             ]
 
         return ProductionOrderPage(items=items, total=total)
 
-    async def _visible_warehouse_ids(self, scope) -> list[UUID] | None:
+    async def _visible_org_unit_ids(self, scope) -> list[UUID] | None:
         if scope.is_company_wide:
             return None
 
-        warehouses = await self._inventory_api.list_warehouses()
+        locations = await self._inventory_api.list_locations()
         visible = sorted(
-            warehouse.id
-            for warehouse in warehouses
-            if scope.covers(warehouse.org_unit_id)
+            location.id
+            for location in locations
+            if scope.covers(location.id)
         )
 
         if not visible:

@@ -32,7 +32,7 @@ class TransferPosting:
         async with self._ledger.posting(
             document_type=DocumentType.TRANSFER,
             document_id=transfer.id,
-            warehouse_id=transfer.from_warehouse_id,
+            org_unit_id=transfer.from_org_unit_id,
             occurred_at=transfer.occurred_at,
             posted_by=posted_by,
         ) as posting:
@@ -40,12 +40,12 @@ class TransferPosting:
 
             for line in transfer.lines:
                 slices = await self._source_slices(
-                    posting, transfer.from_warehouse_id, line
+                    posting, transfer.from_org_unit_id, line
                 )
 
                 for lot_id, quantity in slices:
                     cost = await posting.issue(
-                        warehouse_id=transfer.from_warehouse_id,
+                        org_unit_id=transfer.from_org_unit_id,
                         nomenclature_id=line.nomenclature_id,
                         quantity=quantity,
                         movement_type=MovementType.TRANSFER_OUT,
@@ -56,7 +56,7 @@ class TransferPosting:
                         await posting.lock(
                             lot_keys=[
                                 (
-                                    transfer.to_warehouse_id,
+                                    transfer.to_org_unit_id,
                                     line.nomenclature_id,
                                     lot_id,
                                 )
@@ -64,7 +64,7 @@ class TransferPosting:
                         )
 
                     await posting.receive(
-                        warehouse_id=transfer.to_warehouse_id,
+                        org_unit_id=transfer.to_org_unit_id,
                         nomenclature_id=line.nomenclature_id,
                         quantity=quantity,
                         cost=cost,
@@ -74,20 +74,20 @@ class TransferPosting:
 
     def _balance_keys(self, transfer: Transfer) -> list[BalanceKey]:
         return [
-            (warehouse_id, line.nomenclature_id)
-            for warehouse_id in (transfer.from_warehouse_id, transfer.to_warehouse_id)
+            (org_unit_id, line.nomenclature_id)
+            for org_unit_id in (transfer.from_org_unit_id, transfer.to_org_unit_id)
             for line in transfer.lines
         ]
 
     async def _source_slices(
         self,
         posting: StockPostingHandle,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         line: TransferLine,
     ) -> list[tuple[UUID | None, Decimal]]:
         if line.lot_id is not None:
             await posting.lock(
-                lot_keys=[(warehouse_id, line.nomenclature_id, line.lot_id)]
+                lot_keys=[(org_unit_id, line.nomenclature_id, line.lot_id)]
             )
             return [(line.lot_id, line.quantity)]
 
@@ -97,12 +97,12 @@ class TransferPosting:
                 lot_code=line.lot_code,
             )
             await posting.lock(
-                lot_keys=[(warehouse_id, line.nomenclature_id, lot_id)]
+                lot_keys=[(org_unit_id, line.nomenclature_id, lot_id)]
             )
             return [(lot_id, line.quantity)]
 
         return await posting.allocate(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_id=line.nomenclature_id,
             quantity=line.quantity,
         )

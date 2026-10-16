@@ -8,7 +8,6 @@ from myasnaya_derevnya.modules.business.presentation.business_api import Busines
 from myasnaya_derevnya.modules.catalog.application.errors import CategoryNotFound
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.domain.permissions import CREATE_NOMENCLATURE
@@ -26,7 +25,6 @@ class CreateNomenclatureCommand:
     sku: str
     name: str
     unit: UnitOfMeasurement
-    type_: NomenclatureType
     category_id: UUID
     image_url: str | None = None
     description: str | None = None
@@ -64,7 +62,6 @@ class CreateNomenclatureInteractor:
             sku=command.sku,
             name=command.name,
             unit=command.unit,
-            type_=command.type_,
             category_id=command.category_id,
             image_url=command.image_url,
             description=command.description,

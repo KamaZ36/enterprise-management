@@ -13,7 +13,7 @@
       </h1>
 
       <p class="muted">
-        {{ order.warehouse_name ?? "Цех" }}
+        {{ order.location_name ?? "Цех" }}
         · {{ formatTime(order.occurred_at) }}
         · закладок {{ formatQuantity(order.batch_count) }}
         <template v-if="order.posted_at">

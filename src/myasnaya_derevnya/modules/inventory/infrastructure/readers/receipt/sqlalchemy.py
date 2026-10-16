@@ -16,7 +16,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base imp
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     RECEIPT_LINES_TABLE,
     RECEIPTS_TABLE,
-    WAREHOUSES_TABLE,
 )
 
 
@@ -27,14 +26,14 @@ class SQLAlchemyReceiptReader(ReceiptReader):
     async def list(
         self,
         *,
-        warehouse_ids: Sequence[UUID] | None = None,
+        org_unit_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[ReceiptListItem], int]:
         conditions = []
-        if warehouse_ids is not None:
-            conditions.append(RECEIPTS_TABLE.c.warehouse_id.in_(warehouse_ids))
+        if org_unit_ids is not None:
+            conditions.append(RECEIPTS_TABLE.c.org_unit_id.in_(org_unit_ids))
 
         if search:
             conditions.extend(
@@ -56,7 +55,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         stmt = (
             select(
                 RECEIPTS_TABLE.c.id,
-                RECEIPTS_TABLE.c.warehouse_id,
+                RECEIPTS_TABLE.c.org_unit_id,
                 RECEIPTS_TABLE.c.status,
                 RECEIPTS_TABLE.c.occurred_at,
                 RECEIPTS_TABLE.c.posted_at,
@@ -89,17 +88,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         header = (
             (
                 await self._session.execute(
-                    select(
-                        RECEIPTS_TABLE,
-                        WAREHOUSES_TABLE.c.org_unit_id,
-                    )
-                    .select_from(
-                        RECEIPTS_TABLE.outerjoin(
-                            WAREHOUSES_TABLE,
-                            WAREHOUSES_TABLE.c.id == RECEIPTS_TABLE.c.warehouse_id,
-                        )
-                    )
-                    .where(RECEIPTS_TABLE.c.id == receipt_id)
+                    select(RECEIPTS_TABLE).where(RECEIPTS_TABLE.c.id == receipt_id)
                 )
             )
             .mappings()
@@ -122,7 +111,6 @@ class SQLAlchemyReceiptReader(ReceiptReader):
 
         return ReceiptDetail(
             id=header["id"],
-            warehouse_id=header["warehouse_id"],
             org_unit_id=header["org_unit_id"],
             status=header["status"],
             occurred_at=header["occurred_at"],
@@ -136,7 +124,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
     def _to_list_item(self, row: RowMapping) -> ReceiptListItem:
         return ReceiptListItem(
             id=row["id"],
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],

@@ -108,7 +108,6 @@ class SQLAlchemyOrderRepository(OrderRepository):
         return {
             "id": order.id,
             "org_unit_id": order.org_unit_id,
-            "warehouse_id": order.warehouse_id,
             "channel": order.channel.value,
             "created_by": order.created_by,
             "customer_id": order.customer_id,
@@ -138,7 +137,6 @@ class SQLAlchemyOrderRepository(OrderRepository):
         return Order(
             id_=row["id"],
             org_unit_id=row["org_unit_id"],
-            warehouse_id=row["warehouse_id"],
             channel=OrderChannel(row["channel"]),
             created_by=row["created_by"],
             customer_id=row["customer_id"],

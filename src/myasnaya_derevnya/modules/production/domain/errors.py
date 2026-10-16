@@ -16,12 +16,12 @@ class TechCardNotFoundError(NotFoundError):
         return f"Техкарта {self._tech_card_id} не найдена."
 
 
-class ProductionWarehouseNotFoundError(NotFoundError):
-    def __init__(self, warehouse_id: UUID) -> None:
-        self._warehouse_id = warehouse_id
+class ProductionLocationNotFoundError(NotFoundError):
+    def __init__(self, org_unit_id: UUID) -> None:
+        self._org_unit_id = org_unit_id
 
     def __str__(self) -> str:
-        return f"Склад цеха {self._warehouse_id} не найден."
+        return f"Цех {self._org_unit_id} не найден."
 
 
 class ProductionOrderNotFoundError(NotFoundError):

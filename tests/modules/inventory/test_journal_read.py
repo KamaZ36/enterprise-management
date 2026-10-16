@@ -7,13 +7,13 @@ import pytest
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.modules.inventory.application.dto import (
+    LocationListItem,
     ReceiptDetail,
     ReceiptLineItem,
     ReceiptListItem,
     TransferDetail,
     TransferLineItem,
     TransferListItem,
-    WarehouseListItem,
     WriteOffDetail,
     WriteOffLineItem,
     WriteOffListItem,
@@ -45,7 +45,6 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list
 from myasnaya_derevnya.modules.inventory.application.services.document_scope import (
     DocumentScope,
 )
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import WarehouseType
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     ReceiptNotFoundError,
     TransferNotFoundError,
@@ -91,14 +90,14 @@ class FakeStaffAPI:
         return self.scope
 
 
-class FakeWarehouseReader:
-    def __init__(self, warehouses: list[WarehouseListItem] | None = None) -> None:
-        self.warehouses = warehouses or []
-        self.list_all_calls = 0
+class FakeBusinessAPI:
+    def __init__(self, locations: list[LocationListItem] | None = None) -> None:
+        self.locations = locations or []
+        self.stock_locations_calls = 0
 
-    async def list_all(self) -> list[WarehouseListItem]:
-        self.list_all_calls += 1
-        return self.warehouses
+    async def stock_locations(self) -> list[LocationListItem]:
+        self.stock_locations_calls += 1
+        return self.locations
 
 
 class FakeCatalogAPI:
@@ -159,25 +158,18 @@ class FakeWriteOffReader:
         return self.detail
 
 
-def make_warehouse_item(org_unit_id: UUID, name: str = "Склад") -> WarehouseListItem:
-    return WarehouseListItem(
-        id=uuid4(),
-        org_unit_id=org_unit_id,
-        code=f"W-{uuid4().hex[:6]}",
-        name=name,
-        type=WarehouseType.RAW,
-        is_active=True,
-    )
+def make_location_item(org_unit_id: UUID, name: str = "Локация") -> LocationListItem:
+    return LocationListItem(id=org_unit_id, name=name, is_active=True)
 
 
 def make_document_scope(
     *,
     scope: AccessScope | None = None,
-    warehouses: list[WarehouseListItem] | None = None,
+    locations: list[LocationListItem] | None = None,
     allowed: bool = True,
     allowed_units: set[UUID] | None = None,
-) -> tuple[DocumentScope, FakeWarehouseReader, FakeStaffAPI]:
-    warehouse_reader = FakeWarehouseReader(warehouses)
+) -> tuple[DocumentScope, FakeBusinessAPI, FakeStaffAPI]:
+    business_api = FakeBusinessAPI(locations)
     staff_api = FakeStaffAPI(
         allowed=allowed,
         scope=scope,
@@ -185,11 +177,11 @@ def make_document_scope(
     )
     document_scope = DocumentScope(
         identity_provider=FakeIdentityProvider(),
-        warehouse_reader=warehouse_reader,
+        business_api=business_api,
         staff_api=staff_api,
     )
 
-    return document_scope, warehouse_reader, staff_api
+    return document_scope, business_api, staff_api
 
 
 def make_receipt_detail(
@@ -197,7 +189,7 @@ def make_receipt_detail(
 ) -> ReceiptDetail:
     return ReceiptDetail(
         id=uuid4(),
-        warehouse_id=uuid4(),
+        org_unit_id=org_unit_id or uuid4(),
         status="posted",
         occurred_at=OCCURRED_AT,
         posted_at=OCCURRED_AT,
@@ -215,7 +207,6 @@ def make_receipt_detail(
                 expires_at=date(2026, 11, 5),
             )
         ],
-        org_unit_id=org_unit_id,
     )
 
 
@@ -227,8 +218,8 @@ def make_transfer_detail(
 ) -> TransferDetail:
     return TransferDetail(
         id=uuid4(),
-        from_warehouse_id=uuid4(),
-        to_warehouse_id=uuid4(),
+        from_org_unit_id=from_org_unit_id or uuid4(),
+        to_org_unit_id=to_org_unit_id or uuid4(),
         status="posted",
         occurred_at=OCCURRED_AT,
         posted_at=OCCURRED_AT,
@@ -241,8 +232,6 @@ def make_transfer_detail(
                 lot_code="L-001",
             )
         ],
-        org_unit_id=from_org_unit_id,
-        to_org_unit_id=to_org_unit_id,
     )
 
 
@@ -251,7 +240,7 @@ def make_write_off_detail(
 ) -> WriteOffDetail:
     return WriteOffDetail(
         id=uuid4(),
-        warehouse_id=uuid4(),
+        org_unit_id=org_unit_id or uuid4(),
         status="posted",
         occurred_at=OCCURRED_AT,
         posted_at=OCCURRED_AT,
@@ -265,17 +254,16 @@ def make_write_off_detail(
                 lot_code="L-001",
             )
         ],
-        org_unit_id=org_unit_id,
     )
 
 
 def build_list_receipts(
     *,
     scope: AccessScope | None = None,
-    warehouses: list[WarehouseListItem] | None = None,
+    locations: list[LocationListItem] | None = None,
 ) -> tuple[ListReceiptsInteractor, FakeReceiptReader]:
     reader = FakeReceiptReader()
-    document_scope, _, _ = make_document_scope(scope=scope, warehouses=warehouses)
+    document_scope, _, _ = make_document_scope(scope=scope, locations=locations)
     interactor = ListReceiptsInteractor(
         receipt_reader=reader,
         document_scope=document_scope,
@@ -287,10 +275,10 @@ def build_list_receipts(
 def build_list_transfers(
     *,
     scope: AccessScope | None = None,
-    warehouses: list[WarehouseListItem] | None = None,
+    locations: list[LocationListItem] | None = None,
 ) -> tuple[ListTransfersInteractor, FakeTransferReader]:
     reader = FakeTransferReader()
-    document_scope, _, _ = make_document_scope(scope=scope, warehouses=warehouses)
+    document_scope, _, _ = make_document_scope(scope=scope, locations=locations)
     interactor = ListTransfersInteractor(
         transfer_reader=reader,
         document_scope=document_scope,
@@ -341,61 +329,61 @@ async def test_journal_requires_read_permission() -> None:
     assert reader.list_calls == []
 
 
-async def test_receipt_journal_passes_warehouse_filter_and_window() -> None:
+async def test_receipt_journal_passes_location_filter_and_window() -> None:
     interactor, reader = build_list_receipts()
-    warehouse_id = uuid4()
+    org_unit_id = uuid4()
 
     page = await interactor(
-        ListReceiptsQuery(warehouse_id=warehouse_id, limit=10, offset=20)
+        ListReceiptsQuery(org_unit_id=org_unit_id, limit=10, offset=20)
     )
 
     assert reader.list_calls == [
-        {"warehouse_ids": [warehouse_id], "limit": 10, "offset": 20, "search": None}
+        {"org_unit_ids": [org_unit_id], "limit": 10, "offset": 20, "search": None}
     ]
     assert (page.limit, page.offset, page.total) == (10, 20, 0)
 
 
-async def test_receipt_journal_is_limited_to_scope_warehouses() -> None:
+async def test_receipt_journal_is_limited_to_scope_locations() -> None:
     own_unit, other_unit = uuid4(), uuid4()
-    own = make_warehouse_item(own_unit)
-    other = make_warehouse_item(other_unit)
+    own = make_location_item(own_unit)
+    other = make_location_item(other_unit)
     interactor, reader = build_list_receipts(
-        scope=AccessScope.of([own_unit]), warehouses=[own, other]
+        scope=AccessScope.of([own_unit]), locations=[own, other]
     )
 
     await interactor(ListReceiptsQuery())
 
     assert reader.list_calls == [
-        {"warehouse_ids": [own.id], "limit": 20, "offset": 0, "search": None}
+        {"org_unit_ids": [own.id], "limit": 20, "offset": 0, "search": None}
     ]
 
 
-async def test_receipt_journal_denies_foreign_warehouse() -> None:
+async def test_receipt_journal_denies_foreign_location() -> None:
     own_unit = uuid4()
-    own = make_warehouse_item(own_unit)
-    foreign = make_warehouse_item(uuid4())
+    own = make_location_item(own_unit)
+    foreign = make_location_item(uuid4())
     interactor, reader = build_list_receipts(
-        scope=AccessScope.of([own_unit]), warehouses=[own, foreign]
+        scope=AccessScope.of([own_unit]), locations=[own, foreign]
     )
 
     with pytest.raises(ForbiddenError):
-        await interactor(ListReceiptsQuery(warehouse_id=foreign.id))
+        await interactor(ListReceiptsQuery(org_unit_id=foreign.id))
 
     assert reader.list_calls == []
 
 
-async def test_transfer_journal_is_limited_to_scope_warehouses() -> None:
+async def test_transfer_journal_is_limited_to_scope_locations() -> None:
     own_unit, other_unit = uuid4(), uuid4()
-    own = make_warehouse_item(own_unit)
-    other = make_warehouse_item(other_unit)
+    own = make_location_item(own_unit)
+    other = make_location_item(other_unit)
     interactor, reader = build_list_transfers(
-        scope=AccessScope.of([own_unit]), warehouses=[own, other]
+        scope=AccessScope.of([own_unit]), locations=[own, other]
     )
 
     await interactor(ListTransfersQuery())
 
     assert reader.list_calls == [
-        {"warehouse_ids": [own.id], "limit": 20, "offset": 0, "search": None}
+        {"org_unit_ids": [own.id], "limit": 20, "offset": 0, "search": None}
     ]
 
 
@@ -404,7 +392,7 @@ async def test_write_off_journal_returns_page() -> None:
     reader.items = [
         WriteOffListItem(
             id=uuid4(),
-            warehouse_id=uuid4(),
+            org_unit_id=uuid4(),
             status="draft",
             occurred_at=OCCURRED_AT,
             posted_at=None,
@@ -542,5 +530,5 @@ async def test_receipt_journal_passes_search() -> None:
     await interactor(ListReceiptsQuery(search="мясокомбинат"))
 
     assert reader.list_calls == [
-        {"warehouse_ids": None, "limit": 20, "offset": 0, "search": "мясокомбинат"}
+        {"org_unit_ids": None, "limit": 20, "offset": 0, "search": "мясокомбинат"}
     ]

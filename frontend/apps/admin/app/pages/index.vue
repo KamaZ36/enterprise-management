@@ -81,7 +81,7 @@ const api = useApi();
 const { user, can, load } = useCurrentUser();
 
 const documents = ref<Receipt[]>([]);
-const counts = reactive({ warehouses: 0, nomenclatures: 0, employees: 0 });
+const counts = reactive({ nomenclatures: 0, employees: 0 });
 
 const name = computed(() => {
   const parts = [user.value?.first_name, user.value?.last_name].filter(Boolean);
@@ -110,13 +110,6 @@ const subtitle = computed(() => user.value?.position || "Рабочее мест
 const tiles = computed(() => {
   const result: { title: string; value: number; path: string }[] = [];
 
-  if (can("inventory.warehouse.read")) {
-    result.push({
-      title: "Склады",
-      value: counts.warehouses,
-      path: "/inventory/warehouses",
-    });
-  }
   if (can("nomenclature.read")) {
     result.push({
       title: "Номенклатура",
@@ -138,7 +131,7 @@ const tiles = computed(() => {
 const actions = computed(() => {
   const result: { title: string; path: string }[] = [];
 
-  if (can("inventory.document.create") && can("inventory.warehouse.read")) {
+  if (can("inventory.document.create")) {
     result.push({ title: "Новое поступление", path: "/inventory/documents" });
   }
   if (can("nomenclature.create") && can("category.read")) {
@@ -155,13 +148,6 @@ const actions = computed(() => {
 });
 
 async function loadTiles(): Promise<void> {
-  if (can("inventory.warehouse.read")) {
-    const { data, response } = await api.GET("/api/inventory/warehouses", {});
-    if (response.ok && data) {
-      counts.warehouses = data.length;
-    }
-  }
-
   if (can("nomenclature.read")) {
     const { data, response } = await api.GET("/api/catalog/nomenclatures", {
       params: { query: { limit: 1 } },
@@ -182,7 +168,7 @@ async function loadTiles(): Promise<void> {
 }
 
 async function loadDocuments(): Promise<void> {
-  if (!can("inventory.document.read") || !can("inventory.warehouse.read")) {
+  if (!can("inventory.document.read")) {
     return;
   }
 

@@ -13,7 +13,7 @@ from myasnaya_derevnya.modules.production.domain.entities.production_order impor
     ProductionOrder,
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
-    ProductionWarehouseNotFoundError,
+    ProductionLocationNotFoundError,
     TechCardNotFoundError,
 )
 from myasnaya_derevnya.modules.production.domain.permissions import MANAGE_ORDERS
@@ -28,7 +28,7 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 @dataclass(frozen=True, slots=True)
 class CreateProductionOrderCommand:
-    warehouse_id: UUID
+    org_unit_id: UUID
     tech_card_id: UUID
     batch_count: Decimal
     occurred_at: datetime
@@ -59,20 +59,20 @@ class CreateProductionOrderInteractor:
         if tech_card is None:
             raise TechCardNotFoundError(command.tech_card_id)
 
-        warehouse = await self._inventory_api.get_warehouse(command.warehouse_id)
-        if warehouse is None:
-            raise ProductionWarehouseNotFoundError(command.warehouse_id)
+        location = await self._inventory_api.get_location(command.org_unit_id)
+        if location is None:
+            raise ProductionLocationNotFoundError(command.org_unit_id)
 
         allowed = await self._staff_api.can(
             user_id=user_id,
             permission=MANAGE_ORDERS,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()
 
         order = ProductionOrder.create(
-            warehouse_id=command.warehouse_id,
+            org_unit_id=command.org_unit_id,
             tech_card=tech_card,
             batch_count=command.batch_count,
             occurred_at=command.occurred_at,

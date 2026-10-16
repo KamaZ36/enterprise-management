@@ -49,7 +49,7 @@ def _sqlstate(exc: DBAPIError) -> str | None:
 
 async def receive(
     db_session: AsyncSession,
-    warehouse_id: UUID,
+    org_unit_id: UUID,
     nomenclature_id: UUID,
     quantity: str,
     unit_cost: str,
@@ -59,7 +59,7 @@ async def receive(
     interactors = build_interactors(db_session)
     receipt_id = await interactors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             occurred_at=OCCURRED_AT,
             supplier_name="Мясокомбинат",
             lines=[
@@ -80,7 +80,7 @@ async def receive(
 
 async def write_off(
     db_session: AsyncSession,
-    warehouse_id: UUID,
+    org_unit_id: UUID,
     nomenclature_id: UUID,
     quantity: str,
     lot_code: str | None = None,
@@ -88,7 +88,7 @@ async def write_off(
     interactors = build_interactors(db_session)
     write_off_id = await interactors.create_write_off(
         CreateWriteOffCommand(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             occurred_at=OCCURRED_AT,
             reason="Просрочка",
             lines=[
@@ -106,17 +106,17 @@ async def write_off(
 
 
 async def balance_of(
-    db_session: AsyncSession, warehouse_id: UUID, nomenclature_id: UUID
+    db_session: AsyncSession, org_unit_id: UUID, nomenclature_id: UUID
 ):
     repository = SQLAlchemyStockBalanceRepository(db_session)
 
-    return await repository.get(warehouse_id, nomenclature_id)
+    return await repository.get(org_unit_id, nomenclature_id)
 
 
 async def test_receipt_matches_movement_sum(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
 
     await receive(db_session, warehouse.id, nomenclature.id, "10", "450")
@@ -134,9 +134,9 @@ async def test_receipt_matches_movement_sum(
 
 
 async def test_moving_average_across_two_receipts(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
 
     await receive(db_session, warehouse.id, nomenclature.id, "10", "450")
@@ -155,9 +155,9 @@ async def test_moving_average_across_two_receipts(
 
 
 async def test_full_write_off_leaves_no_residue(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
 
     await receive(db_session, warehouse.id, nomenclature.id, "3", "0.333333")
@@ -177,16 +177,16 @@ async def test_full_write_off_leaves_no_residue(
 
 
 async def test_write_off_beyond_stock_is_rejected(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
     await receive(db_session, warehouse.id, nomenclature.id, "2", "100")
 
     interactors = build_interactors(db_session)
     write_off_id = await interactors.create_write_off(
         CreateWriteOffCommand(
-            warehouse_id=warehouse.id,
+            org_unit_id=warehouse.id,
             occurred_at=OCCURRED_AT,
             lines=[
                 WriteOffLineCommand(
@@ -211,9 +211,9 @@ async def test_write_off_beyond_stock_is_rejected(
 
 
 async def test_document_is_posted_only_once(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
     receipt_id = await receive(db_session, warehouse.id, nomenclature.id, "5", "100")
 
@@ -234,9 +234,9 @@ async def test_document_is_posted_only_once(
 
 
 async def test_double_posting_is_blocked_by_database(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
     receipt_id = await receive(db_session, warehouse.id, nomenclature.id, "5", "100")
 
@@ -269,14 +269,14 @@ async def test_double_posting_is_blocked_by_database(
 
 
 async def test_unknown_nomenclature_is_rejected(
-    db_session: AsyncSession, make_warehouse
+    db_session: AsyncSession, make_location
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
 
     interactors = build_interactors(db_session)
     receipt_id = await interactors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=warehouse.id,
+            org_unit_id=warehouse.id,
             occurred_at=OCCURRED_AT,
             lines=[
                 ReceiptLineCommand(
@@ -295,16 +295,16 @@ async def test_unknown_nomenclature_is_rejected(
 
 
 async def test_write_off_of_unknown_lot_is_rejected(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     meat = await make_nomenclature()
     await receive(db_session, warehouse.id, meat.id, "5", "100")
 
     interactors = build_interactors(db_session)
     write_off_id = await interactors.create_write_off(
         CreateWriteOffCommand(
-            warehouse_id=warehouse.id,
+            org_unit_id=warehouse.id,
             occurred_at=OCCURRED_AT,
             lines=[
                 WriteOffLineCommand(
@@ -323,9 +323,9 @@ async def test_write_off_of_unknown_lot_is_rejected(
 
 
 async def test_lot_balances_are_tracked(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     meat = await make_nomenclature()
 
     await receive(
@@ -374,9 +374,9 @@ async def test_lot_balances_are_tracked(
 
 
 async def test_balance_row_is_locked_during_posting(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
     repository = SQLAlchemyStockBalanceRepository(db_session)
 
@@ -390,20 +390,20 @@ async def test_balance_row_is_locked_during_posting(
             await other.execute(
                 text(
                     "select 1 from inventory.stock_balances"
-                    " where warehouse_id = :warehouse_id"
+                    " where org_unit_id = :org_unit_id"
                     " and nomenclature_id = :nomenclature_id"
                     " for update nowait"
                 ),
-                {"warehouse_id": warehouse.id, "nomenclature_id": nomenclature.id},
+                {"org_unit_id": warehouse.id, "nomenclature_id": nomenclature.id},
             )
 
     assert _sqlstate(error.value) == "55P03"
 
 
 async def test_concurrent_receipts_are_not_lost(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    warehouse = await make_location()
     nomenclature = await make_nomenclature()
     await receive(db_session, warehouse.id, nomenclature.id, "1", "1")
 

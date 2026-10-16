@@ -124,7 +124,6 @@ class Order:
         cancelled_at: datetime | None = None,
         contact_phone: str | None = None,
         lines: list[OrderLine] | None = None,
-        warehouse_id: UUID | None = None,
     ) -> None:
         self._id = id_
         self._org_unit_id = org_unit_id
@@ -141,7 +140,6 @@ class Order:
         self._cancelled_at = cancelled_at
         self._contact_phone = contact_phone
         self._lines = lines if lines is not None else []
-        self._warehouse_id = warehouse_id
 
     @classmethod
     def create(
@@ -180,10 +178,6 @@ class Order:
     @property
     def org_unit_id(self) -> UUID:
         return self._org_unit_id
-
-    @property
-    def warehouse_id(self) -> UUID | None:
-        return self._warehouse_id
 
     @property
     def channel(self) -> OrderChannel:
@@ -285,10 +279,6 @@ class Order:
 
     def assign_number(self, number: int) -> None:
         self._number = number
-        self._touch()
-
-    def assign_warehouse(self, warehouse_id: UUID) -> None:
-        self._warehouse_id = warehouse_id
         self._touch()
 
     def apply_costs(self, costs_kopecks: list[int]) -> None:

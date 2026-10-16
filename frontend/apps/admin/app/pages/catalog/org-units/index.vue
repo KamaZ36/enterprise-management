@@ -2,7 +2,7 @@
   <div class="page">
     <h1 class="page__title">Организация</h1>
     <p class="page__subtitle">
-      Структура компании в виде папок. Склады и права привязываются к подразделению.
+      Структура компании в виде папок. Права и складские документы привязаны к подразделению.
     </p>
 
     <ViewOnlyNotice view="org_unit.read" edit="org_unit.update" />
@@ -111,20 +111,6 @@
               {{ childrenOf(selected.id).length }}
             </el-descriptions-item>
           </el-descriptions>
-
-          <div class="warehouses">
-            <div class="warehouses__title">Склады подразделения</div>
-            <div v-if="warehousesOf(selected.id).length" class="warehouses__list">
-              <el-tag
-                v-for="warehouse in warehousesOf(selected.id)"
-                :key="warehouse.id"
-                effect="light"
-              >
-                {{ warehouse.name }} · {{ label(WAREHOUSE_TYPES, warehouse.type) }}
-              </el-tag>
-            </div>
-            <div v-else class="muted">Складов нет</div>
-          </div>
         </template>
 
         <el-empty v-else description="Выберите подразделение в дереве" :image-size="80" />
@@ -147,7 +133,7 @@
 
         <el-form-item label="Статус">
           <el-switch v-model="editForm.is_active" />
-          <span class="hint">закрытое подразделение остаётся в структуре, но новые склады в нём не заводят</span>
+          <span class="hint">закрытое подразделение остаётся в структуре, но не используется как складская локация</span>
         </el-form-item>
 
         <el-alert v-if="editError" :title="editError" type="error" :closable="false" show-icon />
@@ -225,7 +211,6 @@ import { Folder, FolderOpened } from "@element-plus/icons-vue";
 import type { components } from "@md/api-client";
 
 type OrgUnit = components["schemas"]["OrgUnitSchema"];
-type Warehouse = components["schemas"]["WarehouseSchema"];
 type OrgUnitNode = OrgUnit & { children: OrgUnitNode[] };
 
 const ORG_UNIT_TYPES: Record<string, string> = {
@@ -240,7 +225,6 @@ const api = useApi();
 const { can } = useCurrentUser();
 
 const units = ref<OrgUnit[]>([]);
-const warehouses = ref<Warehouse[]>([]);
 const selected = ref<OrgUnit | null>(null);
 const pending = ref(false);
 const error = ref("");
@@ -307,10 +291,6 @@ function childrenOf(unitId: string): OrgUnit[] {
   return units.value.filter((unit) => unit.parent_id === unitId);
 }
 
-function warehousesOf(unitId: string): Warehouse[] {
-  return warehouses.value.filter((warehouse) => warehouse.org_unit_id === unitId);
-}
-
 function filterNode(value: string, data: OrgUnitNode): boolean {
   if (!value) {
     return true;
@@ -367,17 +347,6 @@ async function load(): Promise<void> {
     units.value = [];
   } finally {
     pending.value = false;
-  }
-}
-
-async function loadWarehouses(): Promise<void> {
-  if (!canAll(CAN.warehouseRead)) {
-    return;
-  }
-
-  const { data, response } = await api.GET("/api/inventory/warehouses", {});
-  if (response.ok && data) {
-    warehouses.value = data;
   }
 }
 
@@ -501,7 +470,6 @@ async function saveEdit(): Promise<void> {
 
 onMounted(async () => {
   await load();
-  await loadWarehouses();
 });
 </script>
 
@@ -559,22 +527,6 @@ onMounted(async () => {
 
 .node__code {
   color: #909399;
-}
-
-.warehouses {
-  margin-top: 18px;
-}
-
-.warehouses__title {
-  font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-
-.warehouses__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 .form-grid {

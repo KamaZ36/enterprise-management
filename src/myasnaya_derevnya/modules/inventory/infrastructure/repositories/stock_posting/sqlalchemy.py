@@ -22,7 +22,7 @@ class SQLAlchemyStockPostingRepository(StockPostingRepository):
                 id=posting.id,
                 document_type=posting.document_type,
                 document_id=posting.document_id,
-                warehouse_id=posting.warehouse_id,
+                org_unit_id=posting.org_unit_id,
                 posted_at=posting.posted_at,
                 posted_by=posting.posted_by,
             )

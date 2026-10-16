@@ -14,7 +14,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.base i
     WriteOffReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
-    WAREHOUSES_TABLE,
     WRITE_OFF_LINES_TABLE,
     WRITE_OFFS_TABLE,
 )
@@ -27,14 +26,14 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
     async def list(
         self,
         *,
-        warehouse_ids: Sequence[UUID] | None = None,
+        org_unit_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[WriteOffListItem], int]:
         conditions = []
-        if warehouse_ids is not None:
-            conditions.append(WRITE_OFFS_TABLE.c.warehouse_id.in_(warehouse_ids))
+        if org_unit_ids is not None:
+            conditions.append(WRITE_OFFS_TABLE.c.org_unit_id.in_(org_unit_ids))
 
         if search:
             conditions.extend(
@@ -51,7 +50,7 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
         stmt = (
             select(
                 WRITE_OFFS_TABLE.c.id,
-                WRITE_OFFS_TABLE.c.warehouse_id,
+                WRITE_OFFS_TABLE.c.org_unit_id,
                 WRITE_OFFS_TABLE.c.status,
                 WRITE_OFFS_TABLE.c.occurred_at,
                 WRITE_OFFS_TABLE.c.posted_at,
@@ -81,17 +80,7 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
         header = (
             (
                 await self._session.execute(
-                    select(
-                        WRITE_OFFS_TABLE,
-                        WAREHOUSES_TABLE.c.org_unit_id,
-                    )
-                    .select_from(
-                        WRITE_OFFS_TABLE.outerjoin(
-                            WAREHOUSES_TABLE,
-                            WAREHOUSES_TABLE.c.id == WRITE_OFFS_TABLE.c.warehouse_id,
-                        )
-                    )
-                    .where(WRITE_OFFS_TABLE.c.id == write_off_id)
+                    select(WRITE_OFFS_TABLE).where(WRITE_OFFS_TABLE.c.id == write_off_id)
                 )
             )
             .mappings()
@@ -114,20 +103,19 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
 
         return WriteOffDetail(
             id=header["id"],
-            warehouse_id=header["warehouse_id"],
+            org_unit_id=header["org_unit_id"],
             status=header["status"],
             occurred_at=header["occurred_at"],
             posted_at=header["posted_at"],
             reason=header["reason"],
             comment=header["comment"],
             lines=[self._to_line_item(row) for row in lines],
-            org_unit_id=header["org_unit_id"],
         )
 
     def _to_list_item(self, row: RowMapping) -> WriteOffListItem:
         return WriteOffListItem(
             id=row["id"],
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],

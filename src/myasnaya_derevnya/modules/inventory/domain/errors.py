@@ -13,7 +13,7 @@ class InventoryDomainError(DomainError):
 
 @dataclass(slots=True, eq=False)
 class InsufficientStockError(InventoryDomainError):
-    warehouse_id: UUID
+    org_unit_id: UUID
     nomenclature_id: UUID
     available: Decimal
     requested: Decimal
@@ -51,11 +51,11 @@ class NegativeCostError(InventoryDomainError):
 
 
 @dataclass(slots=True, eq=False)
-class WarehouseNotFoundError(NotFoundError):
-    warehouse_id: UUID
+class LocationNotFoundError(NotFoundError):
+    org_unit_id: UUID
 
     def __str__(self) -> str:
-        return f"Склад {self.warehouse_id} не найден"
+        return f"Складская локация {self.org_unit_id} не найдена"
 
 
 @dataclass(slots=True, eq=False)
@@ -100,19 +100,11 @@ class OrgUnitNotFoundError(NotFoundError):
 
 
 @dataclass(slots=True, eq=False)
-class WarehouseCodeAlreadyExistsError(ConflictError):
-    code: str
+class LocationInactiveError(InventoryDomainError):
+    org_unit_id: UUID
 
     def __str__(self) -> str:
-        return f"Склад с кодом '{self.code}' уже существует"
-
-
-@dataclass(slots=True, eq=False)
-class WarehouseInactiveError(InventoryDomainError):
-    warehouse_id: UUID
-
-    def __str__(self) -> str:
-        return f"Склад {self.warehouse_id} неактивен"
+        return f"Складская локация {self.org_unit_id} неактивна"
 
 
 @dataclass(slots=True, eq=False)
@@ -154,16 +146,6 @@ class CostAllocationError(InventoryDomainError):
 
 
 @dataclass(slots=True, eq=False)
-class WarehouseInUseError(ConflictError):
-    warehouse_id: UUID
-    def __str__(self) -> str:
-        return (
-            f"Нельзя изменить назначение склада {self.warehouse_id}: "
-            "на нём есть остатки"
-        )
-
-
-@dataclass(slots=True, eq=False)
 class TransferNotFoundError(NotFoundError):
     transfer_id: UUID
 
@@ -172,8 +154,8 @@ class TransferNotFoundError(NotFoundError):
 
 
 @dataclass(slots=True, eq=False)
-class SameWarehouseTransferError(InventoryDomainError):
-    warehouse_id: UUID
+class SameLocationTransferError(InventoryDomainError):
+    org_unit_id: UUID
 
     def __str__(self) -> str:
-        return "Нельзя переместить товар на тот же склад."
+        return "Нельзя переместить товар в то же подразделение."

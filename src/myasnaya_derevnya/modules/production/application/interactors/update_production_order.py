@@ -9,8 +9,8 @@ from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
     InventoryAPI,
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
+    ProductionLocationNotFoundError,
     ProductionOrderNotFoundError,
-    ProductionWarehouseNotFoundError,
 )
 from myasnaya_derevnya.modules.production.domain.permissions import MANAGE_ORDERS
 from myasnaya_derevnya.modules.production.infrastructure.repositories.production_order.base import (
@@ -53,14 +53,14 @@ class UpdateProductionOrderInteractor:
         if order is None:
             raise ProductionOrderNotFoundError(command.order_id)
 
-        warehouse = await self._inventory_api.get_warehouse(order.warehouse_id)
-        if warehouse is None:
-            raise ProductionWarehouseNotFoundError(order.warehouse_id)
+        location = await self._inventory_api.get_location(order.org_unit_id)
+        if location is None:
+            raise ProductionLocationNotFoundError(order.org_unit_id)
 
         allowed = await self._staff_api.can(
             user_id=user_id,
             permission=MANAGE_ORDERS,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()

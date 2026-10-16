@@ -39,7 +39,7 @@ class SQLAlchemyStockMovementRepository(StockMovementRepository):
                         "id": movement.id,
                         "occurred_at": movement.occurred_at,
                         "recorded_at": movement.recorded_at,
-                        "warehouse_id": movement.warehouse_id,
+                        "org_unit_id": movement.org_unit_id,
                         "nomenclature_id": movement.nomenclature_id,
                         "lot_id": movement.lot_id,
                         "movement_type": movement.movement_type.value,

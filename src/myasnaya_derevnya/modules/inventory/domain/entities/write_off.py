@@ -49,7 +49,7 @@ class WriteOff:
         id: UUID,
         status: DocumentStatus,
         occurred_at: datetime,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         reason: str | None,
         comment: str | None,
         created_by: UUID | None,
@@ -60,7 +60,7 @@ class WriteOff:
         self._id = id
         self._status = status
         self._occurred_at = occurred_at
-        self._warehouse_id = warehouse_id
+        self._org_unit_id = org_unit_id
         self._reason = reason
         self._comment = comment
         self._created_by = created_by
@@ -71,7 +71,7 @@ class WriteOff:
     @classmethod
     def create(
         cls,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: datetime,
         lines: list[WriteOffLine] | None = None,
         created_by: UUID | None = None,
@@ -85,7 +85,7 @@ class WriteOff:
             id=uuid7(),
             status=DocumentStatus.DRAFT,
             occurred_at=occurred_at,
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             reason=reason,
             comment=comment,
             created_by=created_by,
@@ -107,8 +107,8 @@ class WriteOff:
         return self._occurred_at
 
     @property
-    def warehouse_id(self) -> UUID:
-        return self._warehouse_id
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def reason(self) -> str | None:

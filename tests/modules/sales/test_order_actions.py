@@ -93,26 +93,26 @@ class FakeTransactionManager:
 
 
 @dataclass(frozen=True, slots=True)
-class FakeWarehouse:
+class FakeLocation:
     id: UUID
 
 
 class FakeInventoryAPI:
     def __init__(
-        self, warehouse: FakeWarehouse | None = None, costs: list[int] | None = None
+        self, location: FakeLocation | None = None, costs: list[int] | None = None
     ) -> None:
-        self._warehouse = warehouse
+        self._location = location
         self._costs = costs or []
         self.sales: list[dict[str, object]] = []
 
-    async def default_sales_warehouse(self, org_unit_id: UUID) -> FakeWarehouse | None:
-        return self._warehouse
+    async def get_location(self, org_unit_id: UUID) -> FakeLocation | None:
+        return self._location
 
     async def post_sale(
         self,
         *,
         document_id: UUID,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: object,
         lines: list[object],
         posted_by: UUID | None = None,
@@ -120,7 +120,7 @@ class FakeInventoryAPI:
         self.sales.append(
             {
                 "document_id": document_id,
-                "warehouse_id": warehouse_id,
+                "org_unit_id": org_unit_id,
                 "lines": list(lines),
                 "posted_by": posted_by,
             }
@@ -358,8 +358,8 @@ async def test_cannot_complete_a_draft() -> None:
 
 async def test_completing_order_writes_off_stock_and_records_costs() -> None:
     staff_id = uuid7()
-    warehouse = FakeWarehouse(id=uuid7())
-    inventory = FakeInventoryAPI(warehouse=warehouse, costs=[12_000])
+    location = FakeLocation(id=uuid7())
+    inventory = FakeInventoryAPI(location=location, costs=[12_000])
     actions = build(user_id=staff_id, staff={staff_id}, inventory=inventory)
     order = await make_order(actions.repository, customer_id=uuid7())
     order.add_line(nomenclature_id=uuid7(), quantity=Decimal(2), unit_price=10_000)
@@ -372,13 +372,12 @@ async def test_completing_order_writes_off_stock_and_records_costs() -> None:
 
     saved = actions.repository.orders[order.id]
     assert saved.status is OrderStatus.COMPLETED
-    assert saved.warehouse_id == warehouse.id
     assert saved.lines[0].cost_kopecks == 12_000
     assert saved.lines[0].margin == 20_000 - 12_000
-    assert inventory.sales[0]["warehouse_id"] == warehouse.id
+    assert inventory.sales[0]["org_unit_id"] == location.id
 
 
-async def test_completing_order_without_warehouse_skips_write_off() -> None:
+async def test_completing_order_without_location_skips_write_off() -> None:
     staff_id = uuid7()
     actions = build(user_id=staff_id, staff={staff_id})
     order = await make_order(actions.repository, customer_id=uuid7())
@@ -392,6 +391,5 @@ async def test_completing_order_without_warehouse_skips_write_off() -> None:
 
     saved = actions.repository.orders[order.id]
     assert saved.status is OrderStatus.COMPLETED
-    assert saved.warehouse_id is None
     assert saved.lines[0].cost_kopecks is None
     assert actions.inventory.sales == []

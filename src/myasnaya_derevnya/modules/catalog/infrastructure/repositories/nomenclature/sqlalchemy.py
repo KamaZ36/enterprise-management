@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.base import (
@@ -26,7 +25,6 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 sku=nomenclature.sku,
                 name=nomenclature.name,
                 unit=nomenclature.unit.value,
-                type=nomenclature.type_.value,
                 category_id=nomenclature.category_id,
                 is_active=nomenclature.is_active,
                 image_url=nomenclature.image_url,
@@ -44,7 +42,6 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 name=nomenclature.name,
                 category_id=nomenclature.category_id,
                 unit=nomenclature.unit.value,
-                type=nomenclature.type_.value,
                 is_active=nomenclature.is_active,
                 image_url=nomenclature.image_url,
                 description=nomenclature.description,
@@ -74,24 +71,12 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
 
         return {row[0]: row[1] for row in rows}
 
-    async def get_types(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
-        if not nomenclature_ids:
-            return {}
-
-        stmt = select(NOMENCLATURES_TABLE.c.id, NOMENCLATURES_TABLE.c.type).where(
-            NOMENCLATURES_TABLE.c.id.in_(nomenclature_ids)
-        )
-        rows = (await self._session.execute(stmt)).all()
-
-        return {row[0]: row[1] for row in rows}
-
     def _to_entity(self, row: RowMapping) -> Nomenclature:
         return Nomenclature(
             id=row["id"],
             sku=row["sku"],
             name=row["name"],
             unit=UnitOfMeasurement(row["unit"]),
-            type_=NomenclatureType(row["type"]),
             category_id=row["category_id"],
             created_at=row["created_at"],
             is_active=row["is_active"],

@@ -4,9 +4,10 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.inventory.application.dto import BalanceListItem
-from myasnaya_derevnya.modules.inventory.domain.errors import WarehouseNotFoundError
+from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import (
     READ_BALANCES,
     READ_COSTS,
@@ -14,15 +15,12 @@ from myasnaya_derevnya.modules.inventory.domain.permissions import (
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base import (
     BalanceReader,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
-    WarehouseRepository,
-)
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
 @dataclass(frozen=True, slots=True)
 class GetBalanceQuery:
-    warehouse_id: UUID
+    org_unit_id: UUID
     nomenclature_id: UUID
 
 
@@ -30,13 +28,13 @@ class GetBalanceInteractor:
     def __init__(
         self,
         identity_provider: IdentityProvider,
-        warehouse_repository: WarehouseRepository,
+        business_api: BusinessAPI,
         balance_reader: BalanceReader,
         catalog_api: CatalogAPI,
         staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
-        self._warehouse_repository = warehouse_repository
+        self._business_api = business_api
         self._balance_reader = balance_reader
         self._catalog_api = catalog_api
         self._staff_api = staff_api
@@ -44,18 +42,18 @@ class GetBalanceInteractor:
     async def __call__(self, query: GetBalanceQuery) -> BalanceListItem:
         current_user_id = await self._identity_provider.get_current_user_id()
 
-        warehouse = await self._warehouse_repository.get_by_id(query.warehouse_id)
-        if warehouse is None:
-            raise WarehouseNotFoundError(query.warehouse_id)
+        location = await self._business_api.stock_location(query.org_unit_id)
+        if location is None:
+            raise LocationNotFoundError(query.org_unit_id)
 
-        cost_visible = await self._check_access(current_user_id, warehouse.org_unit_id)
+        cost_visible = await self._check_access(current_user_id, location.id)
 
         item = await self._balance_reader.get(
-            query.warehouse_id, query.nomenclature_id, with_cost=cost_visible
+            query.org_unit_id, query.nomenclature_id, with_cost=cost_visible
         )
         if item is None:
             item = BalanceListItem(
-                warehouse_id=query.warehouse_id,
+                org_unit_id=query.org_unit_id,
                 nomenclature_id=query.nomenclature_id,
                 quantity=Decimal(0),
                 average_unit_cost=Decimal(0) if cost_visible else None,

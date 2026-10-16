@@ -13,13 +13,13 @@
 
     <div class="toolbar">
       <el-select
-        v-model="warehouseId"
+        v-model="locationId"
         clearable
         placeholder="Цех"
         style="width: 220px"
         @change="reload"
       >
-        <WarehouseOptions :warehouses="warehouses" />
+        <LocationOptions :locations="locations" />
       </el-select>
 
       <el-select
@@ -61,7 +61,7 @@
         <template #default="{ row }">{{ formatDay(row.occurred_at) }}</template>
       </el-table-column>
       <el-table-column label="Цех">
-        <template #default="{ row }">{{ row.warehouse_name ?? "—" }}</template>
+        <template #default="{ row }">{{ row.location_name ?? "—" }}</template>
       </el-table-column>
       <el-table-column label="Техкарта" width="240">
         <template #default="{ row }">
@@ -99,8 +99,8 @@
     <el-dialog v-model="createOpen" title="Новое задание" width="640">
       <el-form label-position="top">
         <el-form-item label="Цех">
-          <el-select v-model="form.warehouse_id" style="width: 100%">
-            <WarehouseOptions :warehouses="warehouses" />
+          <el-select v-model="form.org_unit_id" style="width: 100%">
+            <LocationOptions :locations="locations" />
           </el-select>
         </el-form-item>
 
@@ -157,7 +157,7 @@
         <el-button
           type="primary"
           :loading="saving"
-          :disabled="!form.warehouse_id || !form.tech_card_id"
+          :disabled="!form.org_unit_id || !form.tech_card_id"
           @click="createOrder"
         >
           Создать
@@ -177,7 +177,7 @@ definePageMeta({ permissions: CAN.productionOrdersOpen });
 type ProductionOrderListItem =
   components["schemas"]["ProductionOrderListItemSchema"];
 type TechCardListItem = components["schemas"]["TechCardListItemSchema"];
-type Warehouse = components["schemas"]["WarehouseSchema"];
+type Location = components["schemas"]["LocationSchema"];
 
 const STATUS_TITLES: Record<string, string> = {
   draft: "Черновик",
@@ -197,11 +197,11 @@ const api = useApi();
 const { can } = useCurrentUser();
 
 const items = ref<ProductionOrderListItem[]>([]);
-const warehouses = ref<Warehouse[]>([]);
+const locations = ref<Location[]>([]);
 const techCards = ref<TechCardListItem[]>([]);
 const total = ref(0);
 const page = ref(1);
-const warehouseId = ref<string | null>(null);
+const locationId = ref<string | null>(null);
 const statuses = ref<string[]>([]);
 const pending = ref(false);
 const error = ref("");
@@ -210,7 +210,7 @@ const createOpen = ref(false);
 const createError = ref("");
 const saving = ref(false);
 const form = reactive({
-  warehouse_id: "",
+  org_unit_id: "",
   tech_card_id: "",
   batch_count: 1,
   occurred_at: "",
@@ -253,7 +253,7 @@ async function loadOrders(): Promise<void> {
     const { data, response } = await api.GET("/api/production/orders", {
       params: {
         query: {
-          warehouse_id: warehouseId.value ?? undefined,
+          org_unit_id: locationId.value ?? undefined,
           statuses: statuses.value.length ? statuses.value.join(",") : undefined,
           limit: PAGE_SIZE,
           offset: (page.value - 1) * PAGE_SIZE,
@@ -279,18 +279,19 @@ async function loadOrders(): Promise<void> {
 }
 
 async function loadDictionaries(): Promise<void> {
-  const [warehouseResponse, cardResponse] = await Promise.all([
-    api.GET("/api/inventory/warehouses", {}),
-    api.GET("/api/production/tech-cards", {
-      params: { query: { limit: 100 } },
-    }),
-  ]);
+  const cardResponse = await api.GET("/api/production/tech-cards", {
+    params: { query: { limit: 100 } },
+  });
 
-  if (warehouseResponse.response.ok && warehouseResponse.data) {
-    warehouses.value = warehouseResponse.data;
-  }
   if (cardResponse.response.ok && cardResponse.data) {
     techCards.value = cardResponse.data.items;
+  }
+
+  if (can("production.order.read")) {
+    const { data, response } = await api.GET("/api/inventory/locations", {});
+    if (response.ok && data) {
+      locations.value = data;
+    }
   }
 }
 
@@ -310,7 +311,7 @@ async function openOrder(row: ProductionOrderListItem): Promise<void> {
 
 function openCreate(): void {
   createError.value = "";
-  form.warehouse_id = warehouseId.value ?? warehouses.value[0]?.id ?? "";
+  form.org_unit_id = locationId.value ?? locations.value[0]?.id ?? "";
   form.tech_card_id = techCards.value[0]?.id ?? "";
   form.batch_count = 1;
   form.occurred_at = localNow();
@@ -327,7 +328,7 @@ async function createOrder(): Promise<void> {
       "/api/production/orders",
       {
         body: {
-          warehouse_id: form.warehouse_id,
+          org_unit_id: form.org_unit_id,
           tech_card_id: form.tech_card_id,
           batch_count: String(form.batch_count),
           occurred_at: form.occurred_at || localNow(),

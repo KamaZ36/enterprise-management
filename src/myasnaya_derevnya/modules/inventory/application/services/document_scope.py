@@ -3,10 +3,8 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.inventory.domain.permissions import READ_DOCUMENTS
-from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.base import (
-    WarehouseReader,
-)
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
@@ -14,17 +12,17 @@ class DocumentScope:
     def __init__(
         self,
         identity_provider: IdentityProvider,
-        warehouse_reader: WarehouseReader,
+        business_api: BusinessAPI,
         staff_api: StaffAPI,
     ) -> None:
         self._identity_provider = identity_provider
-        self._warehouse_reader = warehouse_reader
+        self._business_api = business_api
         self._staff_api = staff_api
 
-    async def visible_warehouse_ids(
+    async def visible_org_unit_ids(
         self, requested: UUID | None = None
     ) -> list[UUID] | None:
-        allowed = await self._allowed_warehouse_ids()
+        allowed = await self._allowed_org_unit_ids()
 
         if allowed is None:
             return None if requested is None else [requested]
@@ -51,7 +49,7 @@ class DocumentScope:
 
         raise ForbiddenError()
 
-    async def _allowed_warehouse_ids(self) -> frozenset[UUID] | None:
+    async def _allowed_org_unit_ids(self) -> frozenset[UUID] | None:
         user_id = await self._identity_provider.get_current_user_id()
         scope = await self._staff_api.scope_for(
             user_id=user_id, permission=READ_DOCUMENTS
@@ -63,10 +61,8 @@ class DocumentScope:
         if scope.is_company_wide:
             return None
 
-        warehouses = await self._warehouse_reader.list_all()
+        locations = await self._business_api.stock_locations()
 
         return frozenset(
-            warehouse.id
-            for warehouse in warehouses
-            if scope.covers(warehouse.org_unit_id)
+            location.id for location in locations if scope.covers(location.id)
         )

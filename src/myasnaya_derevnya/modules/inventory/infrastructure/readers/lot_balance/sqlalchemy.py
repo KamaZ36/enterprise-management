@@ -18,9 +18,9 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def list_by_warehouse(
+    async def list_by_org_unit(
         self,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         *,
         with_cost: bool,
         include_empty: bool = False,
@@ -28,7 +28,7 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
     ) -> list[LotBalanceListItem]:
         stmt = (
             select(
-                STOCK_LOT_BALANCES_TABLE.c.warehouse_id,
+                STOCK_LOT_BALANCES_TABLE.c.org_unit_id,
                 STOCK_LOT_BALANCES_TABLE.c.nomenclature_id,
                 STOCK_LOT_BALANCES_TABLE.c.lot_id,
                 STOCK_LOT_BALANCES_TABLE.c.quantity,
@@ -45,7 +45,7 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
                     STOCK_LOT_BALANCES_TABLE.c.lot_id == STOCK_LOTS_TABLE.c.id,
                 )
             )
-            .where(STOCK_LOT_BALANCES_TABLE.c.warehouse_id == warehouse_id)
+            .where(STOCK_LOT_BALANCES_TABLE.c.org_unit_id == org_unit_id)
             .order_by(
                 STOCK_LOTS_TABLE.c.expires_at.asc().nulls_last(),
                 STOCK_LOT_BALANCES_TABLE.c.nomenclature_id.asc(),
@@ -69,7 +69,7 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
     @staticmethod
     def _to_dto(row: RowMapping, *, with_cost: bool) -> LotBalanceListItem:
         return LotBalanceListItem(
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             nomenclature_id=row["nomenclature_id"],
             lot_id=row["lot_id"],
             lot_code=row["lot_code"],

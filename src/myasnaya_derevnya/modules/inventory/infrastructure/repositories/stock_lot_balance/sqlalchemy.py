@@ -38,15 +38,15 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
             .values(
                 [
                     {
-                        "warehouse_id": warehouse_id,
+                        "org_unit_id": org_unit_id,
                         "nomenclature_id": nomenclature_id,
                         "lot_id": lot_id,
                     }
-                    for warehouse_id, nomenclature_id, lot_id in unique
+                    for org_unit_id, nomenclature_id, lot_id in unique
                 ]
             )
             .on_conflict_do_nothing(
-                index_elements=["warehouse_id", "nomenclature_id", "lot_id"]
+                index_elements=["org_unit_id", "nomenclature_id", "lot_id"]
             )
         )
 
@@ -54,13 +54,13 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
             select(STOCK_LOT_BALANCES_TABLE)
             .where(
                 tuple_(
-                    STOCK_LOT_BALANCES_TABLE.c.warehouse_id,
+                    STOCK_LOT_BALANCES_TABLE.c.org_unit_id,
                     STOCK_LOT_BALANCES_TABLE.c.nomenclature_id,
                     STOCK_LOT_BALANCES_TABLE.c.lot_id,
                 ).in_(unique)
             )
             .order_by(
-                STOCK_LOT_BALANCES_TABLE.c.warehouse_id,
+                STOCK_LOT_BALANCES_TABLE.c.org_unit_id,
                 STOCK_LOT_BALANCES_TABLE.c.nomenclature_id,
                 STOCK_LOT_BALANCES_TABLE.c.lot_id,
             )
@@ -69,14 +69,14 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
         rows = (await self._session.execute(stmt)).mappings().all()
 
         return {
-            (row["warehouse_id"], row["nomenclature_id"], row["lot_id"]): (
+            (row["org_unit_id"], row["nomenclature_id"], row["lot_id"]): (
                 self._to_entity(row)
             )
             for row in rows
         }
 
     async def list_available(
-        self, warehouse_id: UUID, nomenclature_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID
     ) -> list[StockLotBalance]:
         stmt = (
             select(STOCK_LOT_BALANCES_TABLE)
@@ -87,7 +87,7 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
                 )
             )
             .where(
-                STOCK_LOT_BALANCES_TABLE.c.warehouse_id == warehouse_id,
+                STOCK_LOT_BALANCES_TABLE.c.org_unit_id == org_unit_id,
                 STOCK_LOT_BALANCES_TABLE.c.nomenclature_id == nomenclature_id,
                 STOCK_LOT_BALANCES_TABLE.c.quantity > 0,
             )
@@ -108,7 +108,7 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
 
         values = [
             {
-                "warehouse_id": balance.warehouse_id,
+                "org_unit_id": balance.org_unit_id,
                 "nomenclature_id": balance.nomenclature_id,
                 "lot_id": balance.lot_id,
                 "quantity": balance.quantity,
@@ -123,7 +123,7 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
         stmt = pg_insert(STOCK_LOT_BALANCES_TABLE).values(values)
         await self._session.execute(
             stmt.on_conflict_do_update(
-                index_elements=["warehouse_id", "nomenclature_id", "lot_id"],
+                index_elements=["org_unit_id", "nomenclature_id", "lot_id"],
                 set_={
                     "quantity": stmt.excluded.quantity,
                     "total_value": stmt.excluded.total_value,
@@ -134,7 +134,7 @@ class SQLAlchemyStockLotBalanceRepository(StockLotBalanceRepository):
 
     def _to_entity(self, row: RowMapping) -> StockLotBalance:
         return StockLotBalance(
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             nomenclature_id=row["nomenclature_id"],
             lot_id=row["lot_id"],
             quantity=row["quantity"],

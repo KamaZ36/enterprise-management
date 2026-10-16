@@ -41,7 +41,7 @@ class StockMovement:
         id: UUID,
         occurred_at: datetime,
         recorded_at: datetime,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         lot_id: UUID | None,
         movement_type: MovementType,
@@ -53,7 +53,7 @@ class StockMovement:
         self._id = id
         self._occurred_at = occurred_at
         self._recorded_at = recorded_at
-        self._warehouse_id = warehouse_id
+        self._org_unit_id = org_unit_id
         self._nomenclature_id = nomenclature_id
         self._lot_id = lot_id
         self._movement_type = movement_type
@@ -67,7 +67,7 @@ class StockMovement:
         cls,
         *,
         occurred_at: datetime,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         movement_type: MovementType,
         quantity: Decimal,
@@ -87,7 +87,7 @@ class StockMovement:
             id=uuid7(),
             occurred_at=occurred_at,
             recorded_at=get_datetime_utc(),
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_id=nomenclature_id,
             lot_id=lot_id,
             movement_type=movement_type,
@@ -110,8 +110,8 @@ class StockMovement:
         return self._recorded_at
 
     @property
-    def warehouse_id(self) -> UUID:
-        return self._warehouse_id
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def nomenclature_id(self) -> UUID:

@@ -10,7 +10,6 @@ from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.modules.catalog.domain.entities.category import Category
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.sqlalchemy import (
@@ -58,7 +57,6 @@ async def make_nomenclature(db_session: AsyncSession) -> Callable[..., Coroutine
     async def factory(
         name: str | None = None,
         sku: str | None = None,
-        type_: NomenclatureType = NomenclatureType.RAW_MATERIAL,
         unit: UnitOfMeasurement = UnitOfMeasurement.KG,
         category_id: UUID | None = None,
     ) -> Nomenclature:
@@ -74,7 +72,6 @@ async def make_nomenclature(db_session: AsyncSession) -> Callable[..., Coroutine
             sku=sku or f"{TEST_PREFIX}{uuid4().hex[:8]}",
             name=name or "Тестовая номенклатура",
             unit=unit,
-            type_=type_,
             category_id=category_id,
         )
         await nomenclatures.add(nomenclature)

@@ -28,7 +28,7 @@ class SaleLineCommand:
 @dataclass(frozen=True, slots=True)
 class PostSaleCommand:
     document_id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     occurred_at: datetime
     lines: tuple[SaleLineCommand, ...]
     posted_by: UUID | None = None
@@ -57,20 +57,20 @@ class PostSaleInteractor:
             raise EmptyDocumentError(command.document_id)
 
         await self._preconditions.ensure_ready(
-            warehouse_id=command.warehouse_id,
+            org_unit_id=command.org_unit_id,
             nomenclature_ids=[line.nomenclature_id for line in command.lines],
         )
 
         async with self._ledger.posting(
             document_type=DocumentType.SALE,
             document_id=command.document_id,
-            warehouse_id=command.warehouse_id,
+            org_unit_id=command.org_unit_id,
             occurred_at=command.occurred_at,
             posted_by=command.posted_by,
         ) as posting:
             await posting.lock(
                 balance_keys=[
-                    (command.warehouse_id, line.nomenclature_id)
+                    (command.org_unit_id, line.nomenclature_id)
                     for line in command.lines
                 ],
             )
@@ -78,7 +78,7 @@ class PostSaleInteractor:
             costs: list[int] = []
             for line in command.lines:
                 slices = await posting.allocate(
-                    warehouse_id=command.warehouse_id,
+                    org_unit_id=command.org_unit_id,
                     nomenclature_id=line.nomenclature_id,
                     quantity=line.quantity,
                 )
@@ -86,7 +86,7 @@ class PostSaleInteractor:
                 line_cost = Money.zero()
                 for lot_id, quantity in slices:
                     line_cost = line_cost + await posting.issue(
-                        warehouse_id=command.warehouse_id,
+                        org_unit_id=command.org_unit_id,
                         nomenclature_id=line.nomenclature_id,
                         quantity=quantity,
                         movement_type=MovementType.SALE,

@@ -12,8 +12,8 @@ from myasnaya_derevnya.modules.production.domain.entities.production_order impor
     ProductionOrder,
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
+    ProductionLocationNotFoundError,
     ProductionOrderNotFoundError,
-    ProductionWarehouseNotFoundError,
 )
 from myasnaya_derevnya.modules.production.domain.permissions import POST_ORDER
 from myasnaya_derevnya.modules.production.infrastructure.repositories.production_order.base import (
@@ -44,14 +44,14 @@ class PostProductionOrderInteractor:
         if order is None:
             raise ProductionOrderNotFoundError(order_id)
 
-        warehouse = await self._inventory_api.get_warehouse(order.warehouse_id)
-        if warehouse is None:
-            raise ProductionWarehouseNotFoundError(order.warehouse_id)
+        location = await self._inventory_api.get_location(order.org_unit_id)
+        if location is None:
+            raise ProductionLocationNotFoundError(order.org_unit_id)
 
         allowed = await self._staff_api.can(
             user_id=user_id,
             permission=POST_ORDER,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()
@@ -65,7 +65,7 @@ class PostProductionOrderInteractor:
 
         posted = await self._inventory_api.post_production(
             document_id=order.id,
-            warehouse_id=order.warehouse_id,
+            org_unit_id=order.org_unit_id,
             occurred_at=order.occurred_at,
             issues=[
                 ProductionIssue(

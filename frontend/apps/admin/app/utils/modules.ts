@@ -9,6 +9,7 @@ import {
   Key,
   Money,
   OfficeBuilding,
+  Switch,
   User,
 } from "@element-plus/icons-vue";
 
@@ -25,6 +26,7 @@ export const MODULE_ICONS: Record<string, Component> = {
   Grid,
   Key,
   Money,
+  Switch,
 };
 
 export type ModuleTab = {
@@ -67,10 +69,10 @@ export const MODULES: ModuleDefinition[
         permissions: CAN.lotsOpen,
       },
       {
-        path: "/inventory/warehouses",
-        title: "Склады",
-        icon: "OfficeBuilding",
-        permissions: CAN.warehouseCreate,
+        path: "/inventory/movements",
+        title: "Движения",
+        icon: "Switch",
+        permissions: CAN.movementsOpen,
       },
     ],
   },

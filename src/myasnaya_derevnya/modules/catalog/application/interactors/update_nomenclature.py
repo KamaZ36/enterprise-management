@@ -10,7 +10,6 @@ from myasnaya_derevnya.modules.catalog.application.errors import (
     NomenclatureNotFound,
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.domain.permissions import UPDATE_NOMENCLATURE
@@ -23,9 +22,7 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.base import (
     NomenclatureRepository,
 )
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movement.base import (
-    StockMovementRepository,
-)
+from myasnaya_derevnya.modules.inventory.presentation.inventory_api import InventoryAPI
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 
@@ -35,7 +32,6 @@ class UpdateNomenclatureCommand:
     name: str | None = None
     category_id: UUID | None = None
     unit: UnitOfMeasurement | None = None
-    type_: NomenclatureType | None = None
     is_active: bool | None = None
 
     image_url: str | None = None
@@ -48,7 +44,7 @@ class UpdateNomenclatureInteractor:
         identity_provider: IdentityProvider,
         nomenclature_repository: NomenclatureRepository,
         category_repository: CategoryRepository,
-        movement_repository: StockMovementRepository,
+        inventory_api: InventoryAPI,
         changes_policy: NomenclatureChangesPolicy,
         business_api: BusinessAPI,
         staff_api: StaffAPI,
@@ -57,7 +53,7 @@ class UpdateNomenclatureInteractor:
         self._identity_provider = identity_provider
         self._nomenclature_repository = nomenclature_repository
         self._category_repository = category_repository
-        self._movement_repository = movement_repository
+        self._inventory_api = inventory_api
         self._changes_policy = changes_policy
         self._business_api = business_api
         self._staff_api = staff_api
@@ -84,19 +80,14 @@ class UpdateNomenclatureInteractor:
         ):
             raise CategoryNotFound(command.category_id)
 
-        if command.unit is not None or command.type_ is not None:
-            has_movements = (
-                await self._movement_repository.count_for_nomenclature(
-                    command.nomenclature_id
-                )
-                > 0
+        if command.unit is not None:
+            has_movements = await self._inventory_api.has_movements(
+                command.nomenclature_id
             )
             self._changes_policy.ensure_changeable(
                 nomenclature_id=nomenclature.id,
                 current_unit=nomenclature.unit,
                 new_unit=command.unit,
-                current_type=nomenclature.type_,
-                new_type=command.type_,
                 has_movements=has_movements,
             )
 
@@ -106,8 +97,6 @@ class UpdateNomenclatureInteractor:
             nomenclature.change_category(command.category_id)
         if command.unit is not None:
             nomenclature.change_unit(command.unit)
-        if command.type_ is not None:
-            nomenclature.change_type(command.type_)
         if command.is_active is not None:
             nomenclature.activate() if command.is_active else nomenclature.deactivate()
         if command.image_url is not None:

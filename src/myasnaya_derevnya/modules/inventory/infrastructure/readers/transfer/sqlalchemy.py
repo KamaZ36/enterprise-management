@@ -16,11 +16,7 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.base im
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     TRANSFER_LINES_TABLE,
     TRANSFERS_TABLE,
-    WAREHOUSES_TABLE,
 )
-
-FROM_WAREHOUSES = WAREHOUSES_TABLE.alias("from_warehouses")
-TO_WAREHOUSES = WAREHOUSES_TABLE.alias("to_warehouses")
 
 
 class SQLAlchemyTransferReader(TransferReader):
@@ -30,17 +26,17 @@ class SQLAlchemyTransferReader(TransferReader):
     async def list(
         self,
         *,
-        warehouse_ids: Sequence[UUID] | None = None,
+        org_unit_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[TransferListItem], int]:
         conditions = []
-        if warehouse_ids is not None:
+        if org_unit_ids is not None:
             conditions.append(
                 or_(
-                    TRANSFERS_TABLE.c.from_warehouse_id.in_(warehouse_ids),
-                    TRANSFERS_TABLE.c.to_warehouse_id.in_(warehouse_ids),
+                    TRANSFERS_TABLE.c.from_org_unit_id.in_(org_unit_ids),
+                    TRANSFERS_TABLE.c.to_org_unit_id.in_(org_unit_ids),
                 )
             )
 
@@ -59,8 +55,8 @@ class SQLAlchemyTransferReader(TransferReader):
         stmt = (
             select(
                 TRANSFERS_TABLE.c.id,
-                TRANSFERS_TABLE.c.from_warehouse_id,
-                TRANSFERS_TABLE.c.to_warehouse_id,
+                TRANSFERS_TABLE.c.from_org_unit_id,
+                TRANSFERS_TABLE.c.to_org_unit_id,
                 TRANSFERS_TABLE.c.status,
                 TRANSFERS_TABLE.c.occurred_at,
                 TRANSFERS_TABLE.c.posted_at,
@@ -82,23 +78,7 @@ class SQLAlchemyTransferReader(TransferReader):
         return [self._to_list_item(row) for row in rows], int(total_documents or 0)
 
     async def get(self, transfer_id: UUID) -> TransferDetail | None:
-        stmt = (
-            select(
-                TRANSFERS_TABLE,
-                FROM_WAREHOUSES.c.org_unit_id.label("from_org_unit_id"),
-                TO_WAREHOUSES.c.org_unit_id.label("to_org_unit_id"),
-            )
-            .select_from(
-                TRANSFERS_TABLE.outerjoin(
-                    FROM_WAREHOUSES,
-                    FROM_WAREHOUSES.c.id == TRANSFERS_TABLE.c.from_warehouse_id,
-                ).outerjoin(
-                    TO_WAREHOUSES,
-                    TO_WAREHOUSES.c.id == TRANSFERS_TABLE.c.to_warehouse_id,
-                )
-            )
-            .where(TRANSFERS_TABLE.c.id == transfer_id)
-        )
+        stmt = select(TRANSFERS_TABLE).where(TRANSFERS_TABLE.c.id == transfer_id)
         row = (await self._session.execute(stmt)).mappings().one_or_none()
 
         if row is None:
@@ -113,22 +93,20 @@ class SQLAlchemyTransferReader(TransferReader):
 
         return TransferDetail(
             id=row["id"],
-            from_warehouse_id=row["from_warehouse_id"],
-            to_warehouse_id=row["to_warehouse_id"],
+            from_org_unit_id=row["from_org_unit_id"],
+            to_org_unit_id=row["to_org_unit_id"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],
             comment=row["comment"],
             lines=[self._to_line(line) for line in line_rows],
-            org_unit_id=row["from_org_unit_id"],
-            to_org_unit_id=row["to_org_unit_id"],
         )
 
     def _to_list_item(self, row: RowMapping) -> TransferListItem:
         return TransferListItem(
             id=row["id"],
-            from_warehouse_id=row["from_warehouse_id"],
-            to_warehouse_id=row["to_warehouse_id"],
+            from_org_unit_id=row["from_org_unit_id"],
+            to_org_unit_id=row["to_org_unit_id"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],

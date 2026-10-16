@@ -3,15 +3,11 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
-    WarehouseType,
-)
-
 
 @dataclass(frozen=True, slots=True)
 class ReceiptListItem:
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -36,7 +32,7 @@ class ReceiptLineItem:
 @dataclass(frozen=True, slots=True)
 class ReceiptDetail:
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -44,13 +40,12 @@ class ReceiptDetail:
     supplier_document_number: str | None
     comment: str | None
     lines: list[ReceiptLineItem]
-    org_unit_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class WriteOffListItem:
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -70,19 +65,18 @@ class WriteOffLineItem:
 @dataclass(frozen=True, slots=True)
 class WriteOffDetail:
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
     reason: str | None
     comment: str | None
     lines: list[WriteOffLineItem]
-    org_unit_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BalanceListItem:
-    warehouse_id: UUID
+    org_unit_id: UUID
     nomenclature_id: UUID
     quantity: Decimal
     nomenclature_name: str | None = None
@@ -92,7 +86,7 @@ class BalanceListItem:
 
 @dataclass(frozen=True, slots=True)
 class LotBalanceListItem:
-    warehouse_id: UUID
+    org_unit_id: UUID
     nomenclature_id: UUID
     lot_id: UUID
     lot_code: str
@@ -106,21 +100,32 @@ class LotBalanceListItem:
 
 
 @dataclass(frozen=True, slots=True)
-class WarehouseListItem:
+class MovementListItem:
     id: UUID
+    occurred_at: datetime
     org_unit_id: UUID
-    code: str
+    nomenclature_id: UUID
+    movement_type: str
+    quantity: Decimal
+    lot_id: UUID | None = None
+    lot_code: str | None = None
+    total_cost_kopecks: int | None = None
+    nomenclature_name: str | None = None
+    location_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LocationListItem:
+    id: UUID
     name: str
-    type: WarehouseType
     is_active: bool
-    org_unit_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class TransferListItem:
     id: UUID
-    from_warehouse_id: UUID
-    to_warehouse_id: UUID
+    from_org_unit_id: UUID
+    to_org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
@@ -140,12 +145,10 @@ class TransferLineItem:
 @dataclass(frozen=True, slots=True)
 class TransferDetail:
     id: UUID
-    from_warehouse_id: UUID
-    to_warehouse_id: UUID
+    from_org_unit_id: UUID
+    to_org_unit_id: UUID
     status: str
     occurred_at: datetime
     posted_at: datetime | None
     comment: str | None
     lines: list[TransferLineItem]
-    org_unit_id: UUID | None = None
-    to_org_unit_id: UUID | None = None

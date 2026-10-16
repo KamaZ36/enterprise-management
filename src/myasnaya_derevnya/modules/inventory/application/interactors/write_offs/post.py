@@ -67,15 +67,15 @@ class PostWriteOffInteractor:
             raise DocumentAlreadyPostedError(write_off.id)
 
         lines = write_off.lines
-        warehouse = await self._preconditions.ensure_ready(
-            warehouse_id=write_off.warehouse_id,
+        location = await self._preconditions.ensure_ready(
+            org_unit_id=write_off.org_unit_id,
             nomenclature_ids=[line.nomenclature_id for line in lines],
         )
 
         allowed = await self._staff_api.can(
             user_id=current_user_id,
             permission=POST_DOCUMENT,
-            org_unit_id=warehouse.org_unit_id,
+            org_unit_id=location.id,
         )
         if not allowed:
             raise ForbiddenError()
@@ -83,21 +83,21 @@ class PostWriteOffInteractor:
         async with self._ledger.posting(
             document_type=DocumentType.WRITE_OFF,
             document_id=write_off.id,
-            warehouse_id=write_off.warehouse_id,
+            org_unit_id=write_off.org_unit_id,
             occurred_at=write_off.occurred_at,
             posted_by=current_user_id,
         ) as posting:
             await posting.lock(
                 balance_keys=[
-                    (write_off.warehouse_id, line.nomenclature_id) for line in lines
+                    (write_off.org_unit_id, line.nomenclature_id) for line in lines
                 ],
             )
 
             for line in lines:
-                slices = await self._line_slices(posting, write_off.warehouse_id, line)
+                slices = await self._line_slices(posting, write_off.org_unit_id, line)
                 for lot_id, quantity in slices:
                     await posting.issue(
-                        warehouse_id=write_off.warehouse_id,
+                        org_unit_id=write_off.org_unit_id,
                         nomenclature_id=line.nomenclature_id,
                         quantity=quantity,
                         movement_type=MovementType.WRITE_OFF,
@@ -111,12 +111,12 @@ class PostWriteOffInteractor:
     async def _line_slices(
         self,
         posting: StockPostingHandle,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         line: WriteOffLine,
     ) -> list[tuple[UUID | None, Decimal]]:
         if line.lot_id is not None:
             await posting.lock(
-                lot_keys=[(warehouse_id, line.nomenclature_id, line.lot_id)]
+                lot_keys=[(org_unit_id, line.nomenclature_id, line.lot_id)]
             )
             return [(line.lot_id, line.quantity)]
 
@@ -125,11 +125,11 @@ class PostWriteOffInteractor:
                 nomenclature_id=line.nomenclature_id,
                 lot_code=line.lot_code,
             )
-            await posting.lock(lot_keys=[(warehouse_id, line.nomenclature_id, lot_id)])
+            await posting.lock(lot_keys=[(org_unit_id, line.nomenclature_id, lot_id)])
             return [(lot_id, line.quantity)]
 
         return await posting.allocate(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_id=line.nomenclature_id,
             quantity=line.quantity,
         )

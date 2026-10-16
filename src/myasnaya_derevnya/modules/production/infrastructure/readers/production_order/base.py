@@ -13,7 +13,7 @@ class ProductionOrderReader(ABC):
     async def list(
         self,
         *,
-        warehouse_ids: Sequence[UUID] | None,
+        org_unit_ids: Sequence[UUID] | None,
         statuses: Sequence[str] | None,
         occurred_from: datetime | None,
         occurred_to: datetime | None,

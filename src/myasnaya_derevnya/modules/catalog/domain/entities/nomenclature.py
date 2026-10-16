@@ -9,12 +9,6 @@ from myasnaya_derevnya.modules.catalog.domain.errors import (
 from myasnaya_derevnya.utils import get_datetime_utc
 
 
-class NomenclatureType(StrEnum):
-    RAW_MATERIAL = "raw_material"
-    SEMI_FINISHED = "semi_finished"
-    FINISHED_GOOD = "finished_good"
-
-
 class UnitOfMeasurement(StrEnum):
     KG = "kg"
     GRAM = "g"
@@ -30,7 +24,6 @@ class Nomenclature:
         sku: str,
         name: str,
         unit: UnitOfMeasurement,
-        type_: NomenclatureType,
         category_id: UUID,
         created_at: datetime,
         is_active: bool = True,
@@ -41,7 +34,6 @@ class Nomenclature:
         self._sku = sku
         self._name = name
         self._unit = unit
-        self._type = type_
         self._category_id = category_id
         self._created_at = created_at
         self._is_active = is_active
@@ -54,7 +46,6 @@ class Nomenclature:
         sku: str,
         name: str,
         unit: UnitOfMeasurement,
-        type_: NomenclatureType,
         category_id: UUID,
         image_url: str | None = None,
         description: str | None = None,
@@ -69,7 +60,6 @@ class Nomenclature:
             sku=sku,
             name=name,
             unit=unit,
-            type_=type_,
             category_id=category_id,
             created_at=get_datetime_utc(),
             image_url=image_url,
@@ -91,10 +81,6 @@ class Nomenclature:
     @property
     def unit(self) -> UnitOfMeasurement:
         return self._unit
-
-    @property
-    def type_(self) -> NomenclatureType:
-        return self._type
 
     @property
     def category_id(self) -> UUID:
@@ -134,9 +120,6 @@ class Nomenclature:
 
     def change_unit(self, unit: UnitOfMeasurement) -> None:
         self._unit = unit
-
-    def change_type(self, type_: NomenclatureType) -> None:
-        self._type = type_
 
     def deactivate(self) -> None:
         self._is_active = False

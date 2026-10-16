@@ -15,6 +15,17 @@ class OrgUnitType(StrEnum):
     CAFE = "cafe"
     SHOP = "shop"
 
+    @property
+    def holds_stock(self) -> bool:
+        """Является ли подразделение складской локацией (хранит запасы)."""
+        return self in STOCK_LOCATION_TYPES
+
+
+# Типы подразделений, которые являются складскими локациями. root/group — папки.
+STOCK_LOCATION_TYPES: frozenset[OrgUnitType] = frozenset(
+    {OrgUnitType.SHOP, OrgUnitType.CAFE, OrgUnitType.PRODUCTION}
+)
+
 
 class OrgUnit:
     def __init__(

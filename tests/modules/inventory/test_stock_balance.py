@@ -20,7 +20,7 @@ POLICY = MovingAverageCostPolicy()
 
 
 def make_balance() -> StockBalance:
-    return StockBalance.empty(warehouse_id=uuid4(), nomenclature_id=uuid4())
+    return StockBalance.empty(org_unit_id=uuid4(), nomenclature_id=uuid4())
 
 
 def test_empty_balance_has_zero_everything() -> None:

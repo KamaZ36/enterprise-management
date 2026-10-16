@@ -68,28 +68,26 @@ async def client(db_session: AsyncSession):
         yield api_client
 
 
-async def _create_warehouse(
-    client: AsyncClient, session: AsyncSession, *, type_: str = "production"
-) -> str:
+async def _create_location(client: AsyncClient, session: AsyncSession) -> str:
     root_org_unit_id = await _root_org_unit_id(session)
 
     created = await client.post(
-        "/api/inventory/warehouses",
+        "/api/business/org-units",
         json={
-            "org_unit_id": str(root_org_unit_id),
+            "parent_id": str(root_org_unit_id),
+            "type": "production",
             "code": f"{TEST_PREFIX}{uuid4().hex[:8]}",
             "name": "Цех",
-            "type": type_,
+            "address": None,
+            "phone_number": None,
         },
     )
     assert created.status_code == 201, created.text
 
-    return created.json()["warehouse_id"]
+    return created.json()["org_unit_id"]
 
 
-async def _create_nomenclature(
-    client: AsyncClient, *, name: str, type_: str = "raw_material"
-) -> str:
+async def _create_nomenclature(client: AsyncClient, *, name: str) -> str:
     category = await client.post(
         "/api/catalog/categories",
         json={"name": f"{TEST_PREFIX}{uuid4().hex[:8]}", "parent_id": None},
@@ -102,7 +100,6 @@ async def _create_nomenclature(
             "sku": f"{TEST_PREFIX}{uuid4().hex[:8]}",
             "name": name,
             "unit": "kg",
-            "type": type_,
             "category_id": category.json()["category_id"],
         },
     )
@@ -113,7 +110,7 @@ async def _create_nomenclature(
 
 async def _receive(
     client: AsyncClient,
-    warehouse_id: str,
+    org_unit_id: str,
     nomenclature_id: str,
     *,
     quantity: str,
@@ -122,7 +119,7 @@ async def _receive(
     receipt = await client.post(
         "/api/inventory/receipts",
         json={
-            "warehouse_id": warehouse_id,
+            "org_unit_id": org_unit_id,
             "occurred_at": OCCURRED_AT,
             "lines": [
                 {
@@ -142,9 +139,9 @@ async def _receive(
     assert posted.status_code == 200, posted.text
 
 
-async def _balance(client: AsyncClient, warehouse_id: str, nomenclature_id: str) -> dict:
+async def _balance(client: AsyncClient, org_unit_id: str, nomenclature_id: str) -> dict:
     response = await client.get(
-        f"/api/inventory/warehouses/{warehouse_id}/balances/{nomenclature_id}"
+        f"/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
     )
     assert response.status_code == 200, response.text
 
@@ -154,17 +151,13 @@ async def _balance(client: AsyncClient, warehouse_id: str, nomenclature_id: str)
 async def test_production_flow_moves_stock_and_absorbs_losses(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    warehouse_id = await _create_warehouse(client, db_session)
+    org_unit_id = await _create_location(client, db_session)
     raw_id = await _create_nomenclature(client, name="Говядина лопатка")
-    main_id = await _create_nomenclature(
-        client, name="Лопатка копчёная", type_="finished_good"
-    )
-    by_product_id = await _create_nomenclature(
-        client, name="Обрезь", type_="semi_finished"
-    )
+    main_id = await _create_nomenclature(client, name="Лопатка копчёная")
+    by_product_id = await _create_nomenclature(client, name="Обрезь")
 
 
-    await _receive(client, warehouse_id, raw_id, quantity="100", unit_cost="400")
+    await _receive(client, org_unit_id, raw_id, quantity="100", unit_cost="400")
 
     tech_card = await client.post(
         "/api/production/tech-cards",
@@ -201,7 +194,7 @@ async def test_production_flow_moves_stock_and_absorbs_losses(
     order = await client.post(
         "/api/production/orders",
         json={
-            "warehouse_id": warehouse_id,
+            "org_unit_id": org_unit_id,
             "tech_card_id": tech_card_id,
             "batch_count": "1",
             "occurred_at": OCCURRED_AT,
@@ -214,14 +207,14 @@ async def test_production_flow_moves_stock_and_absorbs_losses(
     assert posted.status_code == 200, posted.text
 
 
-    raw_balance = await _balance(client, warehouse_id, raw_id)
+    raw_balance = await _balance(client, org_unit_id, raw_id)
     assert Decimal(raw_balance["quantity"]) == 0
 
     detail = await client.get(f"/api/production/orders/{order_id}")
     assert detail.status_code == 200, detail.text
     payload = detail.json()
     assert payload["status"] == "posted"
-    assert payload["warehouse_name"] == "Цех"
+    assert payload["location_name"] == "Цех"
 
     losses = [line for line in payload["lines"] if line["role"] == "loss"]
     assert len(losses) == 1
@@ -241,11 +234,11 @@ async def test_production_flow_moves_stock_and_absorbs_losses(
     assert main["cost"] == 2285714
     assert by_product["cost"] == 1714286
 
-    main_balance = await _balance(client, warehouse_id, main_id)
+    main_balance = await _balance(client, org_unit_id, main_id)
     assert Decimal(main_balance["quantity"]) == Decimal(40)
     assert main_balance["total_value_kopecks"] == main["cost"]
 
-    by_product_balance = await _balance(client, warehouse_id, by_product_id)
+    by_product_balance = await _balance(client, org_unit_id, by_product_id)
     assert Decimal(by_product_balance["quantity"]) == Decimal(30)
     assert by_product_balance["total_value_kopecks"] == by_product["cost"]
 
@@ -255,7 +248,7 @@ async def test_production_flow_moves_stock_and_absorbs_losses(
     assert reposted.json()["error"] == "ProductionOrderNotDraftError"
 
     journal = await client.get(
-        "/api/production/orders", params={"warehouse_id": warehouse_id}
+        "/api/production/orders", params={"org_unit_id": org_unit_id}
     )
     assert journal.status_code == 200, journal.text
     assert order_id in [item["id"] for item in journal.json()["items"]]
@@ -264,11 +257,9 @@ async def test_production_flow_moves_stock_and_absorbs_losses(
 async def test_order_without_stock_is_rejected(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    warehouse_id = await _create_warehouse(client, db_session)
+    org_unit_id = await _create_location(client, db_session)
     raw_id = await _create_nomenclature(client, name="Свинина")
-    output_id = await _create_nomenclature(
-        client, name="Шея копчёная", type_="finished_good"
-    )
+    output_id = await _create_nomenclature(client, name="Шея копчёная")
 
     tech_card = await client.post(
         "/api/production/tech-cards",
@@ -292,7 +283,7 @@ async def test_order_without_stock_is_rejected(
     order = await client.post(
         "/api/production/orders",
         json={
-            "warehouse_id": warehouse_id,
+            "org_unit_id": org_unit_id,
             "tech_card_id": tech_card_id,
             "batch_count": "1",
             "occurred_at": OCCURRED_AT,

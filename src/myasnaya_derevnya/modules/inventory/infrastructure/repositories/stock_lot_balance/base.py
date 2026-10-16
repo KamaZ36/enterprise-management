@@ -22,7 +22,7 @@ class StockLotBalanceRepository(ABC):
 
     @abstractmethod
     async def list_available(
-        self, warehouse_id: UUID, nomenclature_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID
     ) -> list[StockLotBalance]:
         """Блокирует и возвращает партии с остатком в порядке FEFO."""
         raise NotImplementedError

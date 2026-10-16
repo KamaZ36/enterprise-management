@@ -71,9 +71,8 @@ PRODUCTION_ORDERS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column(
-        "warehouse_id",
+        "org_unit_id",
         UUID,
-        ForeignKey("inventory.warehouses.id", ondelete="RESTRICT"),
         nullable=False,
     ),
     Column(
@@ -96,7 +95,7 @@ PRODUCTION_ORDERS_TABLE = Table(
         server_default=func.now(),
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
-    Index("ix_production_orders_warehouse_id", "warehouse_id"),
+    Index("ix_production_orders_org_unit_id", "org_unit_id"),
     Index("ix_production_orders_status", "status"),
     schema=DATABASE_SCHEMA,
 )

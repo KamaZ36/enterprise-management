@@ -72,26 +72,28 @@ async def test_request_without_session_is_unauthorized(
 
     transport = ASGITransport(app=create_app())
     async with AsyncClient(transport=transport, base_url="http://test") as anonymous:
-        response = await anonymous.get("/api/inventory/warehouses")
+        response = await anonymous.get("/api/inventory/locations")
 
     assert response.status_code == 401
 
 
-async def _create_warehouse(client: AsyncClient, session: AsyncSession) -> str:
+async def _create_location(client: AsyncClient, session: AsyncSession) -> str:
     root_org_unit_id = await _root_org_unit_id(session)
 
     created = await client.post(
-        "/api/inventory/warehouses",
+        "/api/business/org-units",
         json={
-            "org_unit_id": str(root_org_unit_id),
+            "parent_id": str(root_org_unit_id),
+            "type": "production",
             "code": f"{TEST_PREFIX}{uuid4().hex[:8]}",
             "name": "Сырьё",
-            "type": "raw",
+            "address": None,
+            "phone_number": None,
         },
     )
     assert created.status_code == 201, created.text
 
-    return created.json()["warehouse_id"]
+    return created.json()["org_unit_id"]
 
 
 async def _create_nomenclature(client: AsyncClient) -> str:
@@ -107,7 +109,6 @@ async def _create_nomenclature(client: AsyncClient) -> str:
             "sku": f"{TEST_PREFIX}{uuid4().hex[:8]}",
             "name": "Говядина",
             "unit": "kg",
-            "type": "raw_material",
             "category_id": category.json()["category_id"],
         },
     )
@@ -119,12 +120,12 @@ async def _create_nomenclature(client: AsyncClient) -> str:
 async def test_full_receipt_flow_through_api(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    warehouse_id = await _create_warehouse(client, db_session)
+    org_unit_id = await _create_location(client, db_session)
     nomenclature_id = await _create_nomenclature(client)
 
-    listed = await client.get("/api/inventory/warehouses")
+    listed = await client.get("/api/inventory/locations")
     assert listed.status_code == 200
-    assert warehouse_id in [item["id"] for item in listed.json()]
+    assert org_unit_id in [item["id"] for item in listed.json()]
 
     roles = await client.get("/api/staff/employees/roles")
     assert roles.status_code == 200, roles.text
@@ -133,7 +134,7 @@ async def test_full_receipt_flow_through_api(
     receipt = await client.post(
         "/api/inventory/receipts",
         json={
-            "warehouse_id": warehouse_id,
+            "org_unit_id": org_unit_id,
             "occurred_at": "2026-10-01T12:00:00+00:00",
             "supplier_name": "Мясокомбинат",
             "lines": [
@@ -153,7 +154,7 @@ async def test_full_receipt_flow_through_api(
     assert posted.status_code == 200, posted.text
 
     balance = await client.get(
-        f"/api/inventory/warehouses/{warehouse_id}/balances/{nomenclature_id}"
+        f"/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
     )
     assert balance.status_code == 200, balance.text
     payload = balance.json()
@@ -161,12 +162,32 @@ async def test_full_receipt_flow_through_api(
     assert payload["total_value_kopecks"] == 450000
     assert Decimal(payload["average_unit_cost"]) == Decimal(450)
 
-    balances = await client.get(f"/api/inventory/warehouses/{warehouse_id}/balances")
+    balances = await client.get(f"/api/inventory/locations/{org_unit_id}/balances")
     assert balances.status_code == 200
     assert balances.json()["total"] == 1
 
+    movements = await client.get(
+        "/api/inventory/movements", params={"org_unit_id": org_unit_id}
+    )
+    assert movements.status_code == 200, movements.text
+    movement_payload = movements.json()
+    assert movement_payload["total"] == 1
+    assert movement_payload["items"][0]["movement_type"] == "receipt"
+    assert Decimal(movement_payload["items"][0]["quantity"]) == Decimal(10)
+    assert movement_payload["items"][0]["lot_code"] == "L-001"
+    assert movement_payload["items"][0]["location_name"] == "Сырьё"
+    assert movement_payload["items"][0]["nomenclature_name"] == "Говядина"
+    assert movement_payload["items"][0]["total_cost_kopecks"] == 450000
+
+    filtered_movements = await client.get(
+        "/api/inventory/movements",
+        params={"org_unit_id": org_unit_id, "movement_types": "write_off"},
+    )
+    assert filtered_movements.status_code == 200, filtered_movements.text
+    assert filtered_movements.json()["total"] == 0
+
     journal = await client.get(
-        "/api/inventory/receipts", params={"warehouse_id": warehouse_id}
+        "/api/inventory/receipts", params={"org_unit_id": org_unit_id}
     )
     assert journal.status_code == 200, journal.text
     assert journal.json()["total"] == 1
@@ -176,7 +197,9 @@ async def test_full_receipt_flow_through_api(
     assert card.status_code == 200, card.text
     assert card.json()["supplier_name"] == "Мясокомбинат"
 
-    transfers = await client.get("/api/inventory/transfers")
+    transfers = await client.get(
+        "/api/inventory/transfers", params={"org_unit_id": org_unit_id}
+    )
     assert transfers.status_code == 200, transfers.text
     assert transfers.json()["total"] == 0
 
@@ -191,13 +214,13 @@ async def test_full_receipt_flow_through_api(
 async def test_write_off_uses_average_cost_through_api(
     client: AsyncClient, db_session: AsyncSession
 ) -> None:
-    warehouse_id = await _create_warehouse(client, db_session)
+    org_unit_id = await _create_location(client, db_session)
     nomenclature_id = await _create_nomenclature(client)
 
     receipt = await client.post(
         "/api/inventory/receipts",
         json={
-            "warehouse_id": warehouse_id,
+            "org_unit_id": org_unit_id,
             "occurred_at": "2026-10-01T12:00:00+00:00",
             "lines": [
                 {
@@ -215,7 +238,7 @@ async def test_write_off_uses_average_cost_through_api(
     write_off = await client.post(
         "/api/inventory/write-offs",
         json={
-            "warehouse_id": warehouse_id,
+            "org_unit_id": org_unit_id,
             "occurred_at": "2026-10-02T12:00:00+00:00",
             "reason": "Просрочка",
             "lines": [
@@ -234,7 +257,7 @@ async def test_write_off_uses_average_cost_through_api(
     assert posted.status_code == 200, posted.text
 
     balance = await client.get(
-        f"/api/inventory/warehouses/{warehouse_id}/balances/{nomenclature_id}"
+        f"/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
     )
     payload = balance.json()
     assert Decimal(payload["quantity"]) == Decimal(6)

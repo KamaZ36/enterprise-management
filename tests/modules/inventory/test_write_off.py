@@ -30,7 +30,7 @@ def make_line(quantity: str = "3", lot_code: str | None = None) -> WriteOffLine:
 
 def make_write_off(lines: list[WriteOffLine] | None = None) -> WriteOff:
     return WriteOff.create(
-        warehouse_id=uuid4(),
+        org_unit_id=uuid4(),
         occurred_at=get_datetime_utc(),
         reason="Просрочка",
         comment="Списание по акту",
@@ -102,7 +102,7 @@ def test_line_with_non_positive_quantity_is_rejected() -> None:
 def test_naive_occurred_at_is_rejected() -> None:
     with pytest.raises(TimezoneRequiredError):
         WriteOff.create(
-            warehouse_id=uuid4(),
+            org_unit_id=uuid4(),
             occurred_at=datetime(2026, 10, 1, 9, 0),
             lines=[make_line()],
         )
@@ -112,7 +112,7 @@ def test_occurred_at_keeps_timezone() -> None:
     occurred_at = datetime(2026, 10, 1, 9, 0, tzinfo=UTC)
 
     write_off = WriteOff.create(
-        warehouse_id=uuid4(), occurred_at=occurred_at, lines=[make_line()]
+        org_unit_id=uuid4(), occurred_at=occurred_at, lines=[make_line()]
     )
 
     assert write_off.occurred_at == occurred_at

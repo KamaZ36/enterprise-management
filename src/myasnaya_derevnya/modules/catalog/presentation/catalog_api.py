@@ -24,11 +24,6 @@ class CatalogAPI:
     ) -> dict[UUID, str]:
         return await self._nomenclature_repository.get_names(set(nomenclature_ids))
 
-    async def nomenclature_types(
-        self, nomenclature_ids: Iterable[UUID]
-    ) -> dict[UUID, str]:
-        return await self._nomenclature_repository.get_types(set(nomenclature_ids))
-
     async def prices_for_point(
         self, org_unit_id: UUID, nomenclature_ids: list[UUID]
     ) -> dict[UUID, int]:

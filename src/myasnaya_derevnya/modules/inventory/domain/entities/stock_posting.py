@@ -10,7 +10,7 @@ class StockPosting:
     id: UUID
     document_type: str
     document_id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     posted_at: datetime
     posted_by: UUID | None
 
@@ -19,14 +19,14 @@ class StockPosting:
         cls,
         document_type: str,
         document_id: UUID,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         posted_by: UUID | None = None,
     ) -> StockPosting:
         return cls(
             id=uuid7(),
             document_type=document_type,
             document_id=document_id,
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             posted_at=get_datetime_utc(),
             posted_by=posted_by,
         )

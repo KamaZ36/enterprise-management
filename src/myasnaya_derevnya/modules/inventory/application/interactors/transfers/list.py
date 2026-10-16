@@ -12,7 +12,7 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.base im
 
 @dataclass(frozen=True, slots=True)
 class ListTransfersQuery:
-    warehouse_id: UUID | None = None
+    org_unit_id: UUID | None = None
     search: str | None = None
     limit: int = 20
     offset: int = 0
@@ -36,12 +36,12 @@ class ListTransfersInteractor:
         self._document_scope = document_scope
 
     async def __call__(self, query: ListTransfersQuery) -> TransferPage:
-        warehouse_ids = await self._document_scope.visible_warehouse_ids(
-            query.warehouse_id
+        org_unit_ids = await self._document_scope.visible_org_unit_ids(
+            query.org_unit_id
         )
 
         items, total = await self._transfer_reader.list(
-            warehouse_ids=warehouse_ids,
+            org_unit_ids=org_unit_ids,
             search=query.search,
             limit=query.limit,
             offset=query.offset,

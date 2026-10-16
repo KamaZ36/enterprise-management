@@ -1,6 +1,5 @@
 from sqlalchemy import (
     BigInteger,
-    Boolean,
     CheckConstraint,
     Column,
     Date,
@@ -20,31 +19,6 @@ from myasnaya_derevnya.core.database import metadata
 DATABASE_SCHEMA = "inventory"
 
 QUANTITY = Numeric(18, 6)
-
-
-WAREHOUSES_TABLE = Table(
-    "warehouses",
-    metadata,
-    Column("id", UUID, primary_key=True),
-    Column("org_unit_id", UUID, nullable=False),
-    Column("code", String(64), nullable=False),
-    Column("name", String(255), nullable=False),
-    Column("type", String(32), nullable=False),
-    Column("is_active", Boolean, nullable=False, server_default="true"),
-    Column(
-        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
-    ),
-    Column(
-        "updated_at",
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-    ),
-    UniqueConstraint("code", name="uq_warehouses_code"),
-    Index("ix_warehouses_org_unit_id", "org_unit_id"),
-    schema=DATABASE_SCHEMA,
-)
 
 
 STOCK_LOTS_TABLE = Table(
@@ -73,12 +47,7 @@ STOCK_POSTINGS_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("document_type", String(32), nullable=False),
     Column("document_id", UUID, nullable=False),
-    Column(
-        "warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
+    Column("org_unit_id", UUID, nullable=False),
     Column(
         "posted_at",
         DateTime(timezone=True),
@@ -87,7 +56,7 @@ STOCK_POSTINGS_TABLE = Table(
     ),
     Column("posted_by", UUID, nullable=True),
     UniqueConstraint("document_type", "document_id", name="uq_stock_postings_document"),
-    Index("ix_stock_postings_warehouse_posted_at", "warehouse_id", "posted_at"),
+    Index("ix_stock_postings_org_unit_posted_at", "org_unit_id", "posted_at"),
     schema=DATABASE_SCHEMA,
 )
 
@@ -98,12 +67,7 @@ RECEIPTS_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
-    Column(
-        "warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
+    Column("org_unit_id", UUID, nullable=False),
     Column("supplier_name", String(255), nullable=True),
     Column("supplier_document_number", String(64), nullable=True),
     Column("comment", String(512), nullable=True),
@@ -112,7 +76,7 @@ RECEIPTS_TABLE = Table(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
-    Index("ix_receipts_warehouse_occurred_at", "warehouse_id", "occurred_at"),
+    Index("ix_receipts_org_unit_occurred_at", "org_unit_id", "occurred_at"),
     Index("ix_receipts_status", "status"),
     schema=DATABASE_SCHEMA,
 )
@@ -152,12 +116,7 @@ WRITE_OFFS_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
-    Column(
-        "warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
+    Column("org_unit_id", UUID, nullable=False),
     Column("reason", String(255), nullable=True),
     Column("comment", String(512), nullable=True),
     Column("created_by", UUID, nullable=True),
@@ -165,7 +124,7 @@ WRITE_OFFS_TABLE = Table(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
-    Index("ix_write_offs_warehouse_occurred_at", "warehouse_id", "occurred_at"),
+    Index("ix_write_offs_org_unit_occurred_at", "org_unit_id", "occurred_at"),
     Index("ix_write_offs_status", "status"),
     schema=DATABASE_SCHEMA,
 )
@@ -207,12 +166,7 @@ STOCK_MOVEMENTS_TABLE = Table(
         nullable=False,
         server_default=func.now(),
     ),
-    Column(
-        "warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
+    Column("org_unit_id", UUID, nullable=False),
     Column("nomenclature_id", UUID, nullable=False),
     Column(
         "lot_id",
@@ -236,13 +190,14 @@ STOCK_MOVEMENTS_TABLE = Table(
         name="sign_consistent",
     ),
     Index(
-        "ix_stock_movements_warehouse_nomenclature",
-        "warehouse_id",
+        "ix_stock_movements_org_unit_nomenclature",
+        "org_unit_id",
         "nomenclature_id",
         "occurred_at",
     ),
     Index("ix_stock_movements_posting_id", "posting_id"),
     Index("ix_stock_movements_lot_id", "lot_id"),
+    Index("ix_stock_movements_nomenclature_id", "nomenclature_id"),
     schema=DATABASE_SCHEMA,
 )
 
@@ -250,12 +205,7 @@ STOCK_MOVEMENTS_TABLE = Table(
 STOCK_BALANCES_TABLE = Table(
     "stock_balances",
     metadata,
-    Column(
-        "warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        primary_key=True,
-    ),
+    Column("org_unit_id", UUID, primary_key=True),
     Column("nomenclature_id", UUID, primary_key=True),
     Column("quantity", QUANTITY, nullable=False, server_default="0"),
     Column("average_unit_cost", Numeric(18, 6), nullable=False, server_default="0"),
@@ -276,12 +226,7 @@ STOCK_BALANCES_TABLE = Table(
 STOCK_LOT_BALANCES_TABLE = Table(
     "stock_lot_balances",
     metadata,
-    Column(
-        "warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        primary_key=True,
-    ),
+    Column("org_unit_id", UUID, primary_key=True),
     Column("nomenclature_id", UUID, primary_key=True),
     Column(
         "lot_id",
@@ -312,26 +257,16 @@ TRANSFERS_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
-    Column(
-        "from_warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
-    Column(
-        "to_warehouse_id",
-        UUID,
-        ForeignKey(f"{DATABASE_SCHEMA}.warehouses.id", ondelete="RESTRICT"),
-        nullable=False,
-    ),
+    Column("from_org_unit_id", UUID, nullable=False),
+    Column("to_org_unit_id", UUID, nullable=False),
     Column("comment", String(512), nullable=True),
     Column("created_by", UUID, nullable=True),
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
-    Index("ix_transfers_from_occurred_at", "from_warehouse_id", "occurred_at"),
-    Index("ix_transfers_to_occurred_at", "to_warehouse_id", "occurred_at"),
+    Index("ix_transfers_from_occurred_at", "from_org_unit_id", "occurred_at"),
+    Index("ix_transfers_to_occurred_at", "to_org_unit_id", "occurred_at"),
     Index("ix_transfers_status", "status"),
     schema=DATABASE_SCHEMA,
 )

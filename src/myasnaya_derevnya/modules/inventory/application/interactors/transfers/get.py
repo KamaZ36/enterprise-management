@@ -34,7 +34,7 @@ class GetTransferInteractor:
             raise TransferNotFoundError(query.transfer_id)
 
         await self._document_scope.ensure_can_read(
-            [detail.org_unit_id, detail.to_org_unit_id]
+            [detail.from_org_unit_id, detail.to_org_unit_id]
         )
 
         names = await self._catalog_api.nomenclature_names(

@@ -154,7 +154,7 @@ class ProductionOrderLineSchema(BaseModel):
 
 class ProductionOrderListItemSchema(BaseModel):
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     tech_card_id: UUID
     tech_card_code: str
     tech_card_version: int
@@ -163,7 +163,7 @@ class ProductionOrderListItemSchema(BaseModel):
     batch_count: Decimal
     created_at: datetime
     posted_at: datetime | None = None
-    warehouse_name: str | None = None
+    location_name: str | None = None
 
     @classmethod
     def from_dto(
@@ -171,7 +171,7 @@ class ProductionOrderListItemSchema(BaseModel):
     ) -> ProductionOrderListItemSchema:
         return cls(
             id=item.id,
-            warehouse_id=item.warehouse_id,
+            org_unit_id=item.org_unit_id,
             tech_card_id=item.tech_card_id,
             tech_card_code=item.tech_card_code,
             tech_card_version=item.tech_card_version,
@@ -180,7 +180,7 @@ class ProductionOrderListItemSchema(BaseModel):
             batch_count=item.batch_count,
             created_at=item.created_at,
             posted_at=item.posted_at,
-            warehouse_name=item.warehouse_name,
+            location_name=item.location_name,
         )
 
 
@@ -191,7 +191,7 @@ class ProductionOrderListSchema(BaseModel):
 
 class ProductionOrderDetailSchema(BaseModel):
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     tech_card_id: UUID
     tech_card_code: str
     tech_card_version: int
@@ -202,7 +202,7 @@ class ProductionOrderDetailSchema(BaseModel):
     lines: list[ProductionOrderLineSchema]
     comment: str | None = None
     posted_at: datetime | None = None
-    warehouse_name: str | None = None
+    location_name: str | None = None
 
     @classmethod
     def from_dto(
@@ -210,7 +210,7 @@ class ProductionOrderDetailSchema(BaseModel):
     ) -> ProductionOrderDetailSchema:
         return cls(
             id=item.id,
-            warehouse_id=item.warehouse_id,
+            org_unit_id=item.org_unit_id,
             tech_card_id=item.tech_card_id,
             tech_card_code=item.tech_card_code,
             tech_card_version=item.tech_card_version,
@@ -223,12 +223,12 @@ class ProductionOrderDetailSchema(BaseModel):
             ],
             comment=item.comment,
             posted_at=item.posted_at,
-            warehouse_name=item.warehouse_name,
+            location_name=item.location_name,
         )
 
 
 class CreateProductionOrderSchema(BaseModel):
-    warehouse_id: UUID
+    org_unit_id: UUID
     tech_card_id: UUID
     batch_count: Decimal = Field(gt=0)
     occurred_at: datetime

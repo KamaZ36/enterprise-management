@@ -1,7 +1,14 @@
-export const NOMENCLATURE_TYPES: Record<string, string> = {
-  raw_material: "Сырьё",
-  semi_finished: "Полуфабрикат",
-  finished_good: "Готовая продукция",
+export const MOVEMENT_TYPES: Record<string, string> = {
+  receipt: "Поступление",
+  issue: "Выдача",
+  write_off: "Списание",
+  sale: "Продажа",
+  transfer_in: "Перемещение (приход)",
+  transfer_out: "Перемещение (расход)",
+  production_in: "Производство (приход)",
+  production_out: "Производство (расход)",
+  inventory_surplus: "Излишек",
+  inventory_shortage: "Недостача",
 };
 
 export const UNITS: Record<string, string> = {
@@ -10,13 +17,6 @@ export const UNITS: Record<string, string> = {
   pcs: "шт",
   l: "л",
   m: "м",
-};
-
-export const WAREHOUSE_TYPES: Record<string, string> = {
-  raw: "Склад сырья",
-  production: "Производство",
-  finished: "Готовая продукция",
-  shop: "Магазин",
 };
 
 export function label(

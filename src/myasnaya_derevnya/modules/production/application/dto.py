@@ -78,7 +78,7 @@ class ProductionOrderLineItem:
 @dataclass(frozen=True, slots=True)
 class ProductionOrderListItem:
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     tech_card_id: UUID
     tech_card_code: str
     tech_card_version: int
@@ -87,13 +87,13 @@ class ProductionOrderListItem:
     batch_count: Decimal
     created_at: datetime
     posted_at: datetime | None = None
-    warehouse_name: str | None = None
+    location_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class ProductionOrderDetail:
     id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     tech_card_id: UUID
     tech_card_code: str
     tech_card_version: int
@@ -104,7 +104,7 @@ class ProductionOrderDetail:
     lines: list[ProductionOrderLineItem]
     comment: str | None = None
     posted_at: datetime | None = None
-    warehouse_name: str | None = None
+    location_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

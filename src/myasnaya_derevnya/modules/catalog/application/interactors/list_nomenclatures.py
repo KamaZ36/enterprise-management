@@ -15,7 +15,6 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 @dataclass(frozen=True, slots=True)
 class ListNomenclaturesQuery:
     search: str | None = None
-    type_code: str | None = None
     category_id: UUID | None = None
     limit: int = 20
     offset: int = 0
@@ -25,7 +24,6 @@ class ListNomenclaturesQuery:
 
         return ListNomenclaturesQuery(
             search=search or None,
-            type_code=self.type_code,
             category_id=self.category_id,
             limit=self.limit,
             offset=self.offset,
@@ -67,7 +65,6 @@ class ListNomenclaturesInteractor:
 
         items, total = await self._nomenclature_reader.list(
             search=page.search,
-            type_code=page.type_code,
             category_id=page.category_id,
             limit=page.limit,
             offset=page.offset,

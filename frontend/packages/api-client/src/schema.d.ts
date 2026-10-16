@@ -780,7 +780,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/warehouses": {
+    "/api/inventory/locations": {
         parameters: {
             query?: never;
             header?: never;
@@ -788,16 +788,12 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List Warehouses
-         * @description Список складов
+         * List Locations
+         * @description Список складских локаций (подразделений)
          */
-        get: operations["list_warehouses_api_inventory_warehouses_get"];
+        get: operations["list_locations_api_inventory_locations_get"];
         put?: never;
-        /**
-         * Create Warehouse
-         * @description Создать склад
-         */
-        post: operations["create_warehouse_api_inventory_warehouses_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -892,7 +888,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/warehouses/{warehouse_id}/balances": {
+    "/api/inventory/locations/{org_unit_id}/balances": {
         parameters: {
             query?: never;
             header?: never;
@@ -901,9 +897,9 @@ export interface paths {
         };
         /**
          * List Balances
-         * @description Остатки склада
+         * @description Остатки локации
          */
-        get: operations["list_balances_api_inventory_warehouses__warehouse_id__balances_get"];
+        get: operations["list_balances_api_inventory_locations__org_unit_id__balances_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -912,7 +908,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/warehouses/{warehouse_id}/balances/{nomenclature_id}": {
+    "/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -923,7 +919,7 @@ export interface paths {
          * Get Balance
          * @description Остаток и себестоимость по номенклатуре
          */
-        get: operations["get_balance_api_inventory_warehouses__warehouse_id__balances__nomenclature_id__get"];
+        get: operations["get_balance_api_inventory_locations__org_unit_id__balances__nomenclature_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -932,7 +928,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/warehouses/{warehouse_id}/lots": {
+    "/api/inventory/locations/{org_unit_id}/lots": {
         parameters: {
             query?: never;
             header?: never;
@@ -943,7 +939,27 @@ export interface paths {
          * List Lot Balances
          * @description Остатки по партиям со сроками годности
          */
-        get: operations["list_lot_balances_api_inventory_warehouses__warehouse_id__lots_get"];
+        get: operations["list_lot_balances_api_inventory_locations__org_unit_id__lots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Movements
+         * @description Регистр движений: приход и расход по локациям
+         */
+        get: operations["list_movements_api_inventory_movements_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -990,26 +1006,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/inventory/warehouses/{warehouse_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update Warehouse
-         * @description Изменить склад
-         */
-        patch: operations["update_warehouse_api_inventory_warehouses__warehouse_id__patch"];
         trace?: never;
     };
     "/api/inventory/transfers": {
@@ -1349,10 +1345,10 @@ export interface components {
         /** BalanceSchema */
         BalanceSchema: {
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /**
              * Nomenclature Id
              * Format: uuid
@@ -1479,7 +1475,6 @@ export interface components {
             /** Name */
             name: string;
             unit: components["schemas"]["UnitOfMeasurement"];
-            type: components["schemas"]["NomenclatureType"];
             /**
              * Category Id
              * Format: uuid
@@ -1545,10 +1540,10 @@ export interface components {
         /** CreateProductionOrderSchema */
         CreateProductionOrderSchema: {
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /**
              * Tech Card Id
              * Format: uuid
@@ -1567,10 +1562,10 @@ export interface components {
         /** CreateReceiptSchema */
         CreateReceiptSchema: {
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /**
              * Occurred At
              * Format: date-time
@@ -1623,15 +1618,15 @@ export interface components {
         /** CreateTransferSchema */
         CreateTransferSchema: {
             /**
-             * From Warehouse Id
+             * From Org Unit Id
              * Format: uuid
              */
-            from_warehouse_id: string;
+            from_org_unit_id: string;
             /**
-             * To Warehouse Id
+             * To Org Unit Id
              * Format: uuid
              */
-            to_warehouse_id: string;
+            to_org_unit_id: string;
             /**
              * Occurred At
              * Format: date-time
@@ -1642,26 +1637,13 @@ export interface components {
             /** Comment */
             comment?: string | null;
         };
-        /** CreateWarehouseSchema */
-        CreateWarehouseSchema: {
+        /** CreateWriteOffSchema */
+        CreateWriteOffSchema: {
             /**
              * Org Unit Id
              * Format: uuid
              */
             org_unit_id: string;
-            /** Code */
-            code: string;
-            /** Name */
-            name: string;
-            type: components["schemas"]["WarehouseType"];
-        };
-        /** CreateWriteOffSchema */
-        CreateWriteOffSchema: {
-            /**
-             * Warehouse Id
-             * Format: uuid
-             */
-            warehouse_id: string;
             /**
              * Occurred At
              * Format: date-time
@@ -1876,6 +1858,18 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** LocationSchema */
+        LocationSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
         /** LoginByPasswordCommand */
         LoginByPasswordCommand: {
             /** Username */
@@ -1905,10 +1899,10 @@ export interface components {
         /** LotBalanceSchema */
         LotBalanceSchema: {
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /**
              * Nomenclature Id
              * Format: uuid
@@ -1941,6 +1935,57 @@ export interface components {
              * @description Стоимость партии в копейках. null — нет права видеть стоимость
              */
             total_value_kopecks?: number | null;
+        };
+        /** MovementItemSchema */
+        MovementItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Location Name */
+            location_name?: string | null;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name?: string | null;
+            /** Lot Id */
+            lot_id?: string | null;
+            /** Lot Code */
+            lot_code?: string | null;
+            /** Movement Type */
+            movement_type: string;
+            /** Quantity */
+            quantity: string;
+            /**
+             * Total Cost Kopecks
+             * @description Сумма движения в копейках. null — нет права видеть стоимость
+             */
+            total_cost_kopecks?: number | null;
+        };
+        /** MovementListSchema */
+        MovementListSchema: {
+            /** Items */
+            items: components["schemas"]["MovementItemSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** MyOrderDetailSchema */
         MyOrderDetailSchema: {
@@ -2056,7 +2101,6 @@ export interface components {
             sku: string;
             /** Name */
             name: string;
-            type: components["schemas"]["NomenclatureType"];
             unit: components["schemas"]["UnitOfMeasurement"];
             /**
              * Category Id
@@ -2072,11 +2116,6 @@ export interface components {
             /** Description */
             description?: string | null;
         };
-        /**
-         * NomenclatureType
-         * @enum {string}
-         */
-        NomenclatureType: "raw_material" | "semi_finished" | "finished_good";
         /**
          * OrderChannel
          * @enum {string}
@@ -2314,10 +2353,10 @@ export interface components {
              */
             id: string;
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /**
              * Tech Card Id
              * Format: uuid
@@ -2346,8 +2385,8 @@ export interface components {
             comment?: string | null;
             /** Posted At */
             posted_at?: string | null;
-            /** Warehouse Name */
-            warehouse_name?: string | null;
+            /** Location Name */
+            location_name?: string | null;
         };
         /** ProductionOrderLineSchema */
         ProductionOrderLineSchema: {
@@ -2378,10 +2417,10 @@ export interface components {
              */
             id: string;
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /**
              * Tech Card Id
              * Format: uuid
@@ -2406,8 +2445,8 @@ export interface components {
             created_at: string;
             /** Posted At */
             posted_at?: string | null;
-            /** Warehouse Name */
-            warehouse_name?: string | null;
+            /** Location Name */
+            location_name?: string | null;
         };
         /** ProductionOrderListSchema */
         ProductionOrderListSchema: {
@@ -2429,10 +2468,10 @@ export interface components {
              */
             id: string;
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /** Status */
             status: string;
             /**
@@ -2503,10 +2542,10 @@ export interface components {
              */
             id: string;
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /** Status */
             status: string;
             /**
@@ -2673,15 +2712,15 @@ export interface components {
              */
             id: string;
             /**
-             * From Warehouse Id
+             * From Org Unit Id
              * Format: uuid
              */
-            from_warehouse_id: string;
+            from_org_unit_id: string;
             /**
-             * To Warehouse Id
+             * To Org Unit Id
              * Format: uuid
              */
-            to_warehouse_id: string;
+            to_org_unit_id: string;
             /** Status */
             status: string;
             /**
@@ -2735,15 +2774,15 @@ export interface components {
              */
             id: string;
             /**
-             * From Warehouse Id
+             * From Org Unit Id
              * Format: uuid
              */
-            from_warehouse_id: string;
+            from_org_unit_id: string;
             /**
-             * To Warehouse Id
+             * To Org Unit Id
              * Format: uuid
              */
-            to_warehouse_id: string;
+            to_org_unit_id: string;
             /** Status */
             status: string;
             /**
@@ -2805,7 +2844,6 @@ export interface components {
             /** Category Id */
             category_id?: string | null;
             unit?: components["schemas"]["UnitOfMeasurement"] | null;
-            type?: components["schemas"]["NomenclatureType"] | null;
             /** Is Active */
             is_active?: boolean | null;
             /** Image Url */
@@ -2864,14 +2902,6 @@ export interface components {
             /** Comment */
             comment?: string | null;
         };
-        /** UpdateWarehouseSchema */
-        UpdateWarehouseSchema: {
-            /** Name */
-            name?: string | null;
-            type?: components["schemas"]["WarehouseType"] | null;
-            /** Is Active */
-            is_active?: boolean | null;
-        };
         /** UploadedImageSchema */
         UploadedImageSchema: {
             /** Url */
@@ -2896,8 +2926,8 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
-        /** WarehouseSchema */
-        WarehouseSchema: {
+        /** WriteOffDetailSchema */
+        WriteOffDetailSchema: {
             /**
              * Id
              * Format: uuid
@@ -2908,36 +2938,6 @@ export interface components {
              * Format: uuid
              */
             org_unit_id: string;
-            /**
-             * Org Unit Name
-             * @description Название подразделения-владельца склада
-             */
-            org_unit_name?: string | null;
-            /** Code */
-            code: string;
-            /** Name */
-            name: string;
-            type: components["schemas"]["WarehouseType"];
-            /** Is Active */
-            is_active: boolean;
-        };
-        /**
-         * WarehouseType
-         * @enum {string}
-         */
-        WarehouseType: "raw" | "production" | "finished" | "shop";
-        /** WriteOffDetailSchema */
-        WriteOffDetailSchema: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Warehouse Id
-             * Format: uuid
-             */
-            warehouse_id: string;
             /** Status */
             status: string;
             /**
@@ -2993,10 +2993,10 @@ export interface components {
              */
             id: string;
             /**
-             * Warehouse Id
+             * Org Unit Id
              * Format: uuid
              */
-            warehouse_id: string;
+            org_unit_id: string;
             /** Status */
             status: string;
             /**
@@ -4103,7 +4103,6 @@ export interface operations {
             query?: {
                 /** @description Поиск по названию или SKU */
                 search?: string | null;
-                type?: components["schemas"]["NomenclatureType"] | null;
                 category_id?: string | null;
                 limit?: number;
                 offset?: number;
@@ -4586,11 +4585,9 @@ export interface operations {
             };
         };
     };
-    list_warehouses_api_inventory_warehouses_get: {
+    list_locations_api_inventory_locations_get: {
         parameters: {
-            query?: {
-                org_unit_id?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4603,49 +4600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseSchema"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_warehouse_api_inventory_warehouses_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateWarehouseSchema"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["LocationSchema"][];
                 };
             };
         };
@@ -4653,7 +4608,7 @@ export interface operations {
     list_receipts_api_inventory_receipts_get: {
         parameters: {
             query?: {
-                warehouse_id?: string | null;
+                org_unit_id?: string | null;
                 limit?: number;
                 offset?: number;
                 search?: string | null;
@@ -4751,7 +4706,7 @@ export interface operations {
     list_write_offs_api_inventory_write_offs_get: {
         parameters: {
             query?: {
-                warehouse_id?: string | null;
+                org_unit_id?: string | null;
                 limit?: number;
                 offset?: number;
                 search?: string | null;
@@ -4846,14 +4801,14 @@ export interface operations {
             };
         };
     };
-    list_balances_api_inventory_warehouses__warehouse_id__balances_get: {
+    list_balances_api_inventory_locations__org_unit_id__balances_get: {
         parameters: {
             query?: {
                 search?: string | null;
             };
             header?: never;
             path: {
-                warehouse_id: string;
+                org_unit_id: string;
             };
             cookie?: never;
         };
@@ -4879,12 +4834,12 @@ export interface operations {
             };
         };
     };
-    get_balance_api_inventory_warehouses__warehouse_id__balances__nomenclature_id__get: {
+    get_balance_api_inventory_locations__org_unit_id__balances__nomenclature_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                warehouse_id: string;
+                org_unit_id: string;
                 nomenclature_id: string;
             };
             cookie?: never;
@@ -4911,7 +4866,7 @@ export interface operations {
             };
         };
     };
-    list_lot_balances_api_inventory_warehouses__warehouse_id__lots_get: {
+    list_lot_balances_api_inventory_locations__org_unit_id__lots_get: {
         parameters: {
             query?: {
                 search?: string | null;
@@ -4920,7 +4875,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                warehouse_id: string;
+                org_unit_id: string;
             };
             cookie?: never;
         };
@@ -4933,6 +4888,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LotBalanceListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_movements_api_inventory_movements_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+                nomenclature_id?: string | null;
+                /** @description Типы движений через запятую */
+                movement_types?: string | null;
+                occurred_from?: string | null;
+                occurred_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementListSchema"];
                 };
             };
             /** @description Validation Error */
@@ -5008,45 +5001,10 @@ export interface operations {
             };
         };
     };
-    update_warehouse_api_inventory_warehouses__warehouse_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                warehouse_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateWarehouseSchema"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_transfers_api_inventory_transfers_get: {
         parameters: {
             query?: {
-                warehouse_id?: string | null;
+                org_unit_id?: string | null;
                 limit?: number;
                 offset?: number;
                 search?: string | null;
@@ -5308,7 +5266,7 @@ export interface operations {
     list_production_orders_api_production_orders_get: {
         parameters: {
             query?: {
-                warehouse_id?: string | null;
+                org_unit_id?: string | null;
                 /** @description Статусы через запятую */
                 statuses?: string | null;
                 occurred_from?: string | null;

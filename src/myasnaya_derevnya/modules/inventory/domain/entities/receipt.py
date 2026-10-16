@@ -58,7 +58,7 @@ class Receipt:
         id: UUID,
         status: DocumentStatus,
         occurred_at: datetime,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         supplier_name: str | None,
         supplier_document_number: str | None,
         comment: str | None,
@@ -70,7 +70,7 @@ class Receipt:
         self._id = id
         self._status = status
         self._occurred_at = occurred_at
-        self._warehouse_id = warehouse_id
+        self._org_unit_id = org_unit_id
         self._supplier_name = supplier_name
         self._supplier_document_number = supplier_document_number
         self._comment = comment
@@ -82,7 +82,7 @@ class Receipt:
     @classmethod
     def create(
         cls,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: datetime,
         lines: list[ReceiptLine] | None = None,
         created_by: UUID | None = None,
@@ -97,7 +97,7 @@ class Receipt:
             id=uuid7(),
             status=DocumentStatus.DRAFT,
             occurred_at=occurred_at,
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             supplier_name=supplier_name,
             supplier_document_number=supplier_document_number,
             comment=comment,
@@ -120,8 +120,8 @@ class Receipt:
         return self._occurred_at
 
     @property
-    def warehouse_id(self) -> UUID:
-        return self._warehouse_id
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def supplier_name(self) -> str | None:

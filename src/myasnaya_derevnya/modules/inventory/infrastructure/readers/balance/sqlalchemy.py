@@ -12,7 +12,7 @@ from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
 )
 
 BASE_COLUMNS = (
-    STOCK_BALANCES_TABLE.c.warehouse_id,
+    STOCK_BALANCES_TABLE.c.org_unit_id,
     STOCK_BALANCES_TABLE.c.nomenclature_id,
     STOCK_BALANCES_TABLE.c.quantity,
 )
@@ -27,12 +27,12 @@ class SQLAlchemyBalanceReader(BalanceReader):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def list_by_warehouse(
-        self, warehouse_id: UUID, *, with_cost: bool
+    async def list_by_org_unit(
+        self, org_unit_id: UUID, *, with_cost: bool
     ) -> list[BalanceListItem]:
         stmt = (
             select(*self._columns(with_cost))
-            .where(STOCK_BALANCES_TABLE.c.warehouse_id == warehouse_id)
+            .where(STOCK_BALANCES_TABLE.c.org_unit_id == org_unit_id)
             .order_by(STOCK_BALANCES_TABLE.c.nomenclature_id.asc())
         )
         rows = (await self._session.execute(stmt)).mappings().all()
@@ -40,10 +40,10 @@ class SQLAlchemyBalanceReader(BalanceReader):
         return [self._to_dto(row, with_cost=with_cost) for row in rows]
 
     async def get(
-        self, warehouse_id: UUID, nomenclature_id: UUID, *, with_cost: bool
+        self, org_unit_id: UUID, nomenclature_id: UUID, *, with_cost: bool
     ) -> BalanceListItem | None:
         stmt = select(*self._columns(with_cost)).where(
-            STOCK_BALANCES_TABLE.c.warehouse_id == warehouse_id,
+            STOCK_BALANCES_TABLE.c.org_unit_id == org_unit_id,
             STOCK_BALANCES_TABLE.c.nomenclature_id == nomenclature_id,
         )
         row = (await self._session.execute(stmt)).mappings().one_or_none()
@@ -57,7 +57,7 @@ class SQLAlchemyBalanceReader(BalanceReader):
     @staticmethod
     def _to_dto(row: RowMapping, *, with_cost: bool) -> BalanceListItem:
         return BalanceListItem(
-            warehouse_id=row["warehouse_id"],
+            org_unit_id=row["org_unit_id"],
             nomenclature_id=row["nomenclature_id"],
             quantity=row["quantity"],
             average_unit_cost=row["average_unit_cost"] if with_cost else None,

@@ -61,13 +61,13 @@ class CompleteOrderInteractor:
         if not lines:
             return
 
-        warehouse = await self._inventory_api.default_sales_warehouse(order.org_unit_id)
-        if warehouse is None:
+        location = await self._inventory_api.get_location(order.org_unit_id)
+        if location is None:
             return
 
         costs = await self._inventory_api.post_sale(
             document_id=order.id,
-            warehouse_id=warehouse.id,
+            org_unit_id=location.id,
             occurred_at=order.completed_at or get_datetime_utc(),
             lines=[
                 SaleLine(nomenclature_id=line.nomenclature_id, quantity=line.quantity)
@@ -76,5 +76,4 @@ class CompleteOrderInteractor:
             posted_by=user_id,
         )
 
-        order.assign_warehouse(warehouse.id)
         order.apply_costs(list(costs))

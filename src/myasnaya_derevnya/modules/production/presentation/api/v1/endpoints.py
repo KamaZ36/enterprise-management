@@ -137,7 +137,7 @@ async def get_tech_card(
 )
 async def list_production_orders(
     request: Request,
-    warehouse_id: Annotated[UUID | None, Query()] = None,
+    org_unit_id: Annotated[UUID | None, Query()] = None,
     statuses: Annotated[
         str | None, Query(description="Статусы через запятую")
     ] = None,
@@ -147,7 +147,7 @@ async def list_production_orders(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ProductionOrderListSchema:
     query = ListProductionOrdersQuery(
-        warehouse_id=warehouse_id,
+        org_unit_id=org_unit_id,
         statuses=tuple(statuses.split(",")) if statuses else None,
         occurred_from=occurred_from,
         occurred_to=occurred_to,
@@ -176,7 +176,7 @@ async def create_production_order(
     request: Request, data: CreateProductionOrderSchema
 ) -> JSONResponse:
     command = CreateProductionOrderCommand(
-        warehouse_id=data.warehouse_id,
+        org_unit_id=data.org_unit_id,
         tech_card_id=data.tech_card_id,
         batch_count=data.batch_count,
         occurred_at=data.occurred_at,

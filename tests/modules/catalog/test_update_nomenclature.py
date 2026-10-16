@@ -13,7 +13,6 @@ from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclatu
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.domain.errors import (
@@ -71,14 +70,14 @@ class FakeCategoryRepository:
         return self.exists
 
 
-class FakeStockMovementRepository:
+class FakeInventoryAPI:
     def __init__(self, has_movements: bool = False) -> None:
-        self.count = 1 if has_movements else 0
+        self.has = has_movements
         self.calls: list[UUID] = []
 
-    async def count_for_nomenclature(self, nomenclature_id: UUID) -> int:
+    async def has_movements(self, nomenclature_id: UUID) -> bool:
         self.calls.append(nomenclature_id)
-        return self.count
+        return self.has
 
 
 class FakeTransactionManager:
@@ -96,7 +95,6 @@ def make_nomenclature(
         sku="BEEF-SHOULDER",
         name="Говядина лопатка",
         unit=unit,
-        type_=NomenclatureType.RAW_MATERIAL,
         category_id=uuid4(),
     )
 
@@ -109,20 +107,20 @@ def build(
     has_movements: bool = False,
 ):
     repository = FakeNomenclatureRepository(nomenclature)
-    movements = FakeStockMovementRepository(has_movements=has_movements)
+    inventory_api = FakeInventoryAPI(has_movements=has_movements)
     transaction_manager = FakeTransactionManager()
     interactor = UpdateNomenclatureInteractor(
         identity_provider=FakeIdentityProvider(),
         nomenclature_repository=repository,
         category_repository=FakeCategoryRepository(exists=category_exists),
-        movement_repository=movements,
+        inventory_api=inventory_api,
         changes_policy=NomenclatureChangesPolicy(),
         business_api=FakeBusinessAPI(),
         staff_api=FakeStaffAPI(allowed=allowed),
         transaction_manager=transaction_manager,
     )
 
-    return interactor, repository, movements, transaction_manager
+    return interactor, repository, inventory_api, transaction_manager
 
 
 async def test_requires_update_permission() -> None:
@@ -186,7 +184,7 @@ async def test_unknown_category_is_rejected() -> None:
 
 async def test_unit_can_change_while_there_are_no_movements() -> None:
     nomenclature = make_nomenclature()
-    interactor, _, movements, _ = build(nomenclature, has_movements=False)
+    interactor, _, inventory, _ = build(nomenclature, has_movements=False)
 
     await interactor(
         UpdateNomenclatureCommand(
@@ -195,7 +193,7 @@ async def test_unit_can_change_while_there_are_no_movements() -> None:
     )
 
     assert nomenclature.unit is UnitOfMeasurement.PIECE
-    assert movements.calls == [nomenclature.id]
+    assert inventory.calls == [nomenclature.id]
 
 
 async def test_unit_cannot_change_after_movements() -> None:

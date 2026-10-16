@@ -1,16 +1,5 @@
 from myasnaya_derevnya.core.types.permission import Permission
 
-MANAGE_WAREHOUSES = Permission(
-    code="inventory.warehouse.manage",
-    description="Управление складами",
-)
-
-READ_WAREHOUSES = Permission(
-    code="inventory.warehouse.read",
-    description="Просмотр складов",
-)
-
-
 CREATE_DOCUMENT = Permission(
     code="inventory.document.create",
     description="Создание складских документов",
@@ -32,16 +21,14 @@ READ_COSTS = Permission(
     description="Просмотр себестоимости",
 )
 
+READ_DOCUMENTS = Permission(
+    code="inventory.document.read", description="Просмотр документов склада"
+)
+
 ALL: tuple[Permission, ...] = (
-    MANAGE_WAREHOUSES,
-    READ_WAREHOUSES,
     CREATE_DOCUMENT,
     POST_DOCUMENT,
     READ_BALANCES,
     READ_COSTS,
-)
-
-
-READ_DOCUMENTS = Permission(
-    code="inventory.document.read", description="Просмотр документов склада"
+    READ_DOCUMENTS,
 )

@@ -33,7 +33,6 @@ from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa:
     STOCK_LOTS_TABLE,
     STOCK_MOVEMENTS_TABLE,
     STOCK_POSTINGS_TABLE,
-    WAREHOUSES_TABLE,
     WRITE_OFF_LINES_TABLE,
     WRITE_OFFS_TABLE,
 )

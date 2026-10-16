@@ -63,14 +63,14 @@ class StockLedger:
         *,
         document_type: str,
         document_id: UUID,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         occurred_at: datetime,
         posted_by: UUID | None = None,
     ) -> AsyncIterator[StockPostingHandle]:
         posting = StockPosting.create(
             document_type=document_type,
             document_id=document_id,
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             posted_by=posted_by,
         )
         try:
@@ -132,25 +132,25 @@ class StockPostingHandle:
     async def receive(
         self,
         *,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         quantity: Decimal,
         cost: Money,
         movement_type: MovementType,
         lot_id: UUID | None = None,
     ) -> None:
-        balance = self._locked_balance(warehouse_id, nomenclature_id)
+        balance = self._locked_balance(org_unit_id, nomenclature_id)
         balance.receive(quantity, cost)
 
         if lot_id is not None:
-            self._locked_lot_balance(warehouse_id, nomenclature_id, lot_id).receive(
+            self._locked_lot_balance(org_unit_id, nomenclature_id, lot_id).receive(
                 quantity, cost
             )
 
         self._movements.append(
             StockMovement.create(
                 occurred_at=self._occurred_at,
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 nomenclature_id=nomenclature_id,
                 movement_type=movement_type,
                 quantity=quantity,
@@ -164,7 +164,7 @@ class StockPostingHandle:
     async def allocate(
         self,
         *,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         quantity: Decimal,
     ) -> list[tuple[UUID | None, Decimal]]:
@@ -176,14 +176,14 @@ class StockPostingHandle:
         if quantity <= 0:
             raise EmptyMovementError()
 
-        await self.lock(balance_keys=[(warehouse_id, nomenclature_id)])
+        await self.lock(balance_keys=[(org_unit_id, nomenclature_id)])
 
         candidates = await self._lot_balance_repository.list_available(
-            warehouse_id, nomenclature_id
+            org_unit_id, nomenclature_id
         )
         for candidate in candidates:
             self._lot_balances.setdefault(
-                (warehouse_id, nomenclature_id, candidate.lot_id), candidate
+                (org_unit_id, nomenclature_id, candidate.lot_id), candidate
             )
 
         remaining = quantity
@@ -196,7 +196,7 @@ class StockPostingHandle:
             remaining -= take
 
         if remaining > 0:
-            balance = self._locked_balance(warehouse_id, nomenclature_id)
+            balance = self._locked_balance(org_unit_id, nomenclature_id)
             lot_quantity = sum(
                 (candidate.quantity for candidate in candidates), Decimal(0)
             )
@@ -206,9 +206,9 @@ class StockPostingHandle:
                 remaining = Decimal(0)
 
         if remaining > 0:
-            balance = self._locked_balance(warehouse_id, nomenclature_id)
+            balance = self._locked_balance(org_unit_id, nomenclature_id)
             raise InsufficientStockError(
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 nomenclature_id=nomenclature_id,
                 available=balance.quantity,
                 requested=quantity,
@@ -219,17 +219,17 @@ class StockPostingHandle:
     async def issue(
         self,
         *,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         quantity: Decimal,
         movement_type: MovementType,
         lot_id: UUID | None = None,
     ) -> Money:
-        balance = self._locked_balance(warehouse_id, nomenclature_id)
+        balance = self._locked_balance(org_unit_id, nomenclature_id)
 
         if lot_id is not None:
             lot_cost = self._locked_lot_balance(
-                warehouse_id, nomenclature_id, lot_id
+                org_unit_id, nomenclature_id, lot_id
             ).issue(quantity, self._cost_policy)
             balance.release(quantity, lot_cost)
             cost = lot_cost
@@ -239,7 +239,7 @@ class StockPostingHandle:
         self._movements.append(
             StockMovement.create(
                 occurred_at=self._occurred_at,
-                warehouse_id=warehouse_id,
+                org_unit_id=org_unit_id,
                 nomenclature_id=nomenclature_id,
                 movement_type=movement_type,
                 quantity=quantity,
@@ -262,9 +262,9 @@ class StockPostingHandle:
             )
 
     def _locked_balance(
-        self, warehouse_id: UUID, nomenclature_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID
     ) -> StockBalance:
-        key = (warehouse_id, nomenclature_id)
+        key = (org_unit_id, nomenclature_id)
         balance = self._balances.get(key)
         if balance is None:
             raise RuntimeError(
@@ -274,9 +274,9 @@ class StockPostingHandle:
         return balance
 
     def _locked_lot_balance(
-        self, warehouse_id: UUID, nomenclature_id: UUID, lot_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID, lot_id: UUID
     ) -> StockLotBalance:
-        key = (warehouse_id, nomenclature_id, lot_id)
+        key = (org_unit_id, nomenclature_id, lot_id)
         lot_balance = self._lot_balances.get(key)
         if lot_balance is None:
             raise RuntimeError(

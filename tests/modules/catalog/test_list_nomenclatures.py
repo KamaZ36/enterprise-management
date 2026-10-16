@@ -9,7 +9,6 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_nomenclature
     ListNomenclaturesQuery,
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.domain.permissions import READ_NOMENCLATURE
@@ -60,7 +59,6 @@ def make_item(sku: str = "SKU-1") -> NomenclatureListItem:
         id=uuid4(),
         sku=sku,
         name="Говядина",
-        type=NomenclatureType.RAW_MATERIAL,
         unit=UnitOfMeasurement.KG,
         category_id=uuid4(),
         category_name="Мясо",
@@ -115,7 +113,6 @@ async def test_filters_are_passed_to_reader() -> None:
     await interactor(
         ListNomenclaturesQuery(
             search="говядина",
-            type_code=NomenclatureType.RAW_MATERIAL.value,
             category_id=category_id,
             limit=10,
             offset=5,
@@ -125,7 +122,6 @@ async def test_filters_are_passed_to_reader() -> None:
     assert reader.calls == [
         {
             "search": "говядина",
-            "type_code": "raw_material",
             "category_id": category_id,
             "limit": 10,
             "offset": 5,

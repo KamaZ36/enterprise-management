@@ -60,9 +60,6 @@ from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclatu
     UpdateNomenclatureCommand,
     UpdateNomenclatureInteractor,
 )
-from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
-)
 from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
     AssortmentItemSchema,
     AssortmentListSchema,
@@ -96,7 +93,6 @@ async def create_nomenclature(
         sku=data.sku,
         name=data.name,
         unit=data.unit,
-        type_=data.type,
         category_id=data.category_id,
         image_url=data.image_url,
         description=data.description,
@@ -169,14 +165,12 @@ async def list_nomenclatures(
     search: Annotated[
         str | None, Query(description="Поиск по названию или SKU")
     ] = None,
-    type_code: Annotated[NomenclatureType | None, Query(alias="type")] = None,
     category_id: Annotated[UUID | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> NomenclatureListSchema:
     query = ListNomenclaturesQuery(
         search=search,
-        type_code=type_code.value if type_code else None,
         category_id=category_id,
         limit=limit,
         offset=offset,
@@ -222,7 +216,6 @@ async def update_nomenclature(
         name=data.name,
         category_id=data.category_id,
         unit=data.unit,
-        type_=data.type,
         is_active=data.is_active,
         image_url=data.image_url,
         description=data.description,

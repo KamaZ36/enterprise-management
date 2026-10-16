@@ -13,13 +13,13 @@ from myasnaya_derevnya.modules.inventory.domain.value_objects.money import Money
 class StockLotBalance:
     def __init__(
         self,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         nomenclature_id: UUID,
         lot_id: UUID,
         quantity: Decimal,
         total_value: Money,
     ) -> None:
-        self._warehouse_id = warehouse_id
+        self._org_unit_id = org_unit_id
         self._nomenclature_id = nomenclature_id
         self._lot_id = lot_id
         self._quantity = quantity
@@ -27,10 +27,10 @@ class StockLotBalance:
 
     @classmethod
     def empty(
-        cls, warehouse_id: UUID, nomenclature_id: UUID, lot_id: UUID
+        cls, org_unit_id: UUID, nomenclature_id: UUID, lot_id: UUID
     ) -> StockLotBalance:
         return cls(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_id=nomenclature_id,
             lot_id=lot_id,
             quantity=Decimal(0),
@@ -38,8 +38,8 @@ class StockLotBalance:
         )
 
     @property
-    def warehouse_id(self) -> UUID:
-        return self._warehouse_id
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def nomenclature_id(self) -> UUID:

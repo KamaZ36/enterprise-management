@@ -21,15 +21,11 @@ class StockBalanceRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def has_any_for_warehouse(self, warehouse_id: UUID) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
     async def get(
-        self, warehouse_id: UUID, nomenclature_id: UUID
+        self, org_unit_id: UUID, nomenclature_id: UUID
     ) -> StockBalance | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def list_by_warehouse(self, warehouse_id: UUID) -> list[StockBalance]:
+    async def list_by_org_unit(self, org_unit_id: UUID) -> list[StockBalance]:
         raise NotImplementedError

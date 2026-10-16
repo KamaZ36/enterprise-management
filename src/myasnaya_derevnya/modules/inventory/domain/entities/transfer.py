@@ -7,7 +7,7 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
     EmptyDocumentError,
     EmptyMovementError,
-    SameWarehouseTransferError,
+    SameLocationTransferError,
     TimezoneRequiredError,
 )
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_status import (
@@ -50,8 +50,8 @@ class Transfer:
         id: UUID,
         status: DocumentStatus,
         occurred_at: datetime,
-        from_warehouse_id: UUID,
-        to_warehouse_id: UUID,
+        from_org_unit_id: UUID,
+        to_org_unit_id: UUID,
         comment: str | None,
         created_by: UUID | None,
         created_at: datetime,
@@ -61,8 +61,8 @@ class Transfer:
         self._id = id
         self._status = status
         self._occurred_at = occurred_at
-        self._from_warehouse_id = from_warehouse_id
-        self._to_warehouse_id = to_warehouse_id
+        self._from_org_unit_id = from_org_unit_id
+        self._to_org_unit_id = to_org_unit_id
         self._comment = comment
         self._created_by = created_by
         self._created_at = created_at
@@ -72,8 +72,8 @@ class Transfer:
     @classmethod
     def create(
         cls,
-        from_warehouse_id: UUID,
-        to_warehouse_id: UUID,
+        from_org_unit_id: UUID,
+        to_org_unit_id: UUID,
         occurred_at: datetime,
         lines: list[TransferLine] | None = None,
         created_by: UUID | None = None,
@@ -82,15 +82,15 @@ class Transfer:
         if occurred_at.tzinfo is None:
             raise TimezoneRequiredError(field="occurred_at")
 
-        if from_warehouse_id == to_warehouse_id:
-            raise SameWarehouseTransferError(from_warehouse_id)
+        if from_org_unit_id == to_org_unit_id:
+            raise SameLocationTransferError(from_org_unit_id)
 
         return cls(
             id=uuid7(),
             status=DocumentStatus.DRAFT,
             occurred_at=occurred_at,
-            from_warehouse_id=from_warehouse_id,
-            to_warehouse_id=to_warehouse_id,
+            from_org_unit_id=from_org_unit_id,
+            to_org_unit_id=to_org_unit_id,
             comment=comment,
             created_by=created_by,
             created_at=get_datetime_utc(),
@@ -111,12 +111,12 @@ class Transfer:
         return self._occurred_at
 
     @property
-    def from_warehouse_id(self) -> UUID:
-        return self._from_warehouse_id
+    def from_org_unit_id(self) -> UUID:
+        return self._from_org_unit_id
 
     @property
-    def to_warehouse_id(self) -> UUID:
-        return self._to_warehouse_id
+    def to_org_unit_id(self) -> UUID:
+        return self._to_org_unit_id
 
     @property
     def comment(self) -> str | None:

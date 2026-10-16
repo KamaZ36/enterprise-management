@@ -20,7 +20,7 @@ def make_movement(
 ) -> StockMovement:
     return StockMovement.create(
         occurred_at=get_datetime_utc(),
-        warehouse_id=uuid4(),
+        org_unit_id=uuid4(),
         nomenclature_id=uuid4(),
         movement_type=movement_type,
         quantity=Decimal(quantity),
@@ -73,7 +73,7 @@ def test_posting_reference_is_stored() -> None:
     posting_id = uuid4()
     movement = StockMovement.create(
         occurred_at=get_datetime_utc(),
-        warehouse_id=uuid4(),
+        org_unit_id=uuid4(),
         nomenclature_id=uuid4(),
         movement_type=MovementType.RECEIPT,
         quantity=Decimal(1),
@@ -96,7 +96,7 @@ def test_naive_occurred_at_is_rejected() -> None:
     with pytest.raises(TimezoneRequiredError):
         StockMovement.create(
             occurred_at=datetime(2026, 10, 1, 9, 0),
-            warehouse_id=uuid4(),
+            org_unit_id=uuid4(),
             nomenclature_id=uuid4(),
             movement_type=MovementType.RECEIPT,
             quantity=Decimal(1),

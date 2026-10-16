@@ -5,6 +5,10 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_repository.sqlalchemy import (
+    SQLAlchemyOrgUnitRepository,
+)
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
     GetPointPricesInteractor,
 )
@@ -33,6 +37,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.crea
     CreateWriteOffCommand,
     WriteOffLineCommand,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
+    PostWriteOffCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.services.document_scope import (
     DocumentScope,
 )
@@ -40,14 +47,14 @@ from myasnaya_derevnya.modules.inventory.domain.entities.transfer import (
     Transfer,
     TransferLine,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.movement.sqlalchemy import (
+    SQLAlchemyMovementReader,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.sqlalchemy import (
     SQLAlchemyReceiptReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.sqlalchemy import (
     SQLAlchemyTransferReader,
-)
-from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.sqlalchemy import (
-    SQLAlchemyWarehouseReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.sqlalchemy import (
     SQLAlchemyWriteOffReader,
@@ -66,17 +73,37 @@ pytestmark = pytest.mark.db
 OCCURRED_AT = datetime(2026, 10, 11, 9, 0, tzinfo=UTC)
 
 
+def _catalog_api(session: AsyncSession) -> CatalogAPI:
+    return CatalogAPI(
+        get_point_prices_interactor=GetPointPricesInteractor(
+            binding_repository=SQLAlchemyPriceListBindingRepository(session),
+            price_repository=SQLAlchemyPriceRepository(session),
+        ),
+        nomenclature_repository=SQLAlchemyNomenclatureRepository(session),
+    )
+
+
+def _document_scope(session: AsyncSession) -> DocumentScope:
+    return DocumentScope(
+        identity_provider=FakeIdentityProvider(uuid4()),
+        business_api=BusinessAPI(
+            org_unit_repository=SQLAlchemyOrgUnitRepository(session)
+        ),
+        staff_api=FakeStaffAPI(),
+    )
+
+
 async def test_receipt_journal_counts_lines_and_sums_cost(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    location = await make_location()
     first = await make_nomenclature(name="Говядина лопатка", sku="PYTEST-BEEF")
     second = await make_nomenclature(name="Свинина шея", sku="PYTEST-PORK")
 
     actors = build_interactors(db_session)
     receipt_id = await actors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=warehouse.id,
+            org_unit_id=location.id,
             occurred_at=OCCURRED_AT,
             supplier_name="Мясокомбинат",
             supplier_document_number="УПД-1042",
@@ -99,7 +126,7 @@ async def test_receipt_journal_counts_lines_and_sums_cost(
     await actors.post_receipt(PostReceiptCommand(receipt_id=receipt_id))
 
     items, total = await SQLAlchemyReceiptReader(db_session).list(
-        warehouse_ids=[warehouse.id]
+        org_unit_ids=[location.id]
     )
 
     assert total == 1
@@ -111,15 +138,15 @@ async def test_receipt_journal_counts_lines_and_sums_cost(
 
 
 async def test_receipt_card_resolves_nomenclature_names(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    warehouse = await make_warehouse()
+    location = await make_location()
     nomenclature = await make_nomenclature(name="Говядина лопатка", sku="PYTEST-BEEF")
 
     actors = build_interactors(db_session)
     receipt_id = await actors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=warehouse.id,
+            org_unit_id=location.id,
             occurred_at=OCCURRED_AT,
             lines=[
                 ReceiptLineCommand(
@@ -134,18 +161,8 @@ async def test_receipt_card_resolves_nomenclature_names(
 
     interactor = GetReceiptInteractor(
         receipt_reader=SQLAlchemyReceiptReader(db_session),
-        catalog_api=CatalogAPI(
-            get_point_prices_interactor=GetPointPricesInteractor(
-                binding_repository=SQLAlchemyPriceListBindingRepository(db_session),
-                price_repository=SQLAlchemyPriceRepository(db_session),
-            ),
-            nomenclature_repository=SQLAlchemyNomenclatureRepository(db_session),
-        ),
-        document_scope=DocumentScope(
-            identity_provider=FakeIdentityProvider(uuid4()),
-            warehouse_reader=SQLAlchemyWarehouseReader(db_session),
-            staff_api=FakeStaffAPI(),
-        ),
+        catalog_api=_catalog_api(db_session),
+        document_scope=_document_scope(db_session),
     )
 
     detail = await interactor(GetReceiptQuery(receipt_id=receipt_id))
@@ -156,10 +173,10 @@ async def test_receipt_card_resolves_nomenclature_names(
 
 
 async def test_receipt_journal_search_by_supplier_and_document(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
     marker = uuid4().hex[:8]
-    warehouse = await make_warehouse()
+    location = await make_location()
     nomenclature = await make_nomenclature(
         name=f"Позиция {marker}", sku=f"PYTEST-{marker}"
     )
@@ -174,7 +191,7 @@ async def test_receipt_journal_search_by_supplier_and_document(
     ):
         await actors.create_receipt(
             CreateReceiptCommand(
-                warehouse_id=warehouse.id,
+                org_unit_id=location.id,
                 occurred_at=OCCURRED_AT,
                 supplier_name=supplier,
                 supplier_document_number=number,
@@ -205,17 +222,17 @@ async def test_receipt_journal_search_by_supplier_and_document(
     assert total == 0
 
 
-async def test_receipt_reader_filters_by_allowed_warehouses(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+async def test_receipt_reader_filters_by_allowed_locations(
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
-    own = await make_warehouse()
-    foreign = await make_warehouse()
+    own = await make_location()
+    foreign = await make_location()
     nomenclature = await make_nomenclature()
 
     actors = build_interactors(db_session)
     own_receipt = await actors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=own.id,
+            org_unit_id=own.id,
             occurred_at=OCCURRED_AT,
             lines=[
                 ReceiptLineCommand(
@@ -228,7 +245,7 @@ async def test_receipt_reader_filters_by_allowed_warehouses(
     )
     await actors.create_receipt(
         CreateReceiptCommand(
-            warehouse_id=foreign.id,
+            org_unit_id=foreign.id,
             occurred_at=OCCURRED_AT,
             lines=[
                 ReceiptLineCommand(
@@ -242,29 +259,29 @@ async def test_receipt_reader_filters_by_allowed_warehouses(
 
     reader = SQLAlchemyReceiptReader(db_session)
 
-    items, total = await reader.list(warehouse_ids=[own.id])
+    items, total = await reader.list(org_unit_ids=[own.id])
     assert total == 1
     assert items[0].id == own_receipt
 
-    _, total = await reader.list(warehouse_ids=[foreign.id])
+    _, total = await reader.list(org_unit_ids=[foreign.id])
     assert total == 1
 
-    _, total = await reader.list(warehouse_ids=[])
+    _, total = await reader.list(org_unit_ids=[])
     assert total == 0
 
 
 async def test_transfer_reader_filters_and_card_exposes_both_units(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
     source_unit, target_unit, foreign_unit = uuid4(), uuid4(), uuid4()
-    source = await make_warehouse(org_unit_id=source_unit)
-    target = await make_warehouse(org_unit_id=target_unit)
-    foreign = await make_warehouse(org_unit_id=foreign_unit)
+    source = await make_location(org_unit_id=source_unit)
+    target = await make_location(org_unit_id=target_unit)
+    foreign = await make_location(org_unit_id=foreign_unit)
     nomenclature = await make_nomenclature()
 
     transfer = Transfer.create(
-        from_warehouse_id=source.id,
-        to_warehouse_id=target.id,
+        from_org_unit_id=source.id,
+        to_org_unit_id=target.id,
         occurred_at=OCCURRED_AT,
         lines=[
             TransferLine.create(nomenclature_id=nomenclature.id, quantity=Decimal(3))
@@ -276,34 +293,111 @@ async def test_transfer_reader_filters_and_card_exposes_both_units(
 
     reader = SQLAlchemyTransferReader(db_session)
 
-    items, total = await reader.list(warehouse_ids=[source.id])
+    items, total = await reader.list(org_unit_ids=[source.id])
     assert total == 1
     assert items[0].id == transfer.id
 
-    items, total = await reader.list(warehouse_ids=[target.id])
+    items, total = await reader.list(org_unit_ids=[target.id])
     assert total == 1
     assert items[0].id == transfer.id
 
-    _, total = await reader.list(warehouse_ids=[foreign.id])
+    _, total = await reader.list(org_unit_ids=[foreign.id])
     assert total == 0
 
     detail = await reader.get(transfer.id)
     assert detail is not None
-    assert detail.org_unit_id == source_unit
+    assert detail.from_org_unit_id == source_unit
     assert detail.to_org_unit_id == target_unit
 
 
-async def test_write_off_card_exposes_warehouse_org_unit(
-    db_session: AsyncSession, make_warehouse, make_nomenclature
+async def test_movement_reader_filters_and_joins_lots(
+    db_session: AsyncSession, make_location, make_nomenclature
+) -> None:
+    own = await make_location()
+    foreign = await make_location()
+    nomenclature = await make_nomenclature()
+
+    actors = build_interactors(db_session)
+    receipt_id = await actors.create_receipt(
+        CreateReceiptCommand(
+            org_unit_id=own.id,
+            occurred_at=OCCURRED_AT,
+            lines=[
+                ReceiptLineCommand(
+                    nomenclature_id=nomenclature.id,
+                    quantity=Decimal(5),
+                    unit_cost=Decimal(100),
+                    lot_code="L-MV",
+                )
+            ],
+        )
+    )
+    await actors.post_receipt(PostReceiptCommand(receipt_id=receipt_id))
+
+    write_off_id = await actors.create_write_off(
+        CreateWriteOffCommand(
+            org_unit_id=own.id,
+            occurred_at=OCCURRED_AT,
+            reason="Просрочка",
+            lines=[
+                WriteOffLineCommand(
+                    nomenclature_id=nomenclature.id, quantity=Decimal(1)
+                )
+            ],
+        )
+    )
+    await actors.post_write_off(PostWriteOffCommand(write_off_id=write_off_id))
+
+    reader = SQLAlchemyMovementReader(db_session)
+
+    items, total = await reader.list(org_unit_ids=[own.id])
+    assert total == 2
+    by_type = {item.movement_type: item for item in items}
+    assert by_type["receipt"].quantity == Decimal(5)
+    assert by_type["receipt"].lot_code == "L-MV"
+    assert by_type["receipt"].total_cost_kopecks == 50000
+    assert by_type["write_off"].quantity == Decimal(-1)
+    assert by_type["write_off"].lot_id is not None
+
+    _, total = await reader.list(org_unit_ids=[foreign.id])
+    assert total == 0
+
+    _, total = await reader.list(org_unit_ids=[])
+    assert total == 0
+
+    items, total = await reader.list(movement_types=["write_off"])
+    assert total == 1
+    assert items[0].movement_type == "write_off"
+
+    _, total = await reader.list(nomenclature_id=nomenclature.id)
+    assert total == 2
+
+    items, total = await reader.list(
+        org_unit_ids=[own.id],
+        occurred_from=datetime(2026, 10, 12, tzinfo=UTC),
+    )
+    assert total == 0
+
+    items, total = await reader.list(
+        org_unit_ids=[own.id],
+        limit=1,
+        offset=1,
+    )
+    assert total == 2
+    assert len(items) == 1
+
+
+async def test_write_off_card_exposes_location_org_unit(
+    db_session: AsyncSession, make_location, make_nomenclature
 ) -> None:
     org_unit_id = uuid4()
-    warehouse = await make_warehouse(org_unit_id=org_unit_id)
+    location = await make_location(org_unit_id=org_unit_id)
     nomenclature = await make_nomenclature()
 
     actors = build_interactors(db_session)
     write_off_id = await actors.create_write_off(
         CreateWriteOffCommand(
-            warehouse_id=warehouse.id,
+            org_unit_id=location.id,
             occurred_at=OCCURRED_AT,
             reason="Просрочка",
             lines=[

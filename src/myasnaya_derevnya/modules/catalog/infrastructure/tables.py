@@ -53,7 +53,6 @@ NOMENCLATURES_TABLE = Table(
     Column("id", UUID, primary_key=True),
     Column("sku", String(64), nullable=False, unique=True),
     Column("name", String(255), nullable=False),
-    Column("type", String(32), nullable=False),
     Column("unit", String(16), nullable=False),
     Column(
         "category_id",
@@ -76,7 +75,6 @@ NOMENCLATURES_TABLE = Table(
         onupdate=func.now(),
     ),
     Index("ix_nomenclatures_category_id", "category_id"),
-    Index("ix_nomenclatures_type", "type"),
     schema=DATABASE_SCHEMA,
 )
 

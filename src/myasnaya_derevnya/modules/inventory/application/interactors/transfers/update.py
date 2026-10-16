@@ -6,20 +6,18 @@ from uuid import UUID
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.inventory.domain.entities.transfer import (
     TransferLine,
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
+    LocationNotFoundError,
     TransferNotFoundError,
-    WarehouseNotFoundError,
 )
 from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.base import (
     TransferRepository,
-)
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
-    WarehouseRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
@@ -43,13 +41,13 @@ class UpdateTransferInteractor:
     def __init__(
         self,
         identity_provider: IdentityProvider,
-        warehouse_repository: WarehouseRepository,
+        business_api: BusinessAPI,
         transfer_repository: TransferRepository,
         staff_api: StaffAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
-        self._warehouse_repository = warehouse_repository
+        self._business_api = business_api
         self._transfer_repository = transfer_repository
         self._staff_api = staff_api
         self._transaction_manager = transaction_manager
@@ -63,15 +61,15 @@ class UpdateTransferInteractor:
         if not transfer.is_draft:
             raise DocumentAlreadyPostedError(transfer.id)
 
-        for warehouse_id in (transfer.from_warehouse_id, transfer.to_warehouse_id):
-            warehouse = await self._warehouse_repository.get_by_id(warehouse_id)
-            if warehouse is None:
-                raise WarehouseNotFoundError(warehouse_id)
+        for org_unit_id in (transfer.from_org_unit_id, transfer.to_org_unit_id):
+            location = await self._business_api.stock_location(org_unit_id)
+            if location is None:
+                raise LocationNotFoundError(org_unit_id)
 
             allowed = await self._staff_api.can(
                 user_id=current_user_id,
                 permission=CREATE_DOCUMENT,
-                org_unit_id=warehouse.org_unit_id,
+                org_unit_id=location.id,
             )
             if not allowed:
                 raise ForbiddenError()

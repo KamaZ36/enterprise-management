@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 """Наполняет базу демонстрационными данными.
 
-Структура подразделений и складов:
+Складская локация — это само подразделение (типа ``shop``, ``cafe`` или
+``production``). Структура подразделений:
 
-    Магазины                       (группа)
-        Магазин Грибановский на Советской
-            Основной склад         (shop)
-        Магазин Рынок Борисоглебск
-            Основной склад         (shop)
-    Кафе                           (группа)
-        Кафе
-            Основной склад         (shop)
-    Производство                   (группа)
-        Основной цех
-            Склад сырья            (raw)
-            Склад готовой продукции (finished)
+    Магазины                           (группа)
+        Магазин Грибановский на Советской  (shop)
+        Магазин Рынок Борисоглебск         (shop)
+    Кафе                               (группа)
+        Кафе                           (cafe)
+    Производство                       (группа)
+        Основной цех                   (production, сырьё и готовая
+                                        продукция хранятся вместе)
 
 Дополнительно создаются категории и номенклатура, техкарты и начальные
 остатки: поступления (с партиями и сроками годности), производственное
@@ -25,8 +22,8 @@
 (см. ``STAFF_EMPLOYEES``), пароль у всех ``demo12345``.
 
 Скрипт идемпотентен: справочники, роли и сотрудники переиспользуются, а
-складские движения выполняются один раз — только если в складе сырья ещё
-нет остатков.
+складские движения выполняются один раз — только если в подразделении
+производства ещё нет остатков.
 
 Бэкенд должен быть запущен (например, ``scripts/dev.sh up``).
 
@@ -36,9 +33,9 @@
     DB_HOST=localhost uv run python scripts/seed_demo.py --reset
 
 ``--reset`` стирает демонстрационные данные модулей (склад, производство,
-заказы, каталог, клиенты), удаляет все некорневые подразделения и склады,
-переносит сотрудников и роли на новое подразделение того же типа и создаёт
-структуру заново.
+заказы, каталог, клиенты), удаляет все некорневые подразделения, переносит
+сотрудников и роли на новое подразделение того же типа и создаёт структуру
+заново.
 """
 
 from __future__ import annotations
@@ -131,7 +128,8 @@ cascade
 
 # --- Справочники -----------------------------------------------------------
 
-# Дерево подразделений: группы верхнего уровня → точки (склады у точек).
+# Дерево подразделений: группы верхнего уровня → точки. Точка (shop/cafe/
+# production) и есть складская локация.
 ORG_STRUCTURE: list[dict[str, Any]] = [
     {
         "code": "GROUP_SHOPS",
@@ -146,13 +144,6 @@ ORG_STRUCTURE: list[dict[str, Any]] = [
                 "name": "Магазин Грибановский на Советской",
                 "address": "с. Грибановский, ул. Советская",
                 "phone_number": None,
-                "warehouses": [
-                    {
-                        "code": "WAREHOUSE_GRBANOVSKY",
-                        "name": "Основной склад",
-                        "type": "shop",
-                    },
-                ],
             },
             {
                 "code": "SHOP_BORISOGLEBSK",
@@ -160,13 +151,6 @@ ORG_STRUCTURE: list[dict[str, Any]] = [
                 "name": "Магазин Рынок Борисоглебск",
                 "address": "г. Борисоглебск, рынок",
                 "phone_number": None,
-                "warehouses": [
-                    {
-                        "code": "WAREHOUSE_BORISOGLEBSK",
-                        "name": "Основной склад",
-                        "type": "shop",
-                    },
-                ],
             },
         ],
     },
@@ -183,13 +167,6 @@ ORG_STRUCTURE: list[dict[str, Any]] = [
                 "name": "Кафе",
                 "address": None,
                 "phone_number": None,
-                "warehouses": [
-                    {
-                        "code": "WAREHOUSE_CAFE",
-                        "name": "Основной склад",
-                        "type": "shop",
-                    },
-                ],
             },
         ],
     },
@@ -206,14 +183,6 @@ ORG_STRUCTURE: list[dict[str, Any]] = [
                 "name": "Основной цех",
                 "address": None,
                 "phone_number": None,
-                "warehouses": [
-                    {"code": "WAREHOUSE_RAW", "name": "Склад сырья", "type": "raw"},
-                    {
-                        "code": "WAREHOUSE_FINISHED",
-                        "name": "Склад готовой продукции",
-                        "type": "finished",
-                    },
-                ],
             },
         ],
     },
@@ -225,14 +194,13 @@ CATEGORIES: list[dict[str, str]] = [
     {"key": "packaging", "name": "Упаковка"},
 ]
 
-# key, sku, name, unit, type, category key
+# key, sku, name, unit, category key
 NOMENCLATURES: list[dict[str, str]] = [
     {
         "key": "pork",
         "sku": "RM-PORK",
         "name": "Свинина, лопатка",
         "unit": "kg",
-        "type": "raw_material",
         "category": "raw",
     },
     {
@@ -240,7 +208,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "RM-BEEF",
         "name": "Говядина, лопатка",
         "unit": "kg",
-        "type": "raw_material",
         "category": "raw",
     },
     {
@@ -248,7 +215,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "RM-SALT",
         "name": "Соль поваренная",
         "unit": "kg",
-        "type": "raw_material",
         "category": "raw",
     },
     {
@@ -256,7 +222,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "RM-SPICE",
         "name": "Смесь специй для колбас",
         "unit": "kg",
-        "type": "raw_material",
         "category": "raw",
     },
     {
@@ -264,7 +229,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "FG-DOCTOR",
         "name": "Колбаса «Докторская»",
         "unit": "kg",
-        "type": "finished_good",
         "category": "finished",
     },
     {
@@ -272,7 +236,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "FG-KRAKOW",
         "name": "Колбаса «Краковская»",
         "unit": "kg",
-        "type": "finished_good",
         "category": "finished",
     },
     {
@@ -280,7 +243,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "FG-KOTLET",
         "name": "Котлета «Домашняя»",
         "unit": "kg",
-        "type": "finished_good",
         "category": "finished",
     },
     {
@@ -288,7 +250,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "PK-BAG",
         "name": "Пакет фасовочный",
         "unit": "pcs",
-        "type": "raw_material",
         "category": "packaging",
     },
     {
@@ -296,7 +257,6 @@ NOMENCLATURES: list[dict[str, str]] = [
         "sku": "PK-BOTTLE",
         "name": "Бутылка ПЭТ 0,5 л",
         "unit": "pcs",
-        "type": "raw_material",
         "category": "packaging",
     },
 ]
@@ -351,7 +311,6 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "customer.read",
             "customer.update",
             "inventory.balance.read",
-            "inventory.warehouse.read",
         ),
     },
     {
@@ -372,7 +331,6 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "customer.update",
             "inventory.balance.read",
             "inventory.cost.read",
-            "inventory.warehouse.read",
             "inventory.document.read",
             "inventory.document.create",
             "inventory.document.post",
@@ -393,7 +351,6 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "production.tech_card.read",
             "inventory.balance.read",
             "inventory.cost.read",
-            "inventory.warehouse.read",
             "inventory.document.read",
             "inventory.document.create",
             "inventory.document.post",
@@ -413,7 +370,6 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "inventory.balance.read",
             "inventory.cost.read",
             "inventory.document.read",
-            "inventory.warehouse.read",
             "nomenclature.read",
             "order.read",
             "org_unit.read",
@@ -489,7 +445,7 @@ STAFF_EMPLOYEES: list[dict[str, Any]] = [
 
 RECEIPTS: list[dict[str, Any]] = [
     {
-        "warehouse": "WAREHOUSE_RAW",
+        "unit": "PRODUCTION",
         "supplier_name": "Мясокомбинат «Юбилейный»",
         "supplier_document_number": "SEED-ПН-0001",
         "comment": "Стартовые остатки сырья",
@@ -525,7 +481,7 @@ RECEIPTS: list[dict[str, Any]] = [
         ],
     },
     {
-        "warehouse": "WAREHOUSE_RAW",
+        "unit": "PRODUCTION",
         "supplier_name": "ООО «УпакТорг»",
         "supplier_document_number": "SEED-ПН-0002",
         "comment": "Тара и упаковка для производства",
@@ -547,7 +503,7 @@ RECEIPTS: list[dict[str, Any]] = [
         ],
     },
     {
-        "warehouse": "WAREHOUSE_FINISHED",
+        "unit": "PRODUCTION",
         "supplier_name": "Кооператив «Домашние колбасы»",
         "supplier_document_number": "SEED-ПН-0003",
         "comment": "Закупная готовая продукция",
@@ -569,7 +525,7 @@ RECEIPTS: list[dict[str, Any]] = [
         ],
     },
     {
-        "warehouse": "WAREHOUSE_GRBANOVSKY",
+        "unit": "SHOP_GRBANOVSKY",
         "supplier_name": "ООО «УпакТорг»",
         "supplier_document_number": "SEED-ПН-0004",
         "comment": "Упаковка для магазина",
@@ -594,25 +550,18 @@ RECEIPTS: list[dict[str, Any]] = [
 
 PRODUCTION_ORDERS: list[dict[str, Any]] = [
     {
-        "warehouse": "WAREHOUSE_RAW",
+        "unit": "PRODUCTION",
         "tech_card": "TTK-DOCTOR",
         "batch_count": "1",
         "comment": "Замес и варка",
     },
 ]
 
-# Перемещения идут после производства: сначала готовую продукцию
-# переносим из цеха на склад готовой продукции, затем развозим по точкам.
+# Перемещения идут после производства: развозим готовую продукцию по точкам.
 TRANSFERS: list[dict[str, Any]] = [
     {
-        "from_warehouse": "WAREHOUSE_RAW",
-        "to_warehouse": "WAREHOUSE_FINISHED",
-        "comment": "Готовая продукция из цеха на склад",
-        "lines": [{"nomenclature": "doctor", "quantity": "90"}],
-    },
-    {
-        "from_warehouse": "WAREHOUSE_FINISHED",
-        "to_warehouse": "WAREHOUSE_CAFE",
+        "from_unit": "PRODUCTION",
+        "to_unit": "CAFE",
         "comment": "Поставка в кафе",
         "lines": [
             {"nomenclature": "doctor", "quantity": "25"},
@@ -620,8 +569,8 @@ TRANSFERS: list[dict[str, Any]] = [
         ],
     },
     {
-        "from_warehouse": "WAREHOUSE_FINISHED",
-        "to_warehouse": "WAREHOUSE_GRBANOVSKY",
+        "from_unit": "PRODUCTION",
+        "to_unit": "SHOP_GRBANOVSKY",
         "comment": "Поставка в магазин на Советской",
         "lines": [
             {"nomenclature": "doctor", "quantity": "20"},
@@ -629,8 +578,8 @@ TRANSFERS: list[dict[str, Any]] = [
         ],
     },
     {
-        "from_warehouse": "WAREHOUSE_FINISHED",
-        "to_warehouse": "WAREHOUSE_BORISOGLEBSK",
+        "from_unit": "PRODUCTION",
+        "to_unit": "SHOP_BORISOGLEBSK",
         "comment": "Поставка на рынок",
         "lines": [{"nomenclature": "doctor", "quantity": "15"}],
     },
@@ -694,7 +643,7 @@ class Api:
 
 
 async def reset_demo_tree() -> tuple[list[tuple[Any, str]], list[tuple[Any, str]]]:
-    """Убирает все некорневые подразделения и связанные с ними склады.
+    """Убирает все некорневые подразделения (со складскими локациями).
 
     Возвращает сотрудников и роли удаляемых подразделений, чтобы затем
     привязать их к новому подразделению того же типа.
@@ -750,13 +699,6 @@ async def reset_demo_tree() -> tuple[list[tuple[Any, str]], list[tuple[Any, str]
         await session.execute(
             text(
                 "update staff.role_assignments set org_unit_id = :root "
-                "where org_unit_id is distinct from :root"
-            ),
-            {"root": root_id},
-        )
-        await session.execute(
-            text(
-                "delete from inventory.warehouses "
                 "where org_unit_id is distinct from :root"
             ),
             {"root": root_id},
@@ -824,7 +766,7 @@ async def reattach_staff(
 
 async def ensure_org_structure(
     api: Api,
-) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+) -> tuple[dict[str, str], dict[str, str]]:
     units = await api.get("/api/business/org-units")
     units_by_code = {unit["code"]: unit for unit in units}
 
@@ -836,10 +778,6 @@ async def ensure_org_structure(
         )
     root_id = roots[0]["id"]
 
-    warehouses = await api.get("/api/inventory/warehouses")
-    warehouses_by_code = {item["code"]: item["id"] for item in warehouses}
-
-    warehouse_ids: dict[str, str] = {}
     unit_ids_by_type: dict[str, str] = {}
     unit_ids_by_code: dict[str, str] = {}
 
@@ -866,25 +804,6 @@ async def ensure_org_structure(
         unit_ids_by_type.setdefault(spec["type"], unit_id)
         unit_ids_by_code[spec["code"]] = unit_id
 
-        for warehouse in spec.get("warehouses", []):
-            existing_w = warehouses_by_code.get(warehouse["code"])
-            if existing_w is not None:
-                warehouse_ids[warehouse["code"]] = existing_w
-                print(f"      · склад «{warehouse['name']}» уже есть")
-                continue
-
-            created_w = await api.post(
-                "/api/inventory/warehouses",
-                json={
-                    "org_unit_id": unit_id,
-                    "code": warehouse["code"],
-                    "name": warehouse["name"],
-                    "type": warehouse["type"],
-                },
-            )
-            warehouse_ids[warehouse["code"]] = created_w["warehouse_id"]
-            print(f"      + склад «{warehouse['name']}» ({warehouse['type']})")
-
         for child in spec.get("children", []):
             await ensure_unit(child, unit_id)
 
@@ -895,7 +814,7 @@ async def ensure_org_structure(
 
     unit_ids_by_code["ROOT"] = root_id
 
-    return warehouse_ids, unit_ids_by_type, unit_ids_by_code
+    return unit_ids_by_type, unit_ids_by_code
 
 
 async def ensure_demo_staff(unit_ids_by_code: dict[str, str]) -> None:
@@ -1067,7 +986,6 @@ async def ensure_catalog(api: Api) -> dict[str, str]:
                     "sku": spec["sku"],
                     "name": spec["name"],
                     "unit": spec["unit"],
-                    "type": spec["type"],
                     "category_id": categories_by_name[
                         next(
                             category["name"]
@@ -1129,7 +1047,7 @@ async def ensure_tech_cards(api: Api, nomenclature_ids: dict[str, str]) -> dict[
 
 async def post_receipts(
     api: Api,
-    warehouse_ids: dict[str, str],
+    unit_ids_by_code: dict[str, str],
     nomenclature_ids: dict[str, str],
 ) -> None:
     for spec in RECEIPTS:
@@ -1147,7 +1065,7 @@ async def post_receipts(
         created = await api.post(
             "/api/inventory/receipts",
             json={
-                "warehouse_id": warehouse_ids[spec["warehouse"]],
+                "org_unit_id": unit_ids_by_code[spec["unit"]],
                 "occurred_at": _now_iso(),
                 "lines": lines,
                 "supplier_name": spec["supplier_name"],
@@ -1161,14 +1079,14 @@ async def post_receipts(
 
 async def post_production(
     api: Api,
-    warehouse_ids: dict[str, str],
+    unit_ids_by_code: dict[str, str],
     tech_card_ids: dict[str, str],
 ) -> None:
     for spec in PRODUCTION_ORDERS:
         created = await api.post(
             "/api/production/orders",
             json={
-                "warehouse_id": warehouse_ids[spec["warehouse"]],
+                "org_unit_id": unit_ids_by_code[spec["unit"]],
                 "tech_card_id": tech_card_ids[spec["tech_card"]],
                 "batch_count": spec["batch_count"],
                 "occurred_at": _now_iso(),
@@ -1181,7 +1099,7 @@ async def post_production(
 
 async def post_transfers(
     api: Api,
-    warehouse_ids: dict[str, str],
+    unit_ids_by_code: dict[str, str],
     nomenclature_ids: dict[str, str],
 ) -> None:
     for spec in TRANSFERS:
@@ -1196,8 +1114,8 @@ async def post_transfers(
         created = await api.post(
             "/api/inventory/transfers",
             json={
-                "from_warehouse_id": warehouse_ids[spec["from_warehouse"]],
-                "to_warehouse_id": warehouse_ids[spec["to_warehouse"]],
+                "from_org_unit_id": unit_ids_by_code[spec["from_unit"]],
+                "to_org_unit_id": unit_ids_by_code[spec["to_unit"]],
                 "occurred_at": _now_iso(),
                 "lines": lines,
                 "comment": spec["comment"],
@@ -1207,8 +1125,8 @@ async def post_transfers(
         print(f"  + перемещение: {spec['comment']}")
 
 
-async def has_stock(api: Api, warehouse_id: str) -> bool:
-    balances = await api.get(f"/api/inventory/warehouses/{warehouse_id}/balances")
+async def has_stock(api: Api, org_unit_id: str) -> bool:
+    balances = await api.get(f"/api/inventory/locations/{org_unit_id}/balances")
 
     return bool(balances["items"])
 
@@ -1217,17 +1135,15 @@ async def run(args: argparse.Namespace) -> None:
     moved_employees: list[tuple[Any, str]] = []
     moved_assignments: list[tuple[Any, str]] = []
     if args.reset:
-        print("Сброс старых подразделений и складов…")
+        print("Сброс старых подразделений…")
         moved_employees, moved_assignments = await reset_demo_tree()
 
     api = Api(args.api_url)
     try:
         await api.login(args.username, args.password)
 
-        print("Подразделения и склады…")
-        warehouse_ids, unit_ids_by_type, unit_ids_by_code = (
-            await ensure_org_structure(api)
-        )
+        print("Подразделения…")
+        unit_ids_by_type, unit_ids_by_code = await ensure_org_structure(api)
 
         if args.reset:
             await reattach_staff(
@@ -1243,15 +1159,15 @@ async def run(args: argparse.Namespace) -> None:
         print("Техкарты…")
         tech_card_ids = await ensure_tech_cards(api, nomenclature_ids)
 
-        if await has_stock(api, warehouse_ids["WAREHOUSE_RAW"]):
+        if await has_stock(api, unit_ids_by_code["PRODUCTION"]):
             print("Остатки уже есть — складские движения пропущены.")
         else:
             print("Поступления…")
-            await post_receipts(api, warehouse_ids, nomenclature_ids)
+            await post_receipts(api, unit_ids_by_code, nomenclature_ids)
             print("Производство…")
-            await post_production(api, warehouse_ids, tech_card_ids)
+            await post_production(api, unit_ids_by_code, tech_card_ids)
             print("Перемещения…")
-            await post_transfers(api, warehouse_ids, nomenclature_ids)
+            await post_transfers(api, unit_ids_by_code, nomenclature_ids)
 
         print("\nГотово.")
     finally:

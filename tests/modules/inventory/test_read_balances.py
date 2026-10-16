@@ -5,6 +5,9 @@ from uuid import UUID, uuid4
 import pytest
 
 from myasnaya_derevnya.core.errors import ForbiddenError
+from myasnaya_derevnya.modules.business.presentation.business_api import (
+    StockLocation,
+)
 from myasnaya_derevnya.modules.inventory.application.dto import BalanceListItem
 from myasnaya_derevnya.modules.inventory.application.interactors.balances.get import (
     GetBalanceInteractor,
@@ -14,11 +17,7 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.list i
     ListBalancesInteractor,
     ListBalancesQuery,
 )
-from myasnaya_derevnya.modules.inventory.domain.entities.warehouse import (
-    Warehouse,
-    WarehouseType,
-)
-from myasnaya_derevnya.modules.inventory.domain.errors import WarehouseNotFoundError
+from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import (
     READ_BALANCES,
     READ_COSTS,
@@ -36,15 +35,15 @@ class FakeIdentityProvider:
         return uuid4()
 
 
-class FakeWarehouseRepository:
-    def __init__(self, warehouse: Warehouse | None) -> None:
-        self._warehouse = warehouse
+class FakeBusinessAPI:
+    def __init__(self, location: StockLocation | None) -> None:
+        self._location = location
 
-    async def get_by_id(self, warehouse_id: UUID) -> Warehouse | None:
-        if self._warehouse is None:
+    async def stock_location(self, org_unit_id: UUID) -> StockLocation | None:
+        if self._location is None:
             return None
 
-        return self._warehouse if self._warehouse.id == warehouse_id else None
+        return self._location if self._location.id == org_unit_id else None
 
 
 class FakeBalanceReader:
@@ -52,19 +51,19 @@ class FakeBalanceReader:
         self._items = items
         self.with_cost_calls: list[bool] = []
 
-    async def list_by_warehouse(
-        self, warehouse_id: UUID, *, with_cost: bool
+    async def list_by_org_unit(
+        self, org_unit_id: UUID, *, with_cost: bool
     ) -> list[BalanceListItem]:
         self.with_cost_calls.append(with_cost)
 
         return [
             self._mask(item, with_cost)
             for item in self._items
-            if item.warehouse_id == warehouse_id
+            if item.org_unit_id == org_unit_id
         ]
 
     async def get(
-        self, warehouse_id: UUID, nomenclature_id: UUID, *, with_cost: bool
+        self, org_unit_id: UUID, nomenclature_id: UUID, *, with_cost: bool
     ) -> BalanceListItem | None:
         self.with_cost_calls.append(with_cost)
 
@@ -72,7 +71,7 @@ class FakeBalanceReader:
             (
                 item
                 for item in self._items
-                if item.warehouse_id == warehouse_id
+                if item.org_unit_id == org_unit_id
                 and item.nomenclature_id == nomenclature_id
             ),
             None,
@@ -107,17 +106,17 @@ class FakeStaffAPI:
         return permission.code not in self._denied
 
 
-def make_warehouse() -> Warehouse:
-    return Warehouse.create(
-        org_unit_id=uuid4(), code="RAW-01", name="Склад сырья", type=WarehouseType.RAW
+def make_location() -> StockLocation:
+    return StockLocation(
+        id=uuid4(), code="RAW-01", name="Склад сырья", is_active=True
     )
 
 
 def make_balance(
-    warehouse_id: UUID, nomenclature_id: UUID, *, quantity: str = "10"
+    org_unit_id: UUID, nomenclature_id: UUID, *, quantity: str = "10"
 ) -> BalanceListItem:
     return BalanceListItem(
-        warehouse_id=warehouse_id,
+        org_unit_id=org_unit_id,
         nomenclature_id=nomenclature_id,
         quantity=Decimal(quantity),
         average_unit_cost=Decimal(450),
@@ -126,7 +125,7 @@ def make_balance(
 
 
 def build_get(
-    warehouse: Warehouse | None,
+    location: StockLocation | None,
     items: list[BalanceListItem],
     *,
     denied: set[str] | None = None,
@@ -136,7 +135,7 @@ def build_get(
     staff_api = FakeStaffAPI(denied)
     interactor = GetBalanceInteractor(
         identity_provider=FakeIdentityProvider(),
-        warehouse_repository=FakeWarehouseRepository(warehouse),
+        business_api=FakeBusinessAPI(location),
         balance_reader=reader,
         catalog_api=FakeCatalogAPI(names),
         staff_api=staff_api,
@@ -146,7 +145,7 @@ def build_get(
 
 
 def build_list(
-    warehouse: Warehouse | None,
+    location: StockLocation | None,
     items: list[BalanceListItem],
     *,
     denied: set[str] | None = None,
@@ -156,7 +155,7 @@ def build_list(
     staff_api = FakeStaffAPI(denied)
     interactor = ListBalancesInteractor(
         identity_provider=FakeIdentityProvider(),
-        warehouse_repository=FakeWarehouseRepository(warehouse),
+        business_api=FakeBusinessAPI(location),
         balance_reader=reader,
         catalog_api=FakeCatalogAPI(names),
         staff_api=staff_api,
@@ -166,29 +165,29 @@ def build_list(
 
 
 async def test_get_balance_requires_read_permission() -> None:
-    warehouse = make_warehouse()
-    interactor, _, _ = build_get(warehouse, [], denied={READ_BALANCES.code})
+    location = make_location()
+    interactor, _, _ = build_get(location, [], denied={READ_BALANCES.code})
 
     with pytest.raises(ForbiddenError):
-        await interactor(GetBalanceQuery(warehouse.id, uuid4()))
+        await interactor(GetBalanceQuery(location.id, uuid4()))
 
 
-async def test_get_balance_raises_when_warehouse_is_unknown() -> None:
+async def test_get_balance_raises_when_location_is_unknown() -> None:
     interactor, _, _ = build_get(None, [])
 
-    with pytest.raises(WarehouseNotFoundError):
+    with pytest.raises(LocationNotFoundError):
         await interactor(GetBalanceQuery(uuid4(), uuid4()))
 
 
 async def test_get_balance_hides_cost_without_cost_permission() -> None:
-    warehouse = make_warehouse()
+    location = make_location()
     nomenclature_id = uuid4()
-    item = make_balance(warehouse.id, nomenclature_id)
+    item = make_balance(location.id, nomenclature_id)
     interactor, reader, staff_api = build_get(
-        warehouse, [item], denied={READ_COSTS.code}
+        location, [item], denied={READ_COSTS.code}
     )
 
-    result = await interactor(GetBalanceQuery(warehouse.id, nomenclature_id))
+    result = await interactor(GetBalanceQuery(location.id, nomenclature_id))
     schema = BalanceSchema.from_dto(result)
 
     assert reader.with_cost_calls == [False]
@@ -199,14 +198,14 @@ async def test_get_balance_hides_cost_without_cost_permission() -> None:
 
 
 async def test_get_balance_shows_cost_with_cost_permission() -> None:
-    warehouse = make_warehouse()
+    location = make_location()
     nomenclature_id = uuid4()
-    item = make_balance(warehouse.id, nomenclature_id)
+    item = make_balance(location.id, nomenclature_id)
     interactor, reader, _ = build_get(
-        warehouse, [item], names={nomenclature_id: "Говядина лопатка"}
+        location, [item], names={nomenclature_id: "Говядина лопатка"}
     )
 
-    result = await interactor(GetBalanceQuery(warehouse.id, nomenclature_id))
+    result = await interactor(GetBalanceQuery(location.id, nomenclature_id))
     schema = BalanceSchema.from_dto(result)
 
     assert reader.with_cost_calls == [True]
@@ -216,24 +215,24 @@ async def test_get_balance_shows_cost_with_cost_permission() -> None:
 
 
 async def test_get_balance_returns_empty_balance_when_row_is_missing() -> None:
-    warehouse = make_warehouse()
-    interactor, _, _ = build_get(warehouse, [])
+    location = make_location()
+    interactor, _, _ = build_get(location, [])
 
-    result = await interactor(GetBalanceQuery(warehouse.id, uuid4()))
+    result = await interactor(GetBalanceQuery(location.id, uuid4()))
 
     assert result.quantity == Decimal(0)
     assert result.total_value_kopecks == 0
 
 
 async def test_list_balances_returns_items_with_names() -> None:
-    warehouse = make_warehouse()
+    location = make_location()
     nomenclature_id = uuid4()
-    item = make_balance(warehouse.id, nomenclature_id)
+    item = make_balance(location.id, nomenclature_id)
     interactor, reader, _ = build_list(
-        warehouse, [item], names={nomenclature_id: "Говядина лопатка"}
+        location, [item], names={nomenclature_id: "Говядина лопатка"}
     )
 
-    items = await interactor(ListBalancesQuery(warehouse.id))
+    items = await interactor(ListBalancesQuery(location.id))
 
     assert len(items) == 1
     assert isinstance(items[0], BalanceListItem)
@@ -242,26 +241,26 @@ async def test_list_balances_returns_items_with_names() -> None:
 
 
 async def test_list_balances_filters_by_name() -> None:
-    warehouse = make_warehouse()
-    first = make_balance(warehouse.id, uuid4())
-    second = make_balance(warehouse.id, uuid4())
+    location = make_location()
+    first = make_balance(location.id, uuid4())
+    second = make_balance(location.id, uuid4())
     names = {
         first.nomenclature_id: "Говядина лопатка",
         second.nomenclature_id: "Свинина шея",
     }
-    interactor, _, _ = build_list(warehouse, [first, second], names=names)
+    interactor, _, _ = build_list(location, [first, second], names=names)
 
-    items = await interactor(ListBalancesQuery(warehouse.id, search="свинина"))
+    items = await interactor(ListBalancesQuery(location.id, search="свинина"))
 
     assert [item.nomenclature_name for item in items] == ["Свинина шея"]
 
 
 async def test_list_balances_without_search_returns_everything() -> None:
-    warehouse = make_warehouse()
-    first = make_balance(warehouse.id, uuid4())
-    second = make_balance(warehouse.id, uuid4())
-    interactor, _, _ = build_list(warehouse, [first, second])
+    location = make_location()
+    first = make_balance(location.id, uuid4())
+    second = make_balance(location.id, uuid4())
+    interactor, _, _ = build_list(location, [first, second])
 
-    items = await interactor(ListBalancesQuery(warehouse.id))
+    items = await interactor(ListBalancesQuery(location.id))
 
     assert len(items) == 2

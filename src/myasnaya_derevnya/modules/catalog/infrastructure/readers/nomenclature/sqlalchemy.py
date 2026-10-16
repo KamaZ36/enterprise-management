@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from myasnaya_derevnya.core.database.search import like_pattern
 from myasnaya_derevnya.modules.catalog.application.dto import NomenclatureListItem
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
-    NomenclatureType,
     UnitOfMeasurement,
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature.base import (
@@ -26,14 +25,11 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
         self,
         *,
         search: str | None = None,
-        type_code: str | None = None,
         category_id: UUID | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[NomenclatureListItem], int]:
-        conditions = self._conditions(
-            search=search, type_code=type_code, category_id=category_id
-        )
+        conditions = self._conditions(search=search, category_id=category_id)
 
         total = await self._session.scalar(
             select(func.count()).select_from(NOMENCLATURES_TABLE).where(*conditions)
@@ -44,7 +40,6 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 NOMENCLATURES_TABLE.c.id,
                 NOMENCLATURES_TABLE.c.sku,
                 NOMENCLATURES_TABLE.c.name,
-                NOMENCLATURES_TABLE.c.type,
                 NOMENCLATURES_TABLE.c.unit,
                 NOMENCLATURES_TABLE.c.category_id,
                 NOMENCLATURES_TABLE.c.is_active,
@@ -88,7 +83,6 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
         self,
         *,
         search: str | None,
-        type_code: str | None,
         category_id: UUID | None,
     ) -> list:
         conditions: list = []
@@ -101,8 +95,6 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 )
                 for token in search.split()
             )
-        if type_code:
-            conditions.append(NOMENCLATURES_TABLE.c.type == type_code)
         if category_id is not None:
             conditions.append(NOMENCLATURES_TABLE.c.category_id == category_id)
 
@@ -113,7 +105,6 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
             id=row["id"],
             sku=row["sku"],
             name=row["name"],
-            type=NomenclatureType(row["type"]),
             unit=UnitOfMeasurement(row["unit"]),
             category_id=row["category_id"],
             category_name=row["category_name"],

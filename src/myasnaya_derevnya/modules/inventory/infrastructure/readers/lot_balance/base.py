@@ -7,9 +7,9 @@ from myasnaya_derevnya.modules.inventory.application.dto import LotBalanceListIt
 
 class LotBalanceReader(ABC):
     @abstractmethod
-    async def list_by_warehouse(
+    async def list_by_org_unit(
         self,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         *,
         with_cost: bool,
         include_empty: bool = False,

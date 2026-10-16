@@ -95,9 +95,9 @@ def test_inventory_read_endpoints_document_response_schema() -> None:
     spec = create_app().openapi()
     paths = spec["paths"]
 
-    balances = paths["/api/inventory/warehouses/{warehouse_id}/balances"]["get"]
+    balances = paths["/api/inventory/locations/{org_unit_id}/balances"]["get"]
     balance = paths[
-        "/api/inventory/warehouses/{warehouse_id}/balances/{nomenclature_id}"
+        "/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
     ]["get"]
 
     assert balances["responses"]["200"]["content"]["application/json"]["schema"] == {

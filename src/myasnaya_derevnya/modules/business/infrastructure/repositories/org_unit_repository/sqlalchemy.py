@@ -71,6 +71,20 @@ class SQLAlchemyOrgUnitRepository(OrgUnitRepository):
 
         return self._to_entity(row)
 
+    async def list_by_types(self, types: Iterable[OrgUnitType]) -> list[OrgUnit]:
+        type_codes = [unit_type.value for unit_type in types]
+        if not type_codes:
+            return []
+
+        stmt = (
+            select(ORG_UNITS_TABLE)
+            .where(ORG_UNITS_TABLE.c.type.in_(type_codes))
+            .order_by(ORG_UNITS_TABLE.c.name.asc())
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+
+        return [self._to_entity(row) for row in rows]
+
     async def get_children(self, org_unit_id: UUID) -> list[OrgUnit]:
         stmt = (
             select(ORG_UNITS_TABLE)

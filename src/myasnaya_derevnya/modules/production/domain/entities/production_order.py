@@ -62,7 +62,7 @@ class ProductionOrder:
     def __init__(
         self,
         id: UUID,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         tech_card_id: UUID,
         tech_card_code: str,
         tech_card_version: int,
@@ -76,7 +76,7 @@ class ProductionOrder:
         posted_at: datetime | None = None,
     ) -> None:
         self._id = id
-        self._warehouse_id = warehouse_id
+        self._org_unit_id = org_unit_id
         self._tech_card_id = tech_card_id
         self._tech_card_code = tech_card_code
         self._tech_card_version = tech_card_version
@@ -93,7 +93,7 @@ class ProductionOrder:
     def create(
         cls,
         *,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         tech_card: TechCard,
         batch_count: Decimal,
         occurred_at: datetime,
@@ -119,7 +119,7 @@ class ProductionOrder:
 
         return cls(
             id=uuid7(),
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             tech_card_id=tech_card.id,
             tech_card_code=tech_card.code,
             tech_card_version=tech_card.version,
@@ -137,8 +137,8 @@ class ProductionOrder:
         return self._id
 
     @property
-    def warehouse_id(self) -> UUID:
-        return self._warehouse_id
+    def org_unit_id(self) -> UUID:
+        return self._org_unit_id
 
     @property
     def tech_card_id(self) -> UUID:

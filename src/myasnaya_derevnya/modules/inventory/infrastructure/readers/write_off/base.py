@@ -13,7 +13,7 @@ class WriteOffReader(ABC):
     async def list(
         self,
         *,
-        warehouse_ids: Sequence[UUID] | None = None,
+        org_unit_ids: Sequence[UUID] | None = None,
         search: str | None = None,
         limit: int = 20,
         offset: int = 0,

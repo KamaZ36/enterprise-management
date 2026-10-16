@@ -46,7 +46,7 @@ class ProductionReceiptCommand:
 @dataclass(frozen=True, slots=True)
 class PostProductionCommand:
     document_id: UUID
-    warehouse_id: UUID
+    org_unit_id: UUID
     occurred_at: datetime
     issues: tuple[ProductionIssueCommand, ...]
     receipts: tuple[ProductionReceiptCommand, ...]
@@ -82,10 +82,10 @@ class PostProductionInteractor:
         if not command.issues or not command.receipts:
             raise EmptyDocumentError(command.document_id)
 
-        warehouse_id = command.warehouse_id
+        org_unit_id = command.org_unit_id
 
         await self._preconditions.ensure_ready(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_ids=[
                 *(issue.nomenclature_id for issue in command.issues),
                 *(receipt.nomenclature_id for receipt in command.receipts),
@@ -105,23 +105,23 @@ class PostProductionInteractor:
         async with self._ledger.posting(
             document_type=DocumentType.PRODUCTION,
             document_id=command.document_id,
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             occurred_at=command.occurred_at,
             posted_by=command.posted_by,
         ) as posting:
             await posting.lock(
                 balance_keys=[
                     *(
-                        (warehouse_id, issue.nomenclature_id)
+                        (org_unit_id, issue.nomenclature_id)
                         for issue in command.issues
                     ),
                     *(
-                        (warehouse_id, receipt.nomenclature_id)
+                        (org_unit_id, receipt.nomenclature_id)
                         for receipt in command.receipts
                     ),
                 ],
                 lot_keys=[
-                    (warehouse_id, receipt.nomenclature_id, lot_id)
+                    (org_unit_id, receipt.nomenclature_id, lot_id)
                     for receipt, lot_id in zip(
                         command.receipts, receipt_lots, strict=True
                     )
@@ -131,10 +131,10 @@ class PostProductionInteractor:
 
             issued = Money.zero()
             for issue in command.issues:
-                slices = await self._issue_slices(posting, warehouse_id, issue)
+                slices = await self._issue_slices(posting, org_unit_id, issue)
                 for lot_id, quantity in slices:
                     issued = issued + await posting.issue(
-                        warehouse_id=warehouse_id,
+                        org_unit_id=org_unit_id,
                         nomenclature_id=issue.nomenclature_id,
                         quantity=quantity,
                         movement_type=MovementType.PRODUCTION_OUT,
@@ -150,7 +150,7 @@ class PostProductionInteractor:
                 command.receipts, receipt_lots, costs, strict=True
             ):
                 await posting.receive(
-                    warehouse_id=warehouse_id,
+                    org_unit_id=org_unit_id,
                     nomenclature_id=receipt.nomenclature_id,
                     quantity=receipt.quantity,
                     cost=Money(kopecks=cost),
@@ -174,17 +174,17 @@ class PostProductionInteractor:
     async def _issue_slices(
         self,
         posting: StockPostingHandle,
-        warehouse_id: UUID,
+        org_unit_id: UUID,
         issue: ProductionIssueCommand,
     ) -> list[tuple[UUID | None, Decimal]]:
         if issue.lot_id is not None:
             await posting.lock(
-                lot_keys=[(warehouse_id, issue.nomenclature_id, issue.lot_id)]
+                lot_keys=[(org_unit_id, issue.nomenclature_id, issue.lot_id)]
             )
             return [(issue.lot_id, issue.quantity)]
 
         return await posting.allocate(
-            warehouse_id=warehouse_id,
+            org_unit_id=org_unit_id,
             nomenclature_id=issue.nomenclature_id,
             quantity=issue.quantity,
         )

@@ -27,14 +27,14 @@
         @input="onFilter"
       />
       <el-select
-        v-if="can('inventory.warehouse.read')"
-        v-model="warehouseId"
-        placeholder="Все склады"
+        v-if="can('inventory.document.read')"
+        v-model="locationId"
+        placeholder="Все точки"
         clearable
         style="width: 260px"
         @change="reload"
       >
-        <WarehouseOptions :warehouses="warehouses" />
+        <LocationOptions :locations="locations" />
       </el-select>
       <el-button :loading="pending" @click="reload">Обновить</el-button>
     </div>
@@ -73,8 +73,8 @@
       <el-table-column label="Дата" width="120">
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
       </el-table-column>
-      <el-table-column label="Склад" min-width="180">
-        <template #default="{ row }">{{ warehouseName(row.warehouse_id) }}</template>
+      <el-table-column label="Подразделение" min-width="180">
+        <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
       </el-table-column>
       <el-table-column label="Поставщик" min-width="220">
         <template #default="{ row }">{{ row.supplier_name ?? "—" }}</template>
@@ -121,8 +121,8 @@
       <el-table-column label="Дата" width="120">
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
       </el-table-column>
-      <el-table-column label="Склад" min-width="180">
-        <template #default="{ row }">{{ warehouseName(row.warehouse_id) }}</template>
+      <el-table-column label="Подразделение" min-width="180">
+        <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
       </el-table-column>
       <el-table-column label="Причина" min-width="220">
         <template #default="{ row }">{{ row.reason ?? "—" }}</template>
@@ -175,10 +175,10 @@
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
       </el-table-column>
       <el-table-column label="Откуда" min-width="180">
-        <template #default="{ row }">{{ warehouseName(row.from_warehouse_id) }}</template>
+        <template #default="{ row }">{{ locationName(row.from_org_unit_id) }}</template>
       </el-table-column>
       <el-table-column label="Куда" min-width="180">
-        <template #default="{ row }">{{ warehouseName(row.to_warehouse_id) }}</template>
+        <template #default="{ row }">{{ locationName(row.to_org_unit_id) }}</template>
       </el-table-column>
       <el-table-column prop="line_count" label="Строк" width="90" align="right" />
       <el-table-column label="Статус" width="120">
@@ -193,9 +193,9 @@
     <el-dialog v-model="writeOffOpen" title="Новое списание" width="760">
       <el-form label-position="top" @submit.prevent>
         <div class="form-grid">
-          <el-form-item label="Склад">
-            <el-select v-model="woForm.warehouse_id" style="width: 100%">
-              <WarehouseOptions :warehouses="warehouses" />
+          <el-form-item label="Подразделение">
+            <el-select v-model="woForm.org_unit_id" style="width: 100%">
+              <LocationOptions :locations="locations" />
             </el-select>
           </el-form-item>
           <el-form-item label="Дата и время">
@@ -257,7 +257,7 @@
           :closable="false"
           show-icon
           title="Цены в списании нет"
-          description="Себестоимость определится при проведении по средней на складе."
+          description="Себестоимость определится при проведении по средней в подразделении."
         />
 
         <el-alert v-if="woError" :title="woError" type="error" :closable="false" show-icon />
@@ -282,9 +282,9 @@
     <el-dialog v-model="createOpen" title="Новое поступление" width="900">
       <el-form label-position="top" @submit.prevent>
         <div class="form-grid">
-          <el-form-item label="Склад">
-            <el-select v-model="form.warehouse_id" style="width: 100%">
-              <WarehouseOptions :warehouses="warehouses" />
+          <el-form-item label="Подразделение">
+            <el-select v-model="form.org_unit_id" style="width: 100%">
+              <LocationOptions :locations="locations" />
             </el-select>
           </el-form-item>
           <el-form-item label="Дата и время">
@@ -379,13 +379,13 @@
       <el-form label-position="top" @submit.prevent>
         <div class="form-grid">
           <el-form-item label="Откуда">
-            <el-select v-model="trForm.from_warehouse_id" style="width: 100%">
-              <WarehouseOptions :warehouses="warehouses" />
+            <el-select v-model="trForm.from_org_unit_id" style="width: 100%">
+              <LocationOptions :locations="locations" />
             </el-select>
           </el-form-item>
           <el-form-item label="Куда">
-            <el-select v-model="trForm.to_warehouse_id" style="width: 100%">
-              <WarehouseOptions :warehouses="warehouses" />
+            <el-select v-model="trForm.to_org_unit_id" style="width: 100%">
+              <LocationOptions :locations="locations" />
             </el-select>
           </el-form-item>
         </div>
@@ -469,10 +469,10 @@
 
         <el-descriptions :column="1" border>
           <el-descriptions-item label="Откуда">
-            {{ warehouseName(transferDetail.from_warehouse_id) }}
+            {{ locationName(transferDetail.from_org_unit_id) }}
           </el-descriptions-item>
           <el-descriptions-item label="Куда">
-            {{ warehouseName(transferDetail.to_warehouse_id) }}
+            {{ locationName(transferDetail.to_org_unit_id) }}
           </el-descriptions-item>
           <el-descriptions-item label="Дата">
             {{ formatDate(transferDetail.occurred_at) }}
@@ -514,8 +514,8 @@
           <el-descriptions-item label="Дата">
             {{ formatDate(receiptDetail.occurred_at) }}
           </el-descriptions-item>
-          <el-descriptions-item label="Склад">
-            {{ warehouseName(receiptDetail.warehouse_id) }}
+          <el-descriptions-item label="Подразделение">
+            {{ locationName(receiptDetail.org_unit_id) }}
           </el-descriptions-item>
           <el-descriptions-item label="Поставщик">
             {{ receiptDetail.supplier_name ?? "—" }}
@@ -558,8 +558,8 @@
           <el-descriptions-item label="Дата">
             {{ formatDate(writeOffDetail.occurred_at) }}
           </el-descriptions-item>
-          <el-descriptions-item label="Склад">
-            {{ warehouseName(writeOffDetail.warehouse_id) }}
+          <el-descriptions-item label="Подразделение">
+            {{ locationName(writeOffDetail.org_unit_id) }}
           </el-descriptions-item>
           <el-descriptions-item label="Причина">
             {{ writeOffDetail.reason ?? "—" }}
@@ -602,13 +602,13 @@ import { CAN } from "~/utils/access";
 definePageMeta({ permissions: CAN.documentsOpen });
 import { formatKopecks, formatQuantity } from "@md/money";
 import type { components } from "@md/api-client";
-import { warehouseDisplay } from "~/utils/warehouses";
+import { locationDisplay } from "~/utils/locations";
 
 type ReceiptListItem = components["schemas"]["ReceiptListItemSchema"];
 type ReceiptDetail = components["schemas"]["ReceiptDetailSchema"];
 type WriteOffListItem = components["schemas"]["WriteOffListItemSchema"];
 type WriteOffDetail = components["schemas"]["WriteOffDetailSchema"];
-type Warehouse = components["schemas"]["WarehouseSchema"];
+type Location = components["schemas"]["LocationSchema"];
 
 const PAGE_SIZE = 20;
 
@@ -623,8 +623,8 @@ const receipts = ref<ReceiptListItem[]>([]);
 const writeOffs = ref<WriteOffListItem[]>([]);
 const receiptsTotal = ref(0);
 const writeOffsTotal = ref(0);
-const warehouses = ref<Warehouse[]>([]);
-const warehouseId = ref<string | null>(null);
+const locations = ref<Location[]>([]);
+const locationId = ref<string | null>(null);
 const page = ref(1);
 const pending = ref(false);
 const error = ref("");
@@ -668,7 +668,7 @@ function isCompleteLine(line: DraftLine): boolean {
 }
 
 const form = reactive({
-  warehouse_id: "",
+  org_unit_id: "",
   occurred_at: new Date(),
   supplier_name: "",
   supplier_document_number: "",
@@ -691,7 +691,7 @@ const writeOffOpen = ref(false);
 const woSaving = ref(false);
 const woError = ref("");
 const woForm = reactive({
-  warehouse_id: "",
+  org_unit_id: "",
   occurred_at: new Date(),
   reason: "",
   comment: "",
@@ -703,11 +703,11 @@ function isCompleteWriteOffLine(line: WriteOffLine): boolean {
 }
 
 const woCanSubmit = computed(
-  () => Boolean(woForm.warehouse_id) && woLines.value.some(isCompleteWriteOffLine),
+  () => Boolean(woForm.org_unit_id) && woLines.value.some(isCompleteWriteOffLine),
 );
 
 const canSubmit = computed(
-  () => Boolean(form.warehouse_id) && lines.value.some(isCompleteLine),
+  () => Boolean(form.org_unit_id) && lines.value.some(isCompleteLine),
 );
 const receiptDetail = ref<ReceiptDetail | null>(null);
 const writeOffDetail = ref<WriteOffDetail | null>(null);
@@ -723,9 +723,9 @@ const drawerTitle = computed(() => {
   return "Документ";
 });
 
-function warehouseName(id: string): string {
-  return warehouseDisplay(
-    warehouses.value.find((warehouse) => warehouse.id === id),
+function locationName(id: string): string {
+  return locationDisplay(
+    locations.value.find((location) => location.id === id),
   );
 }
 
@@ -740,14 +740,14 @@ function reasonOf(status: number, fallback: string): string {
   return `${fallback}: ${status}`;
 }
 
-async function loadWarehouses(): Promise<void> {
-  if (!can("inventory.warehouse.read")) {
+async function loadLocations(): Promise<void> {
+  if (!can("inventory.document.read")) {
     return;
   }
 
-  const { data, response } = await api.GET("/api/inventory/warehouses", {});
+  const { data, response } = await api.GET("/api/inventory/locations", {});
   if (response.ok && data) {
-    warehouses.value = data;
+    locations.value = data;
   }
 }
 
@@ -756,7 +756,7 @@ async function load(): Promise<void> {
   error.value = "";
 
   const query = {
-    warehouse_id: warehouseId.value ?? undefined,
+    org_unit_id: locationId.value ?? undefined,
     limit: PAGE_SIZE,
     offset: (page.value - 1) * PAGE_SIZE,
     search: filter.value.trim() || undefined,
@@ -838,7 +838,7 @@ function serverMessage(error: unknown, fallback: string): string {
 function openCreate(): void {
   createError.value = "";
   notice.value = "";
-  form.warehouse_id = warehouses.value[0]?.id ?? "";
+  form.org_unit_id = locations.value[0]?.id ?? "";
   form.occurred_at = new Date();
   form.supplier_name = "";
   form.supplier_document_number = "";
@@ -880,7 +880,7 @@ async function createReceipt(postAfterCreate: boolean): Promise<void> {
   try {
     const created = await api.POST("/api/inventory/receipts", {
       body: {
-        warehouse_id: form.warehouse_id,
+        org_unit_id: form.org_unit_id,
         occurred_at: form.occurred_at.toISOString(),
         supplier_name: form.supplier_name.trim() || null,
         supplier_document_number: form.supplier_document_number.trim() || null,
@@ -933,7 +933,7 @@ async function createReceipt(postAfterCreate: boolean): Promise<void> {
 function openWriteOffCreate(): void {
   woError.value = "";
   notice.value = "";
-  woForm.warehouse_id = warehouses.value[0]?.id ?? "";
+  woForm.org_unit_id = locations.value[0]?.id ?? "";
   woForm.occurred_at = new Date();
   woForm.reason = "";
   woForm.comment = "";
@@ -960,7 +960,7 @@ async function createWriteOff(postAfterCreate: boolean): Promise<void> {
   try {
     const created = await api.POST("/api/inventory/write-offs", {
       body: {
-        warehouse_id: woForm.warehouse_id,
+        org_unit_id: woForm.org_unit_id,
         occurred_at: woForm.occurred_at.toISOString(),
         reason: woForm.reason.trim() || null,
         comment: woForm.comment.trim() || null,
@@ -1073,7 +1073,7 @@ function onFilter(): void {
 
 
 onMounted(async () => {
-  await loadWarehouses();
+  await loadLocations();
   await load();
 });
 watch(tab, async (value) => {
@@ -1111,8 +1111,8 @@ const transferOpen = ref(false);
 const trSaving = ref(false);
 const trError = ref("");
 const trForm = reactive({
-  from_warehouse_id: "",
-  to_warehouse_id: "",
+  from_org_unit_id: "",
+  to_org_unit_id: "",
   occurred_at: new Date(),
   comment: "",
 });
@@ -1124,9 +1124,9 @@ function isCompleteTransferLine(line: TransferLine): boolean {
 
 const trCanSubmit = computed(
   () =>
-    Boolean(trForm.from_warehouse_id) &&
-    Boolean(trForm.to_warehouse_id) &&
-    trForm.from_warehouse_id !== trForm.to_warehouse_id &&
+    Boolean(trForm.from_org_unit_id) &&
+    Boolean(trForm.to_org_unit_id) &&
+    trForm.from_org_unit_id !== trForm.to_org_unit_id &&
     trLines.value.some(isCompleteTransferLine),
 );
 
@@ -1134,8 +1134,8 @@ function openTransferCreate(): void {
   trEditingId.value = null;
   trError.value = "";
   notice.value = "";
-  trForm.from_warehouse_id = warehouses.value[0]?.id ?? "";
-  trForm.to_warehouse_id = warehouses.value[1]?.id ?? "";
+  trForm.from_org_unit_id = locations.value[0]?.id ?? "";
+  trForm.to_org_unit_id = locations.value[1]?.id ?? "";
   trForm.occurred_at = new Date();
   trForm.comment = "";
   trLines.value = [emptyTransferLine()];
@@ -1156,8 +1156,8 @@ async function createTransfer(postAfterCreate: boolean): Promise<void> {
   notice.value = "";
 
   try {
-    if (trForm.from_warehouse_id === trForm.to_warehouse_id) {
-      trError.value = "Склад-отправитель и склад-получатель должны различаться";
+    if (trForm.from_org_unit_id === trForm.to_org_unit_id) {
+      trError.value = "Подразделение-отправитель и подразделение-получатель должны различаться";
       return;
     }
 
@@ -1192,8 +1192,8 @@ async function createTransfer(postAfterCreate: boolean): Promise<void> {
 
     const created = await api.POST("/api/inventory/transfers", {
       body: {
-        from_warehouse_id: trForm.from_warehouse_id,
-        to_warehouse_id: trForm.to_warehouse_id,
+        from_org_unit_id: trForm.from_org_unit_id,
+        to_org_unit_id: trForm.to_org_unit_id,
         occurred_at: trForm.occurred_at.toISOString(),
         comment: trForm.comment.trim() || null,
         lines: trLines.value.filter(isCompleteTransferLine).map((line) => ({
@@ -1303,8 +1303,8 @@ function openTransferEdit(): void {
   trError.value = "";
   notice.value = "";
   trEditingId.value = detail.id;
-  trForm.from_warehouse_id = detail.from_warehouse_id;
-  trForm.to_warehouse_id = detail.to_warehouse_id;
+  trForm.from_org_unit_id = detail.from_org_unit_id;
+  trForm.to_org_unit_id = detail.to_org_unit_id;
   trForm.occurred_at = new Date(detail.occurred_at);
   trForm.comment = detail.comment ?? "";
   trLines.value = detail.lines.map((line) => ({

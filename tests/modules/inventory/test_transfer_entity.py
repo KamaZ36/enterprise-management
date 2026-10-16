@@ -12,7 +12,7 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
     EmptyDocumentError,
     EmptyMovementError,
-    SameWarehouseTransferError,
+    SameLocationTransferError,
     TimezoneRequiredError,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
@@ -25,22 +25,22 @@ def make_line(quantity: str = "10") -> TransferLine:
 
 
 def make_transfer(**kwargs) -> Transfer:
-    from_warehouse_id = kwargs.pop("from_warehouse_id", uuid4())
-    to_warehouse_id = kwargs.pop("to_warehouse_id", uuid4())
+    from_org_unit_id = kwargs.pop("from_org_unit_id", uuid4())
+    to_org_unit_id = kwargs.pop("to_org_unit_id", uuid4())
 
     return Transfer.create(
-        from_warehouse_id=from_warehouse_id,
-        to_warehouse_id=to_warehouse_id,
+        from_org_unit_id=from_org_unit_id,
+        to_org_unit_id=to_org_unit_id,
         occurred_at=kwargs.pop("occurred_at", get_datetime_utc()),
         **kwargs,
     )
 
 
 def test_new_transfer_is_draft() -> None:
-    warehouse_id = uuid4()
+    org_unit_id = uuid4()
     transfer = Transfer.create(
-        from_warehouse_id=warehouse_id,
-        to_warehouse_id=uuid4(),
+        from_org_unit_id=org_unit_id,
+        to_org_unit_id=uuid4(),
         occurred_at=get_datetime_utc(),
         lines=[make_line()],
     )
@@ -50,13 +50,13 @@ def test_new_transfer_is_draft() -> None:
     assert len(transfer.lines) == 1
 
 
-def test_transfer_to_same_warehouse_is_rejected() -> None:
-    warehouse_id = uuid4()
+def test_transfer_to_same_location_is_rejected() -> None:
+    org_unit_id = uuid4()
 
-    with pytest.raises(SameWarehouseTransferError):
+    with pytest.raises(SameLocationTransferError):
         Transfer.create(
-            from_warehouse_id=warehouse_id,
-            to_warehouse_id=warehouse_id,
+            from_org_unit_id=org_unit_id,
+            to_org_unit_id=org_unit_id,
             occurred_at=get_datetime_utc(),
         )
 
@@ -64,8 +64,8 @@ def test_transfer_to_same_warehouse_is_rejected() -> None:
 def test_naive_datetime_is_rejected() -> None:
     with pytest.raises(TimezoneRequiredError):
         Transfer.create(
-            from_warehouse_id=uuid4(),
-            to_warehouse_id=uuid4(),
+            from_org_unit_id=uuid4(),
+            to_org_unit_id=uuid4(),
             occurred_at=datetime(2026, 10, 13, 12, 0),
         )
 
