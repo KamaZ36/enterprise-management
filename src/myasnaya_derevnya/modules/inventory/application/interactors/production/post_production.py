@@ -14,6 +14,7 @@ from myasnaya_derevnya.modules.inventory.application.services.posting_preconditi
 )
 from myasnaya_derevnya.modules.inventory.application.services.stock_ledger import (
     StockLedger,
+    StockPostingHandle,
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_movement import (
     MovementType,
@@ -91,7 +92,6 @@ class PostProductionInteractor:
             ],
         )
 
-        issue_lots = [issue.lot_id for issue in command.issues]
         receipt_lots = [
             await self._lot_resolver.find_or_create(
                 nomenclature_id=receipt.nomenclature_id,
@@ -121,32 +121,25 @@ class PostProductionInteractor:
                     ),
                 ],
                 lot_keys=[
-                    *(
-                        (warehouse_id, issue.nomenclature_id, lot_id)
-                        for issue, lot_id in zip(
-                            command.issues, issue_lots, strict=True
-                        )
-                        if lot_id is not None
-                    ),
-                    *(
-                        (warehouse_id, receipt.nomenclature_id, lot_id)
-                        for receipt, lot_id in zip(
-                            command.receipts, receipt_lots, strict=True
-                        )
-                        if lot_id is not None
-                    ),
+                    (warehouse_id, receipt.nomenclature_id, lot_id)
+                    for receipt, lot_id in zip(
+                        command.receipts, receipt_lots, strict=True
+                    )
+                    if lot_id is not None
                 ],
             )
 
             issued = Money.zero()
-            for issue, lot_id in zip(command.issues, issue_lots, strict=True):
-                issued = issued + await posting.issue(
-                    warehouse_id=warehouse_id,
-                    nomenclature_id=issue.nomenclature_id,
-                    quantity=issue.quantity,
-                    movement_type=MovementType.PRODUCTION_OUT,
-                    lot_id=lot_id,
-                )
+            for issue in command.issues:
+                slices = await self._issue_slices(posting, warehouse_id, issue)
+                for lot_id, quantity in slices:
+                    issued = issued + await posting.issue(
+                        warehouse_id=warehouse_id,
+                        nomenclature_id=issue.nomenclature_id,
+                        quantity=quantity,
+                        movement_type=MovementType.PRODUCTION_OUT,
+                        lot_id=lot_id,
+                    )
 
             costs = split_kopecks(
                 issued.kopecks, [receipt.share for receipt in command.receipts]
@@ -176,4 +169,22 @@ class PostProductionInteractor:
         return PostedProduction(
             issued_cost_kopecks=issued.kopecks,
             receipts=tuple(posted),
+        )
+
+    async def _issue_slices(
+        self,
+        posting: StockPostingHandle,
+        warehouse_id: UUID,
+        issue: ProductionIssueCommand,
+    ) -> list[tuple[UUID | None, Decimal]]:
+        if issue.lot_id is not None:
+            await posting.lock(
+                lot_keys=[(warehouse_id, issue.nomenclature_id, issue.lot_id)]
+            )
+            return [(issue.lot_id, issue.quantity)]
+
+        return await posting.allocate(
+            warehouse_id=warehouse_id,
+            nomenclature_id=issue.nomenclature_id,
+            quantity=issue.quantity,
         )

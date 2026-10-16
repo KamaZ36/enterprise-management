@@ -24,6 +24,7 @@ ORDERS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("org_unit_id", UUID, nullable=False),
+    Column("warehouse_id", UUID, nullable=True),
     Column("channel", String(16), nullable=False),
     Column("created_by", UUID, nullable=False),
     Column("customer_id", UUID, nullable=True),
@@ -63,6 +64,7 @@ ORDER_LINES_TABLE = Table(
     Column("nomenclature_id", UUID, nullable=False),
     Column("quantity", Numeric(18, 6), nullable=False),
     Column("unit_price", BigInteger, nullable=False),
+    Column("cost_kopecks", BigInteger, nullable=True),
     Index("ix_order_lines_order_id", "order_id"),
     schema=DATABASE_SCHEMA,
 )

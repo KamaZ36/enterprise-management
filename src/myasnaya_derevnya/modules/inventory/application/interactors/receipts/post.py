@@ -109,6 +109,14 @@ class PostReceiptInteractor:
 
         receipt.post()
         await self._receipt_repository.save(receipt)
+        await self._receipt_repository.attach_lot_ids(
+            receipt.id,
+            {
+                line.id: lot_id
+                for line, lot_id in zip(receipt.lines, lot_ids, strict=True)
+                if line.lot_id is None and lot_id is not None
+            },
+        )
         await self._transaction_manager.commit()
 
     async def _resolve_lots(self, receipt) -> list[UUID | None]:

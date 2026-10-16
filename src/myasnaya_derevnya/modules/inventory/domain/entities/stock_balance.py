@@ -99,3 +99,23 @@ class StockBalance:
         self._updated_at = get_datetime_utc()
 
         return cost
+
+    def release(self, quantity: Decimal, cost: Money) -> None:
+        """Списывает количество и стоимость, посчитанную на уровне партии."""
+        if quantity <= 0:
+            raise EmptyMovementError()
+        if quantity > self._quantity:
+            raise InsufficientStockError(
+                warehouse_id=self._warehouse_id,
+                nomenclature_id=self._nomenclature_id,
+                available=self._quantity,
+                requested=quantity,
+            )
+
+        self._quantity -= quantity
+        self._total_value = self._total_value - cost
+
+        if self._quantity == 0:
+            self._total_value = Money.zero()
+
+        self._updated_at = get_datetime_utc()

@@ -20,6 +20,11 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post i
     PostReceiptCommand,
     PostReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
+    PostSaleCommand,
+    PostSaleInteractor,
+    SaleLineCommand,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.base import (
     WarehouseReader,
 )
@@ -66,12 +71,22 @@ class ProductionReceipt:
     expires_at: date | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class SaleLine:
+    nomenclature_id: UUID
+    quantity: Decimal
+
+
+SALES_WAREHOUSE_PREFERENCE: tuple[str, ...] = ("shop", "finished")
+
+
 class InventoryAPI:
     def __init__(
         self,
         create_receipt_interactor: CreateReceiptInteractor,
         post_receipt_interactor: PostReceiptInteractor,
         post_production_interactor: PostProductionInteractor,
+        post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
         warehouse_repository: WarehouseRepository,
         warehouse_reader: WarehouseReader,
@@ -79,6 +94,7 @@ class InventoryAPI:
         self._create_receipt_interactor = create_receipt_interactor
         self._post_receipt_interactor = post_receipt_interactor
         self._post_production_interactor = post_production_interactor
+        self._post_sale_interactor = post_sale_interactor
         self._balance_repository = balance_repository
         self._warehouse_repository = warehouse_repository
         self._warehouse_reader = warehouse_reader
@@ -154,6 +170,26 @@ class InventoryAPI:
             for warehouse in await self._warehouse_reader.list_all()
         ]
 
+    async def default_sales_warehouse(self, org_unit_id: UUID) -> WarehouseInfo | None:
+        """Склад списания продаж по умолчанию для точки.
+
+        Приоритет: торговый зал (``shop``), затем ``finished``. Если подходящего
+        склада нет — возвращает ``None`` (продажа проходит без списания).
+        """
+        warehouses = [
+            warehouse
+            for warehouse in await self.list_warehouses()
+            if warehouse.org_unit_id == org_unit_id and warehouse.is_active
+        ]
+        warehouses.sort(key=lambda warehouse: warehouse.code)
+
+        for warehouse_type in SALES_WAREHOUSE_PREFERENCE:
+            for warehouse in warehouses:
+                if warehouse.type == warehouse_type:
+                    return warehouse
+
+        return None
+
     async def post_production(
         self,
         *,
@@ -191,3 +227,31 @@ class InventoryAPI:
                 posted_by=posted_by,
             )
         )
+
+    async def post_sale(
+        self,
+        *,
+        document_id: UUID,
+        warehouse_id: UUID,
+        occurred_at: datetime,
+        lines: Iterable[SaleLine],
+        posted_by: UUID | None = None,
+    ) -> tuple[int, ...]:
+        """Списывает проданные позиции и возвращает их себестоимость в копейках."""
+        posted = await self._post_sale_interactor(
+            PostSaleCommand(
+                document_id=document_id,
+                warehouse_id=warehouse_id,
+                occurred_at=occurred_at,
+                lines=tuple(
+                    SaleLineCommand(
+                        nomenclature_id=line.nomenclature_id,
+                        quantity=line.quantity,
+                    )
+                    for line in lines
+                ),
+                posted_by=posted_by,
+            )
+        )
+
+        return posted.line_costs_kopecks

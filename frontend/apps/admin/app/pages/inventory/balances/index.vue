@@ -19,12 +19,7 @@
         style="width: 320px"
         @change="load"
       >
-        <el-option
-          v-for="warehouse in warehouses"
-          :key="warehouse.id"
-          :label="warehouse.name"
-          :value="warehouse.id"
-        />
+        <WarehouseOptions :warehouses="warehouses" />
       </el-select>
       <el-input
         v-model="filter"

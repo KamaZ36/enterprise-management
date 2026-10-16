@@ -131,16 +131,30 @@ class SQLAlchemyOrderReader(OrderReader):
             .all()
         )
 
-        items = [
-            OrderLineItem(
-                nomenclature_id=line["nomenclature_id"],
-                nomenclature_name=None,
-                quantity=line["quantity"],
-                unit_price=line["unit_price"],
-                total=int(Decimal(line["quantity"]) * line["unit_price"]),
+        items: list[OrderLineItem] = []
+        for line in lines:
+            line_total = int(Decimal(line["quantity"]) * line["unit_price"])
+            cost = line["cost_kopecks"]
+            items.append(
+                OrderLineItem(
+                    nomenclature_id=line["nomenclature_id"],
+                    nomenclature_name=None,
+                    quantity=line["quantity"],
+                    unit_price=line["unit_price"],
+                    total=line_total,
+                    cost_kopecks=cost,
+                    margin=line_total - cost if cost is not None else None,
+                )
             )
-            for line in lines
-        ]
+
+        total = sum(item.total for item in items)
+        costs = [item.cost_kopecks for item in items]
+        cost_total = (
+            sum(cost for cost in costs if cost is not None)
+            if items and all(cost is not None for cost in costs)
+            else None
+        )
+        margin_total = total - cost_total if cost_total is not None else None
 
         return OrderDetail(
             id=row["id"],
@@ -157,8 +171,10 @@ class SQLAlchemyOrderReader(OrderReader):
             contact_phone=row["contact_phone"],
             completed_at=row["completed_at"],
             cancelled_at=row["cancelled_at"],
-            total=sum(item.total for item in items),
+            total=total,
             lines=items,
+            cost_total=cost_total,
+            margin_total=margin_total,
         )
 
     def _conditions(

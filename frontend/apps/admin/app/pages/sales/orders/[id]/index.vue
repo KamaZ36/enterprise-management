@@ -56,10 +56,28 @@
       <el-table-column label="Сумма" width="140" align="right">
         <template #default="{ row }">{{ formatKopecks(row.total) }}</template>
       </el-table-column>
+      <el-table-column v-if="hasCost" label="Себестоимость" width="150" align="right">
+        <template #default="{ row }">
+          {{ row.cost_kopecks === null || row.cost_kopecks === undefined ? "—" : formatKopecks(row.cost_kopecks) }}
+        </template>
+      </el-table-column>
+      <el-table-column v-if="hasCost" label="Маржа" width="140" align="right">
+        <template #default="{ row }">
+          {{ row.margin === null || row.margin === undefined ? "—" : formatKopecks(row.margin) }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <div v-if="order" style="margin-top: 16px; font-size: 18px">
       Итого: <strong>{{ formatKopecks(order.total) }}</strong>
+      <template v-if="order.cost_total !== null && order.cost_total !== undefined">
+        <span style="margin-left: 16px">
+          Себестоимость: <strong>{{ formatKopecks(order.cost_total) }}</strong>
+        </span>
+        <span style="margin-left: 16px">
+          Маржа: <strong>{{ formatKopecks(order.margin_total) }}</strong>
+        </span>
+      </template>
     </div>
 
     <div v-if="order" style="display: flex; gap: 12px; margin-top: 24px">
@@ -211,6 +229,13 @@ const error = ref("");
 
 const isOpen = computed(
   () => order.value !== null && OPEN_STATUSES.includes(order.value.status),
+);
+
+const hasCost = computed(
+  () =>
+    order.value?.lines?.some(
+      (line) => line.cost_kopecks !== null && line.cost_kopecks !== undefined,
+    ) ?? false,
 );
 
 function formatTime(value: string): string {

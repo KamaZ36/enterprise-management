@@ -21,6 +21,8 @@ from myasnaya_derevnya.modules.inventory.domain.entities.stock_posting import (
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
+    EmptyMovementError,
+    InsufficientStockError,
 )
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import CostPolicy
 from myasnaya_derevnya.modules.inventory.domain.value_objects.money import Money
@@ -114,7 +116,7 @@ class StockPostingHandle:
     async def lock(
         self,
         *,
-        balance_keys: Iterable[BalanceKey],
+        balance_keys: Iterable[BalanceKey] = (),
         lot_keys: Iterable[LotBalanceKey] = (),
     ) -> None:
         fresh = [key for key in balance_keys if key not in self._balances]
@@ -142,7 +144,7 @@ class StockPostingHandle:
 
         if lot_id is not None:
             self._locked_lot_balance(warehouse_id, nomenclature_id, lot_id).receive(
-                quantity
+                quantity, cost
             )
 
         self._movements.append(
@@ -159,6 +161,61 @@ class StockPostingHandle:
             )
         )
 
+    async def allocate(
+        self,
+        *,
+        warehouse_id: UUID,
+        nomenclature_id: UUID,
+        quantity: Decimal,
+    ) -> list[tuple[UUID | None, Decimal]]:
+        """Подбирает партии по FEFO и блокирует их.
+
+        Если партий не хватает, добирает остаток из беспартийного пула
+        (``lot_id=None``), как в старой модели по средней.
+        """
+        if quantity <= 0:
+            raise EmptyMovementError()
+
+        await self.lock(balance_keys=[(warehouse_id, nomenclature_id)])
+
+        candidates = await self._lot_balance_repository.list_available(
+            warehouse_id, nomenclature_id
+        )
+        for candidate in candidates:
+            self._lot_balances.setdefault(
+                (warehouse_id, nomenclature_id, candidate.lot_id), candidate
+            )
+
+        remaining = quantity
+        slices: list[tuple[UUID | None, Decimal]] = []
+        for candidate in candidates:
+            if remaining <= 0:
+                break
+            take = min(remaining, candidate.quantity)
+            slices.append((candidate.lot_id, take))
+            remaining -= take
+
+        if remaining > 0:
+            balance = self._locked_balance(warehouse_id, nomenclature_id)
+            lot_quantity = sum(
+                (candidate.quantity for candidate in candidates), Decimal(0)
+            )
+            non_lot = balance.quantity - lot_quantity
+            if non_lot >= remaining:
+                slices.append((None, remaining))
+                remaining = Decimal(0)
+
+        if remaining > 0:
+            balance = self._locked_balance(warehouse_id, nomenclature_id)
+            raise InsufficientStockError(
+                warehouse_id=warehouse_id,
+                nomenclature_id=nomenclature_id,
+                available=balance.quantity,
+                requested=quantity,
+            )
+
+        return slices
+
     async def issue(
         self,
         *,
@@ -169,12 +226,15 @@ class StockPostingHandle:
         lot_id: UUID | None = None,
     ) -> Money:
         balance = self._locked_balance(warehouse_id, nomenclature_id)
-        cost = balance.issue(quantity, self._cost_policy)
 
         if lot_id is not None:
-            self._locked_lot_balance(warehouse_id, nomenclature_id, lot_id).issue(
-                quantity
-            )
+            lot_cost = self._locked_lot_balance(
+                warehouse_id, nomenclature_id, lot_id
+            ).issue(quantity, self._cost_policy)
+            balance.release(quantity, lot_cost)
+            cost = lot_cost
+        else:
+            cost = balance.issue(quantity, self._cost_policy)
 
         self._movements.append(
             StockMovement.create(

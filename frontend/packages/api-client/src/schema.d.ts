@@ -932,6 +932,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory/warehouses/{warehouse_id}/lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Lot Balances
+         * @description Остатки по партиям со сроками годности
+         */
+        get: operations["list_lot_balances_api_inventory_warehouses__warehouse_id__lots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/inventory/receipts/{receipt_id}": {
         parameters: {
             query?: never;
@@ -1875,6 +1895,53 @@ export interface components {
          * @enum {string}
          */
         LossKind: "shrinkage" | "cooking" | "trimming" | "defrost" | "defect";
+        /** LotBalanceListSchema */
+        LotBalanceListSchema: {
+            /** Items */
+            items: components["schemas"]["LotBalanceSchema"][];
+            /** Total */
+            total: number;
+        };
+        /** LotBalanceSchema */
+        LotBalanceSchema: {
+            /**
+             * Warehouse Id
+             * Format: uuid
+             */
+            warehouse_id: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name?: string | null;
+            /**
+             * Lot Id
+             * Format: uuid
+             */
+            lot_id: string;
+            /** Lot Code */
+            lot_code: string;
+            /** Quantity */
+            quantity: string;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Produced At */
+            produced_at?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /**
+             * Unit Cost
+             * @description Себестоимость единицы по партии, рубли. null — нет права видеть стоимость
+             */
+            unit_cost?: string | null;
+            /**
+             * Total Value Kopecks
+             * @description Стоимость партии в копейках. null — нет права видеть стоимость
+             */
+            total_value_kopecks?: number | null;
+        };
         /** MyOrderDetailSchema */
         MyOrderDetailSchema: {
             /**
@@ -2064,6 +2131,10 @@ export interface components {
             total: number;
             /** Lines */
             lines: components["schemas"]["OrderLineViewSchema"][];
+            /** Cost Total */
+            cost_total?: number | null;
+            /** Margin Total */
+            margin_total?: number | null;
         };
         /** OrderLineCommandSchema */
         OrderLineCommandSchema: {
@@ -2090,6 +2161,10 @@ export interface components {
             unit_price: number;
             /** Total */
             total: number;
+            /** Cost Kopecks */
+            cost_kopecks?: number | null;
+            /** Margin */
+            margin?: number | null;
         };
         /** OrderListItemSchema */
         OrderListItemSchema: {
@@ -2833,6 +2908,11 @@ export interface components {
              * Format: uuid
              */
             org_unit_id: string;
+            /**
+             * Org Unit Name
+             * @description Название подразделения-владельца склада
+             */
+            org_unit_name?: string | null;
             /** Code */
             code: string;
             /** Name */
@@ -4818,6 +4898,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BalanceSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_lot_balances_api_inventory_warehouses__warehouse_id__lots_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                expiring_before?: string | null;
+                include_empty?: boolean;
+            };
+            header?: never;
+            path: {
+                warehouse_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LotBalanceListSchema"];
                 };
             };
             /** @description Validation Error */

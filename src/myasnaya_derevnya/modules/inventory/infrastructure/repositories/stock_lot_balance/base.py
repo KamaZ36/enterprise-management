@@ -19,3 +19,10 @@ class StockLotBalanceRepository(ABC):
     @abstractmethod
     async def save_many(self, balances: Sequence[StockLotBalance]) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def list_available(
+        self, warehouse_id: UUID, nomenclature_id: UUID
+    ) -> list[StockLotBalance]:
+        """Блокирует и возвращает партии с остатком в порядке FEFO."""
+        raise NotImplementedError

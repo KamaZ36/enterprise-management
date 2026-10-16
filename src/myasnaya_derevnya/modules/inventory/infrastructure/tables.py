@@ -290,6 +290,8 @@ STOCK_LOT_BALANCES_TABLE = Table(
         primary_key=True,
     ),
     Column("quantity", QUANTITY, nullable=False, server_default="0"),
+    Column("total_value", BigInteger, nullable=False, server_default="0"),
+    Column("average_unit_cost", Numeric(18, 6), nullable=False, server_default="0"),
     Column(
         "updated_at",
         DateTime(timezone=True),
@@ -298,6 +300,7 @@ STOCK_LOT_BALANCES_TABLE = Table(
         onupdate=func.now(),
     ),
     CheckConstraint("quantity >= 0", name="quantity_non_negative"),
+    CheckConstraint("total_value >= 0", name="total_value_non_negative"),
     Index("ix_stock_lot_balances_lot_id", "lot_id"),
     schema=DATABASE_SCHEMA,
 )

@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from uuid import UUID
 
 from sqlalchemy import RowMapping, insert, select, update
@@ -67,6 +68,19 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
             .where(RECEIPTS_TABLE.c.id == receipt.id)
             .values(status=receipt.status.value, posted_at=receipt.posted_at)
         )
+
+    async def attach_lot_ids(
+        self, receipt_id: UUID, lot_ids: Mapping[UUID, UUID]
+    ) -> None:
+        for line_id, lot_id in lot_ids.items():
+            await self._session.execute(
+                update(RECEIPT_LINES_TABLE)
+                .where(
+                    RECEIPT_LINES_TABLE.c.id == line_id,
+                    RECEIPT_LINES_TABLE.c.receipt_id == receipt_id,
+                )
+                .values(lot_id=lot_id)
+            )
 
     async def get_by_id(self, receipt_id: UUID) -> Receipt | None:
         stmt = select(RECEIPTS_TABLE).where(RECEIPTS_TABLE.c.id == receipt_id)

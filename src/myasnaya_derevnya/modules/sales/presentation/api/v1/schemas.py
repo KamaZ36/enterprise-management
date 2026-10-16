@@ -70,6 +70,8 @@ class OrderLineViewSchema(BaseModel):
     quantity: Decimal
     unit_price: int
     total: int
+    cost_kopecks: int | None = None
+    margin: int | None = None
 
     @classmethod
     def from_dto(cls, item) -> OrderLineViewSchema:
@@ -79,6 +81,8 @@ class OrderLineViewSchema(BaseModel):
             quantity=item.quantity,
             unit_price=item.unit_price,
             total=item.total,
+            cost_kopecks=item.cost_kopecks,
+            margin=item.margin,
         )
 
 
@@ -99,6 +103,8 @@ class OrderDetailSchema(BaseModel):
     cancelled_at: datetime | None
     total: int
     lines: list[OrderLineViewSchema]
+    cost_total: int | None = None
+    margin_total: int | None = None
 
     @classmethod
     def from_dto(cls, item) -> OrderDetailSchema:
@@ -119,6 +125,8 @@ class OrderDetailSchema(BaseModel):
             cancelled_at=item.cancelled_at,
             total=item.total,
             lines=[OrderLineViewSchema.from_dto(line) for line in item.lines],
+            cost_total=item.cost_total,
+            margin_total=item.margin_total,
         )
 
 

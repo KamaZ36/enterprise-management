@@ -19,12 +19,7 @@
         style="width: 220px"
         @change="reload"
       >
-        <el-option
-          v-for="warehouse in warehouses"
-          :key="warehouse.id"
-          :label="warehouse.name"
-          :value="warehouse.id"
-        />
+        <WarehouseOptions :warehouses="warehouses" />
       </el-select>
 
       <el-select
@@ -105,12 +100,7 @@
       <el-form label-position="top">
         <el-form-item label="Цех">
           <el-select v-model="form.warehouse_id" style="width: 100%">
-            <el-option
-              v-for="warehouse in warehouses"
-              :key="warehouse.id"
-              :label="warehouse.name"
-              :value="warehouse.id"
-            />
+            <WarehouseOptions :warehouses="warehouses" />
           </el-select>
         </el-form-item>
 

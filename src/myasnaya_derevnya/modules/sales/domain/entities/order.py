@@ -46,11 +46,13 @@ class OrderLine:
         nomenclature_id: UUID,
         quantity: Decimal,
         unit_price: int,
+        cost_kopecks: int | None = None,
     ) -> None:
         self._id = id_
         self._nomenclature_id = nomenclature_id
         self._quantity = quantity
         self._unit_price = unit_price
+        self._cost_kopecks = cost_kopecks
 
     @classmethod
     def create(
@@ -86,8 +88,22 @@ class OrderLine:
         return self._unit_price
 
     @property
+    def cost_kopecks(self) -> int | None:
+        return self._cost_kopecks
+
+    @property
     def total(self) -> int:
         return int(self._quantity * self._unit_price)
+
+    @property
+    def margin(self) -> int | None:
+        if self._cost_kopecks is None:
+            return None
+
+        return self.total - self._cost_kopecks
+
+    def set_cost(self, cost_kopecks: int) -> None:
+        self._cost_kopecks = cost_kopecks
 
 
 class Order:
@@ -108,6 +124,7 @@ class Order:
         cancelled_at: datetime | None = None,
         contact_phone: str | None = None,
         lines: list[OrderLine] | None = None,
+        warehouse_id: UUID | None = None,
     ) -> None:
         self._id = id_
         self._org_unit_id = org_unit_id
@@ -124,6 +141,7 @@ class Order:
         self._cancelled_at = cancelled_at
         self._contact_phone = contact_phone
         self._lines = lines if lines is not None else []
+        self._warehouse_id = warehouse_id
 
     @classmethod
     def create(
@@ -162,6 +180,10 @@ class Order:
     @property
     def org_unit_id(self) -> UUID:
         return self._org_unit_id
+
+    @property
+    def warehouse_id(self) -> UUID | None:
+        return self._warehouse_id
 
     @property
     def channel(self) -> OrderChannel:
@@ -264,6 +286,18 @@ class Order:
     def assign_number(self, number: int) -> None:
         self._number = number
         self._touch()
+
+    def assign_warehouse(self, warehouse_id: UUID) -> None:
+        self._warehouse_id = warehouse_id
+        self._touch()
+
+    def apply_costs(self, costs_kopecks: list[int]) -> None:
+        """Проставляет себестоимость строк, полученную при списании со склада."""
+        if len(costs_kopecks) != len(self._lines):
+            raise ValueError("Число стоимостей не совпадает с числом строк заказа")
+
+        for line, cost in zip(self._lines, costs_kopecks, strict=True):
+            line.set_cost(cost)
 
     def set_status(self, status: OrderStatus) -> None:
         if status not in TRANSITIONS[self._status]:

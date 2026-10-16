@@ -108,6 +108,7 @@ class SQLAlchemyOrderRepository(OrderRepository):
         return {
             "id": order.id,
             "org_unit_id": order.org_unit_id,
+            "warehouse_id": order.warehouse_id,
             "channel": order.channel.value,
             "created_by": order.created_by,
             "customer_id": order.customer_id,
@@ -130,12 +131,14 @@ class SQLAlchemyOrderRepository(OrderRepository):
             "nomenclature_id": line.nomenclature_id,
             "quantity": line.quantity,
             "unit_price": line.unit_price,
+            "cost_kopecks": line.cost_kopecks,
         }
 
     def _to_entity(self, row: RowMapping, lines: list[RowMapping] | object) -> Order:
         return Order(
             id_=row["id"],
             org_unit_id=row["org_unit_id"],
+            warehouse_id=row["warehouse_id"],
             channel=OrderChannel(row["channel"]),
             created_by=row["created_by"],
             customer_id=row["customer_id"],
@@ -154,6 +157,7 @@ class SQLAlchemyOrderRepository(OrderRepository):
                     nomenclature_id=line["nomenclature_id"],
                     quantity=line["quantity"],
                     unit_price=line["unit_price"],
+                    cost_kopecks=line["cost_kopecks"],
                 )
                 for line in lines
             ],

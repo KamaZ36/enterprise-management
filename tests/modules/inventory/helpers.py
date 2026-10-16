@@ -22,11 +22,17 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_bi
     SQLAlchemyPriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
+from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
+    PostProductionInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
+    PostSaleInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
     CreateWriteOffInteractor,
@@ -45,6 +51,9 @@ from myasnaya_derevnya.modules.inventory.application.services.stock_ledger impor
 )
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
     MovingAverageCostPolicy,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.warehouse.sqlalchemy import (
+    SQLAlchemyWarehouseReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.sqlalchemy import (
     SQLAlchemyReceiptRepository,
@@ -69,6 +78,9 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.s
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.sqlalchemy import (
     SQLAlchemyWriteOffRepository,
+)
+from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
+    InventoryAPI,
 )
 from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
     AccessScope,
@@ -135,26 +147,8 @@ def build_interactors(
     warehouses = SQLAlchemyWarehouseRepository(session)
     receipts = SQLAlchemyReceiptRepository(session)
     write_offs = SQLAlchemyWriteOffRepository(session)
-    lots = SQLAlchemyStockLotRepository(session)
 
-    preconditions = PostingPreconditions(
-        warehouse_repository=warehouses,
-        catalog_api=CatalogAPI(
-            get_point_prices_interactor=GetPointPricesInteractor(
-                binding_repository=SQLAlchemyPriceListBindingRepository(session),
-                price_repository=SQLAlchemyPriceRepository(session),
-            ),
-            nomenclature_repository=SQLAlchemyNomenclatureRepository(session),
-        ),
-    )
-    lot_resolver = LotResolver(lot_repository=lots)
-    ledger = StockLedger(
-        posting_repository=SQLAlchemyStockPostingRepository(session),
-        movement_repository=SQLAlchemyStockMovementRepository(session),
-        balance_repository=SQLAlchemyStockBalanceRepository(session),
-        lot_balance_repository=SQLAlchemyStockLotBalanceRepository(session),
-        cost_policy=MovingAverageCostPolicy(),
-    )
+    preconditions, lot_resolver, ledger = build_posting(session)
 
     return InventoryInteractors(
         create_receipt=CreateReceiptInteractor(
@@ -191,6 +185,64 @@ def build_interactors(
             transaction_manager=transaction_manager,
         ),
         staff_api=staff_api,
+    )
+
+
+def build_posting(
+    session: AsyncSession,
+) -> tuple[PostingPreconditions, LotResolver, StockLedger]:
+    warehouses = SQLAlchemyWarehouseRepository(session)
+    lots = SQLAlchemyStockLotRepository(session)
+
+    preconditions = PostingPreconditions(
+        warehouse_repository=warehouses,
+        catalog_api=CatalogAPI(
+            get_point_prices_interactor=GetPointPricesInteractor(
+                binding_repository=SQLAlchemyPriceListBindingRepository(session),
+                price_repository=SQLAlchemyPriceRepository(session),
+            ),
+            nomenclature_repository=SQLAlchemyNomenclatureRepository(session),
+        ),
+    )
+    lot_resolver = LotResolver(lot_repository=lots)
+    ledger = StockLedger(
+        posting_repository=SQLAlchemyStockPostingRepository(session),
+        movement_repository=SQLAlchemyStockMovementRepository(session),
+        balance_repository=SQLAlchemyStockBalanceRepository(session),
+        lot_balance_repository=SQLAlchemyStockLotBalanceRepository(session),
+        cost_policy=MovingAverageCostPolicy(),
+    )
+
+    return preconditions, lot_resolver, ledger
+
+
+def build_production_interactor(session: AsyncSession) -> PostProductionInteractor:
+    preconditions, lot_resolver, ledger = build_posting(session)
+
+    return PostProductionInteractor(
+        preconditions=preconditions,
+        lot_resolver=lot_resolver,
+        ledger=ledger,
+    )
+
+
+def build_sale_interactor(session: AsyncSession) -> PostSaleInteractor:
+    preconditions, _lot_resolver, ledger = build_posting(session)
+
+    return PostSaleInteractor(preconditions=preconditions, ledger=ledger)
+
+
+def build_inventory_api(session: AsyncSession) -> InventoryAPI:
+    interactors = build_interactors(session)
+
+    return InventoryAPI(
+        create_receipt_interactor=interactors.create_receipt,
+        post_receipt_interactor=interactors.post_receipt,
+        post_production_interactor=build_production_interactor(session),
+        post_sale_interactor=build_sale_interactor(session),
+        balance_repository=SQLAlchemyStockBalanceRepository(session),
+        warehouse_repository=SQLAlchemyWarehouseRepository(session),
+        warehouse_reader=SQLAlchemyWarehouseReader(session),
     )
 
 

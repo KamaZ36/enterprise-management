@@ -3,15 +3,20 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
+    InventoryAPI,
+    SaleLine,
+)
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import OrderStatus
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order, OrderStatus
 from myasnaya_derevnya.modules.sales.domain.errors import OrderNotFoundError
 from myasnaya_derevnya.modules.sales.domain.permissions import UPDATE_ORDER
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
+from myasnaya_derevnya.utils import get_datetime_utc
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,11 +30,13 @@ class CompleteOrderInteractor:
         identity_provider: IdentityProvider,
         order_repository: OrderRepository,
         order_access: OrderAccess,
+        inventory_api: InventoryAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
         self._order_repository = order_repository
         self._order_access = order_access
+        self._inventory_api = inventory_api
         self._transaction_manager = transaction_manager
 
     async def __call__(self, command: CompleteOrderCommand) -> None:
@@ -44,5 +51,30 @@ class CompleteOrderInteractor:
         )
 
         order.set_status(OrderStatus.COMPLETED)
+        await self._write_off_stock(order=order, user_id=user_id)
+
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+    async def _write_off_stock(self, *, order: Order, user_id: UUID) -> None:
+        lines = order.lines
+        if not lines:
+            return
+
+        warehouse = await self._inventory_api.default_sales_warehouse(order.org_unit_id)
+        if warehouse is None:
+            return
+
+        costs = await self._inventory_api.post_sale(
+            document_id=order.id,
+            warehouse_id=warehouse.id,
+            occurred_at=order.completed_at or get_datetime_utc(),
+            lines=[
+                SaleLine(nomenclature_id=line.nomenclature_id, quantity=line.quantity)
+                for line in lines
+            ],
+            posted_by=user_id,
+        )
+
+        order.assign_warehouse(warehouse.id)
+        order.apply_costs(list(costs))

@@ -61,6 +61,12 @@ export const MODULES: ModuleDefinition[
         permissions: CAN.balancesOpen,
       },
       {
+        path: "/inventory/lots",
+        title: "Партии",
+        icon: "Files",
+        permissions: CAN.lotsOpen,
+      },
+      {
         path: "/inventory/warehouses",
         title: "Склады",
         icon: "OfficeBuilding",

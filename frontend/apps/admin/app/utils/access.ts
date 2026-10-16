@@ -13,6 +13,7 @@ export const CAN = {
   warehouseCreate: ["inventory.warehouse.manage", "org_unit.read"],
   warehouseEdit: ["inventory.warehouse.manage"],
   balancesOpen: ["inventory.balance.read", "inventory.warehouse.read"],
+  lotsOpen: ["inventory.balance.read", "inventory.warehouse.read"],
   nomenclaturesOpen: ["nomenclature.read", "category.read"],
   nomenclatureCreate: ["nomenclature.create", "category.read"],
   orgUnitsOpen: ["org_unit.read", "inventory.warehouse.read"],

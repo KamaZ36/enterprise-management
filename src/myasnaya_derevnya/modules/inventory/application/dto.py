@@ -91,6 +91,21 @@ class BalanceListItem:
 
 
 @dataclass(frozen=True, slots=True)
+class LotBalanceListItem:
+    warehouse_id: UUID
+    nomenclature_id: UUID
+    lot_id: UUID
+    lot_code: str
+    quantity: Decimal
+    expires_at: date | None = None
+    produced_at: date | None = None
+    supplier_name: str | None = None
+    nomenclature_name: str | None = None
+    unit_cost: Decimal | None = None
+    total_value_kopecks: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class WarehouseListItem:
     id: UUID
     org_unit_id: UUID
@@ -98,6 +113,7 @@ class WarehouseListItem:
     name: str
     type: WarehouseType
     is_active: bool
+    org_unit_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

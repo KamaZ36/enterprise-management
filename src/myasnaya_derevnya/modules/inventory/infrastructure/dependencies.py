@@ -8,6 +8,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.get im
 from myasnaya_derevnya.modules.inventory.application.interactors.balances.list import (
     ListBalancesInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.lots.list import (
+    ListLotBalancesInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
     PostProductionInteractor,
 )
@@ -22,6 +25,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list i
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
+    PostSaleInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferInteractor,
@@ -83,6 +89,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base imp
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.sqlalchemy import (
     SQLAlchemyBalanceReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.lot_balance.base import (
+    LotBalanceReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.lot_balance.sqlalchemy import (
+    SQLAlchemyLotBalanceReader,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base import (
     ReceiptReader,
@@ -216,6 +228,10 @@ class InventoryDepProvider(Provider):
         return SQLAlchemyBalanceReader(session)
 
     @provide(scope=Scope.REQUEST)
+    def get_lot_balance_reader(self, session: AsyncSession) -> LotBalanceReader:
+        return SQLAlchemyLotBalanceReader(session)
+
+    @provide(scope=Scope.REQUEST)
     def get_receipt_reader(self, session: AsyncSession) -> ReceiptReader:
         return SQLAlchemyReceiptReader(session)
 
@@ -276,10 +292,14 @@ class InventoryDepProvider(Provider):
     post_production_interactor = provide(
         PostProductionInteractor, scope=Scope.REQUEST
     )
+    post_sale_interactor = provide(PostSaleInteractor, scope=Scope.REQUEST)
     create_write_off_interactor = provide(CreateWriteOffInteractor, scope=Scope.REQUEST)
     post_write_off_interactor = provide(PostWriteOffInteractor, scope=Scope.REQUEST)
     get_balance_interactor = provide(GetBalanceInteractor, scope=Scope.REQUEST)
     list_balances_interactor = provide(ListBalancesInteractor, scope=Scope.REQUEST)
+    list_lot_balances_interactor = provide(
+        ListLotBalancesInteractor, scope=Scope.REQUEST
+    )
     list_receipts_interactor = provide(ListReceiptsInteractor, scope=Scope.REQUEST)
     get_receipt_interactor = provide(GetReceiptInteractor, scope=Scope.REQUEST)
     list_write_offs_interactor = provide(ListWriteOffsInteractor, scope=Scope.REQUEST)
@@ -312,6 +332,7 @@ class InventoryDepProvider(Provider):
         create_receipt_interactor: CreateReceiptInteractor,
         post_receipt_interactor: PostReceiptInteractor,
         post_production_interactor: PostProductionInteractor,
+        post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
         warehouse_repository: WarehouseRepository,
         warehouse_reader: WarehouseReader,
@@ -320,6 +341,7 @@ class InventoryDepProvider(Provider):
             create_receipt_interactor=create_receipt_interactor,
             post_receipt_interactor=post_receipt_interactor,
             post_production_interactor=post_production_interactor,
+            post_sale_interactor=post_sale_interactor,
             balance_repository=balance_repository,
             warehouse_repository=warehouse_repository,
             warehouse_reader=warehouse_reader,

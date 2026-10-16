@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -12,10 +13,12 @@ from myasnaya_derevnya.modules.inventory.application.services.posting_preconditi
 )
 from myasnaya_derevnya.modules.inventory.application.services.stock_ledger import (
     StockLedger,
+    StockPostingHandle,
 )
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_movement import (
     MovementType,
 )
+from myasnaya_derevnya.modules.inventory.domain.entities.write_off import WriteOffLine
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
     WriteOffNotFoundError,
@@ -23,9 +26,6 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
 from myasnaya_derevnya.modules.inventory.domain.permissions import POST_DOCUMENT
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
     DocumentType,
-)
-from myasnaya_derevnya.modules.inventory.infrastructure.repositories.warehouse.base import (
-    WarehouseRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.base import (
     WriteOffRepository,
@@ -43,7 +43,6 @@ class PostWriteOffInteractor:
         self,
         identity_provider: IdentityProvider,
         write_off_repository: WriteOffRepository,
-        warehouse_repository: WarehouseRepository,
         staff_api: StaffAPI,
         preconditions: PostingPreconditions,
         lot_resolver: LotResolver,
@@ -81,8 +80,6 @@ class PostWriteOffInteractor:
         if not allowed:
             raise ForbiddenError()
 
-        lot_ids = await self._resolve_lots(write_off)
-
         async with self._ledger.posting(
             document_type=DocumentType.WRITE_OFF,
             document_id=write_off.id,
@@ -94,43 +91,45 @@ class PostWriteOffInteractor:
                 balance_keys=[
                     (write_off.warehouse_id, line.nomenclature_id) for line in lines
                 ],
-                lot_keys=[
-                    (write_off.warehouse_id, line.nomenclature_id, lot_id)
-                    for line, lot_id in zip(lines, lot_ids, strict=True)
-                    if lot_id is not None
-                ],
             )
 
-            for line, lot_id in zip(lines, lot_ids, strict=True):
-                await posting.issue(
-                    warehouse_id=write_off.warehouse_id,
-                    nomenclature_id=line.nomenclature_id,
-                    quantity=line.quantity,
-                    movement_type=MovementType.WRITE_OFF,
-                    lot_id=lot_id,
-                )
+            for line in lines:
+                slices = await self._line_slices(posting, write_off.warehouse_id, line)
+                for lot_id, quantity in slices:
+                    await posting.issue(
+                        warehouse_id=write_off.warehouse_id,
+                        nomenclature_id=line.nomenclature_id,
+                        quantity=quantity,
+                        movement_type=MovementType.WRITE_OFF,
+                        lot_id=lot_id,
+                    )
 
         write_off.post()
         await self._write_off_repository.save(write_off)
         await self._transaction_manager.commit()
 
-    async def _resolve_lots(self, write_off) -> list[UUID | None]:
-        lot_ids: list[UUID | None] = []
-
-        for line in write_off.lines:
-            if line.lot_id is not None:
-                lot_ids.append(line.lot_id)
-                continue
-
-            if not line.lot_code:
-                lot_ids.append(None)
-                continue
-
-            lot_ids.append(
-                await self._lot_resolver.require(
-                    nomenclature_id=line.nomenclature_id,
-                    lot_code=line.lot_code,
-                )
+    async def _line_slices(
+        self,
+        posting: StockPostingHandle,
+        warehouse_id: UUID,
+        line: WriteOffLine,
+    ) -> list[tuple[UUID | None, Decimal]]:
+        if line.lot_id is not None:
+            await posting.lock(
+                lot_keys=[(warehouse_id, line.nomenclature_id, line.lot_id)]
             )
+            return [(line.lot_id, line.quantity)]
 
-        return lot_ids
+        if line.lot_code:
+            lot_id = await self._lot_resolver.require(
+                nomenclature_id=line.nomenclature_id,
+                lot_code=line.lot_code,
+            )
+            await posting.lock(lot_keys=[(warehouse_id, line.nomenclature_id, lot_id)])
+            return [(lot_id, line.quantity)]
+
+        return await posting.allocate(
+            warehouse_id=warehouse_id,
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+        )

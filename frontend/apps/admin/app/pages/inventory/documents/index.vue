@@ -34,12 +34,7 @@
         style="width: 260px"
         @change="reload"
       >
-        <el-option
-          v-for="warehouse in warehouses"
-          :key="warehouse.id"
-          :label="warehouse.name"
-          :value="warehouse.id"
-        />
+        <WarehouseOptions :warehouses="warehouses" />
       </el-select>
       <el-button :loading="pending" @click="reload">Обновить</el-button>
     </div>
@@ -200,12 +195,7 @@
         <div class="form-grid">
           <el-form-item label="Склад">
             <el-select v-model="woForm.warehouse_id" style="width: 100%">
-              <el-option
-                v-for="warehouse in warehouses"
-                :key="warehouse.id"
-                :label="warehouse.name"
-                :value="warehouse.id"
-              />
+              <WarehouseOptions :warehouses="warehouses" />
             </el-select>
           </el-form-item>
           <el-form-item label="Дата и время">
@@ -294,12 +284,7 @@
         <div class="form-grid">
           <el-form-item label="Склад">
             <el-select v-model="form.warehouse_id" style="width: 100%">
-              <el-option
-                v-for="warehouse in warehouses"
-                :key="warehouse.id"
-                :label="warehouse.name"
-                :value="warehouse.id"
-              />
+              <WarehouseOptions :warehouses="warehouses" />
             </el-select>
           </el-form-item>
           <el-form-item label="Дата и время">
@@ -395,22 +380,12 @@
         <div class="form-grid">
           <el-form-item label="Откуда">
             <el-select v-model="trForm.from_warehouse_id" style="width: 100%">
-              <el-option
-                v-for="warehouse in warehouses"
-                :key="warehouse.id"
-                :label="warehouse.name"
-                :value="warehouse.id"
-              />
+              <WarehouseOptions :warehouses="warehouses" />
             </el-select>
           </el-form-item>
           <el-form-item label="Куда">
             <el-select v-model="trForm.to_warehouse_id" style="width: 100%">
-              <el-option
-                v-for="warehouse in warehouses"
-                :key="warehouse.id"
-                :label="warehouse.name"
-                :value="warehouse.id"
-              />
+              <WarehouseOptions :warehouses="warehouses" />
             </el-select>
           </el-form-item>
         </div>
@@ -627,6 +602,7 @@ import { CAN } from "~/utils/access";
 definePageMeta({ permissions: CAN.documentsOpen });
 import { formatKopecks, formatQuantity } from "@md/money";
 import type { components } from "@md/api-client";
+import { warehouseDisplay } from "~/utils/warehouses";
 
 type ReceiptListItem = components["schemas"]["ReceiptListItemSchema"];
 type ReceiptDetail = components["schemas"]["ReceiptDetailSchema"];
@@ -748,7 +724,9 @@ const drawerTitle = computed(() => {
 });
 
 function warehouseName(id: string): string {
-  return warehouses.value.find((warehouse) => warehouse.id === id)?.name ?? "—";
+  return warehouseDisplay(
+    warehouses.value.find((warehouse) => warehouse.id === id),
+  );
 }
 
 function reasonOf(status: number, fallback: string): string {

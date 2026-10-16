@@ -25,6 +25,8 @@ class OrderLineItem:
     quantity: Decimal
     unit_price: int
     total: int
+    cost_kopecks: int | None = None
+    margin: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,3 +47,5 @@ class OrderDetail:
     cancelled_at: datetime | None
     total: int
     lines: list[OrderLineItem] = field(default_factory=list)
+    cost_total: int | None = None
+    margin_total: int | None = None

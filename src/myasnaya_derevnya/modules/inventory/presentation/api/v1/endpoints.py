@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
@@ -12,6 +13,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.get im
 from myasnaya_derevnya.modules.inventory.application.interactors.balances.list import (
     ListBalancesInteractor,
     ListBalancesQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.lots.list import (
+    ListLotBalancesInteractor,
+    ListLotBalancesQuery,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
@@ -87,6 +92,8 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     CreateTransferSchema,
     CreateWarehouseSchema,
     CreateWriteOffSchema,
+    LotBalanceListSchema,
+    LotBalanceSchema,
     ReceiptDetailSchema,
     ReceiptLineSchema,
     ReceiptListItemSchema,
@@ -255,6 +262,35 @@ async def get_balance(
         item = await interactor(query)
 
     return BalanceSchema.from_dto(item)
+
+
+@router.get(
+    "/warehouses/{warehouse_id}/lots",
+    response_model=LotBalanceListSchema,
+    description="Остатки по партиям со сроками годности",
+)
+async def list_lot_balances(
+    request: Request,
+    warehouse_id: UUID,
+    search: Annotated[str | None, Query(max_length=100)] = None,
+    expiring_before: date | None = None,
+    include_empty: bool = False,
+) -> LotBalanceListSchema:
+    query = ListLotBalancesQuery(
+        warehouse_id=warehouse_id,
+        search=search,
+        expiring_before=expiring_before,
+        include_empty=include_empty,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListLotBalancesInteractor)
+        items = await interactor(query)
+
+    return LotBalanceListSchema(
+        items=[LotBalanceSchema.from_dto(item) for item in items],
+        total=len(items),
+    )
 
 
 @router.get(

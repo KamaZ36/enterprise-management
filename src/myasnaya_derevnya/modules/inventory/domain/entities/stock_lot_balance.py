@@ -4,7 +4,10 @@ from uuid import UUID
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     EmptyMovementError,
     InsufficientLotStockError,
+    NegativeCostError,
 )
+from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import CostPolicy
+from myasnaya_derevnya.modules.inventory.domain.value_objects.money import Money
 
 
 class StockLotBalance:
@@ -14,11 +17,13 @@ class StockLotBalance:
         nomenclature_id: UUID,
         lot_id: UUID,
         quantity: Decimal,
+        total_value: Money,
     ) -> None:
         self._warehouse_id = warehouse_id
         self._nomenclature_id = nomenclature_id
         self._lot_id = lot_id
         self._quantity = quantity
+        self._total_value = total_value
 
     @classmethod
     def empty(
@@ -29,6 +34,7 @@ class StockLotBalance:
             nomenclature_id=nomenclature_id,
             lot_id=lot_id,
             quantity=Decimal(0),
+            total_value=Money.zero(),
         )
 
     @property
@@ -47,12 +53,26 @@ class StockLotBalance:
     def quantity(self) -> Decimal:
         return self._quantity
 
-    def receive(self, quantity: Decimal) -> None:
+    @property
+    def total_value(self) -> Money:
+        return self._total_value
+
+    @property
+    def average_unit_cost(self) -> Decimal:
+        if self._quantity == 0:
+            return Decimal(0)
+        return self._total_value.rubles / self._quantity
+
+    def receive(self, quantity: Decimal, cost: Money) -> None:
         if quantity <= 0:
             raise EmptyMovementError()
-        self._quantity += quantity
+        if cost.is_negative:
+            raise NegativeCostError()
 
-    def issue(self, quantity: Decimal) -> None:
+        self._quantity += quantity
+        self._total_value = self._total_value + cost
+
+    def issue(self, quantity: Decimal, policy: CostPolicy) -> Money:
         if quantity <= 0:
             raise EmptyMovementError()
         if quantity > self._quantity:
@@ -61,4 +81,17 @@ class StockLotBalance:
                 available=self._quantity,
                 requested=quantity,
             )
+
+        cost = policy.issue_cost(
+            quantity_out=quantity,
+            balance_quantity=self._quantity,
+            balance_total=self._total_value,
+        )
+
         self._quantity -= quantity
+        self._total_value = self._total_value - cost
+
+        if self._quantity == 0:
+            self._total_value = Money.zero()
+
+        return cost

@@ -7,3 +7,4 @@ class DocumentType(StrEnum):
     TRANSFER = "transfer"
     INVENTORY_COUNT = "inventory_count"
     PRODUCTION = "production"
+    SALE = "sale"

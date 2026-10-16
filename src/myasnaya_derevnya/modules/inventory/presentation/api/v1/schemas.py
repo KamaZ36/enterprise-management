@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from myasnaya_derevnya.modules.inventory.application.dto import (
     BalanceListItem,
+    LotBalanceListItem,
     ReceiptDetail,
     ReceiptListItem,
     TransferDetail,
@@ -67,6 +68,9 @@ class CreateWriteOffSchema(BaseModel):
 class WarehouseSchema(BaseModel):
     id: UUID
     org_unit_id: UUID
+    org_unit_name: str | None = Field(
+        default=None, description="Название подразделения-владельца склада"
+    )
     code: str
     name: str
     type: WarehouseType
@@ -77,6 +81,7 @@ class WarehouseSchema(BaseModel):
         return cls(
             id=warehouse.id,
             org_unit_id=warehouse.org_unit_id,
+            org_unit_name=warehouse.org_unit_name,
             code=warehouse.code,
             name=warehouse.name,
             type=warehouse.type,
@@ -112,6 +117,47 @@ class BalanceSchema(BaseModel):
 
 class BalanceListSchema(BaseModel):
     items: list[BalanceSchema]
+    total: int
+
+
+class LotBalanceSchema(BaseModel):
+    warehouse_id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None = None
+    lot_id: UUID
+    lot_code: str
+    quantity: Decimal
+    expires_at: date | None = None
+    produced_at: date | None = None
+    supplier_name: str | None = None
+    unit_cost: Decimal | None = Field(
+        default=None,
+        description="Себестоимость единицы по партии, рубли. null — нет права видеть стоимость",
+    )
+    total_value_kopecks: int | None = Field(
+        default=None,
+        description="Стоимость партии в копейках. null — нет права видеть стоимость",
+    )
+
+    @classmethod
+    def from_dto(cls, item: LotBalanceListItem) -> LotBalanceSchema:
+        return cls(
+            warehouse_id=item.warehouse_id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            lot_id=item.lot_id,
+            lot_code=item.lot_code,
+            quantity=item.quantity,
+            expires_at=item.expires_at,
+            produced_at=item.produced_at,
+            supplier_name=item.supplier_name,
+            unit_cost=item.unit_cost,
+            total_value_kopecks=item.total_value_kopecks,
+        )
+
+
+class LotBalanceListSchema(BaseModel):
+    items: list[LotBalanceSchema]
     total: int
 
 
