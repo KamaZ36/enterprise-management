@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from datetime import date
 from uuid import UUID
 
@@ -14,5 +15,15 @@ class LotBalanceReader(ABC):
         with_cost: bool,
         include_empty: bool = False,
         expiring_before: date | None = None,
-    ) -> list[LotBalanceListItem]:
+        search: str | None = None,
+        nomenclature_ids: Sequence[UUID] | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[LotBalanceListItem], int]:
+        """Партионные остатки локации страницей.
+
+        ``search`` ищет по коду партии, ``nomenclature_ids`` — предфильтр по
+        номенклатуре (идентификаторы, найденные каталогом по названию/артикулу).
+        Если задан ``search``, оба условия объединяются через ``OR``.
+        """
         raise NotImplementedError

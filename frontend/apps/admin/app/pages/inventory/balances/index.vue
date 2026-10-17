@@ -17,7 +17,7 @@
         v-model="locationId"
         placeholder="Выберите точку"
         style="width: 320px"
-        @change="load"
+        @change="reload"
       >
         <LocationOptions :locations="locations" />
       </el-select>
@@ -87,6 +87,17 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+      v-if="canAll(CAN.balancesOpen)"
+      v-model:current-page="page"
+      class="pager"
+      layout="prev, pager, next, total"
+      :page-size="PAGE_SIZE"
+      :total="total"
+      :disabled="pending"
+      @current-change="load"
+    />
   </div>
 </template>
 
@@ -103,11 +114,15 @@ import { shortId } from "~/utils/format";
 type Location = components["schemas"]["LocationSchema"];
 type Balance = components["schemas"]["BalanceSchema"];
 
+const PAGE_SIZE = 50;
+
 const api = useApi();
 const { can } = useCurrentUser();
 
 const locations = ref<Location[]>([]);
 const balances = ref<Balance[]>([]);
+const total = ref(0);
+const page = ref(1);
 const locationId = ref("");
 const filter = ref("");
 const pending = ref(false);
@@ -124,8 +139,14 @@ function onSearch(): void {
   }
 
   searchTimer = setTimeout(() => {
-    void load();
+    void reload();
   }, 300);
+}
+
+function reload(): Promise<void> {
+  page.value = 1;
+
+  return load();
 }
 
 async function loadLocations(): Promise<void> {
@@ -155,7 +176,11 @@ async function load(): Promise<void> {
       {
         params: {
           path: { org_unit_id: locationId.value },
-          query: { search: filter.value.trim() || undefined },
+          query: {
+            search: filter.value.trim() || undefined,
+            limit: PAGE_SIZE,
+            offset: (page.value - 1) * PAGE_SIZE,
+          },
         },
       },
     );
@@ -168,6 +193,7 @@ async function load(): Promise<void> {
     }
 
     balances.value = data.items;
+    total.value = data.total;
     loaded.value = true;
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : "Ошибка загрузки";
@@ -189,5 +215,10 @@ onMounted(async () => {
 
 .page__table {
   margin-top: 4px;
+}
+
+.pager {
+  margin-top: 18px;
+  justify-content: flex-end;
 }
 </style>

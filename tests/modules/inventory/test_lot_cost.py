@@ -326,16 +326,67 @@ async def test_lot_reader_orders_by_expiry_and_filters(
 
     reader = SQLAlchemyLotBalanceReader(db_session)
 
-    items = await reader.list_by_org_unit(warehouse.id, with_cost=True)
+    items, total = await reader.list_by_org_unit(warehouse.id, with_cost=True)
+    assert total == 2
     assert [item.lot_code for item in items] == ["M-10", "M-20"]
     assert all(item.unit_cost is not None for item in items)
     assert all(item.total_value_kopecks is not None for item in items)
 
-    expiring = await reader.list_by_org_unit(
+    expiring, expiring_total = await reader.list_by_org_unit(
         warehouse.id, with_cost=True, expiring_before=date(2026, 10, 15)
     )
+    assert expiring_total == 1
     assert [item.lot_code for item in expiring] == ["M-10"]
 
-    hidden_cost = await reader.list_by_org_unit(warehouse.id, with_cost=False)
+    hidden_cost, _ = await reader.list_by_org_unit(warehouse.id, with_cost=False)
     assert all(item.unit_cost is None for item in hidden_cost)
     assert all(item.total_value_kopecks is None for item in hidden_cost)
+
+
+async def test_lot_reader_paginates_and_searches_by_lot_code(
+    db_session: AsyncSession, make_location, make_nomenclature
+) -> None:
+    warehouse = await make_location()
+    meat = await make_nomenclature()
+
+    for index in range(3):
+        await receive(
+            db_session,
+            warehouse.id,
+            meat.id,
+            "10",
+            "100",
+            f"LOT-{index}",
+            date(2026, 10, 10 + index),
+        )
+
+    reader = SQLAlchemyLotBalanceReader(db_session)
+
+    first_page, total = await reader.list_by_org_unit(
+        warehouse.id, with_cost=True, limit=2
+    )
+    assert total == 3
+    assert [item.lot_code for item in first_page] == ["LOT-0", "LOT-1"]
+
+    second_page, _ = await reader.list_by_org_unit(
+        warehouse.id, with_cost=True, limit=2, offset=2
+    )
+    assert [item.lot_code for item in second_page] == ["LOT-2"]
+
+    matched, matched_total = await reader.list_by_org_unit(
+        warehouse.id, with_cost=True, search="LOT-2"
+    )
+    assert matched_total == 1
+    assert [item.lot_code for item in matched] == ["LOT-2"]
+
+    by_nomenclature, by_nomenclature_total = await reader.list_by_org_unit(
+        warehouse.id, with_cost=True, nomenclature_ids=[meat.id]
+    )
+    assert by_nomenclature_total == 3
+    assert len(by_nomenclature) == 3
+
+    nothing, nothing_total = await reader.list_by_org_unit(
+        warehouse.id, with_cost=True, nomenclature_ids=[]
+    )
+    assert nothing == []
+    assert nothing_total == 0

@@ -19,7 +19,7 @@
         v-model="locationId"
         placeholder="Выберите точку"
         style="width: 280px"
-        @change="load"
+        @change="reload"
       >
         <LocationOptions :locations="locations" />
       </el-select>
@@ -30,7 +30,7 @@
         clearable
         @input="onSearch"
       />
-      <el-checkbox v-model="onlyExpiring" @change="load">
+      <el-checkbox v-model="onlyExpiring" @change="reload">
         Только с истекающим сроком (14 дней)
       </el-checkbox>
     </div>
@@ -107,6 +107,17 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+      v-if="canAll(CAN.lotsOpen)"
+      v-model:current-page="page"
+      class="pager"
+      layout="prev, pager, next, total"
+      :page-size="PAGE_SIZE"
+      :total="total"
+      :disabled="pending"
+      @current-change="load"
+    />
   </div>
 </template>
 
@@ -123,12 +134,15 @@ type Location = components["schemas"]["LocationSchema"];
 type LotBalance = components["schemas"]["LotBalanceSchema"];
 
 const WARNING_DAYS = 14;
+const PAGE_SIZE = 50;
 
 const api = useApi();
 const { can } = useCurrentUser();
 
 const locations = ref<Location[]>([]);
 const lots = ref<LotBalance[]>([]);
+const total = ref(0);
+const page = ref(1);
 const locationId = ref("");
 const filter = ref("");
 const onlyExpiring = ref(false);
@@ -146,8 +160,14 @@ function onSearch(): void {
   }
 
   searchTimer = setTimeout(() => {
-    void load();
+    void reload();
   }, 300);
+}
+
+function reload(): Promise<void> {
+  page.value = 1;
+
+  return load();
 }
 
 function daysUntil(value: string): number {
@@ -218,6 +238,8 @@ async function load(): Promise<void> {
           query: {
             search: filter.value.trim() || undefined,
             expiring_before: expiringBefore(),
+            limit: PAGE_SIZE,
+            offset: (page.value - 1) * PAGE_SIZE,
           },
         },
       },
@@ -231,6 +253,7 @@ async function load(): Promise<void> {
     }
 
     lots.value = data.items;
+    total.value = data.total;
     loaded.value = true;
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : "Ошибка загрузки";
@@ -252,6 +275,11 @@ onMounted(async () => {
 
 .page__table {
   margin-top: 4px;
+}
+
+.pager {
+  margin-top: 18px;
+  justify-content: flex-end;
 }
 
 :deep(.row-expired) {

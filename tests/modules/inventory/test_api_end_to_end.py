@@ -164,7 +164,56 @@ async def test_full_receipt_flow_through_api(
 
     balances = await client.get(f"/api/inventory/locations/{org_unit_id}/balances")
     assert balances.status_code == 200
-    assert balances.json()["total"] == 1
+    balance_payload = balances.json()
+    assert balance_payload["total"] == 1
+    assert balance_payload["limit"] == 50
+    assert balance_payload["offset"] == 0
+    assert len(balance_payload["items"]) == 1
+
+    balances_page = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/balances",
+        params={"limit": 1, "offset": 1},
+    )
+    assert balances_page.status_code == 200
+    assert balances_page.json()["total"] == 1
+    assert balances_page.json()["items"] == []
+
+    balances_found = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/balances",
+        params={"search": "Говядина"},
+    )
+    assert balances_found.status_code == 200
+    assert balances_found.json()["total"] == 1
+
+    balances_missing = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/balances",
+        params={"search": "Нетакого"},
+    )
+    assert balances_missing.status_code == 200
+    assert balances_missing.json()["total"] == 0
+    assert balances_missing.json()["items"] == []
+
+    lots = await client.get(f"/api/inventory/locations/{org_unit_id}/lots")
+    assert lots.status_code == 200, lots.text
+    lot_payload = lots.json()
+    assert lot_payload["total"] == 1
+    assert lot_payload["limit"] == 50
+    assert lot_payload["offset"] == 0
+    assert lot_payload["items"][0]["lot_code"] == "L-001"
+
+    lots_found = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/lots",
+        params={"search": "L-001"},
+    )
+    assert lots_found.status_code == 200, lots_found.text
+    assert lots_found.json()["total"] == 1
+
+    lots_missing = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/lots",
+        params={"search": "Нетакого"},
+    )
+    assert lots_missing.status_code == 200, lots_missing.text
+    assert lots_missing.json()["total"] == 0
 
     movements = await client.get(
         "/api/inventory/movements", params={"org_unit_id": org_unit_id}

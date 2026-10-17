@@ -1341,6 +1341,10 @@ export interface components {
             items: components["schemas"]["BalanceSchema"][];
             /** Total */
             total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** BalanceSchema */
         BalanceSchema: {
@@ -1895,6 +1899,10 @@ export interface components {
             items: components["schemas"]["LotBalanceSchema"][];
             /** Total */
             total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** LotBalanceSchema */
         LotBalanceSchema: {
@@ -4805,6 +4813,8 @@ export interface operations {
         parameters: {
             query?: {
                 search?: string | null;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path: {
@@ -4872,6 +4882,8 @@ export interface operations {
                 search?: string | null;
                 expiring_before?: string | null;
                 include_empty?: boolean;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path: {

@@ -211,16 +211,25 @@ async def list_balances(
     request: Request,
     org_unit_id: UUID,
     search: Annotated[str | None, Query(max_length=100)] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> BalanceListSchema:
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListBalancesInteractor)
-        items = await interactor(
-            ListBalancesQuery(org_unit_id=org_unit_id, search=search)
+        items, total = await interactor(
+            ListBalancesQuery(
+                org_unit_id=org_unit_id,
+                search=search,
+                limit=limit,
+                offset=offset,
+            )
         )
 
     return BalanceListSchema(
         items=[BalanceSchema.from_dto(item) for item in items],
-        total=len(items),
+        total=total,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -252,21 +261,27 @@ async def list_lot_balances(
     search: Annotated[str | None, Query(max_length=100)] = None,
     expiring_before: date | None = None,
     include_empty: bool = False,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> LotBalanceListSchema:
     query = ListLotBalancesQuery(
         org_unit_id=org_unit_id,
         search=search,
         expiring_before=expiring_before,
         include_empty=include_empty,
+        limit=limit,
+        offset=offset,
     )
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(ListLotBalancesInteractor)
-        items = await interactor(query)
+        items, total = await interactor(query)
 
     return LotBalanceListSchema(
         items=[LotBalanceSchema.from_dto(item) for item in items],
-        total=len(items),
+        total=total,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -290,8 +305,8 @@ async def list_movements(
     ] = None,
     occurred_from: datetime | None = None,
     occurred_to: datetime | None = None,
-    limit: int = 50,
-    offset: int = 0,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> MovementListSchema:
     query = ListMovementsQuery(
         org_unit_id=org_unit_id,

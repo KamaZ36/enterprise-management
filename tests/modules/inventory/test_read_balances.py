@@ -50,17 +50,37 @@ class FakeBalanceReader:
     def __init__(self, items: list[BalanceListItem]) -> None:
         self._items = items
         self.with_cost_calls: list[bool] = []
+        self.list_calls: list[dict] = []
 
     async def list_by_org_unit(
-        self, org_unit_id: UUID, *, with_cost: bool
-    ) -> list[BalanceListItem]:
+        self,
+        org_unit_id: UUID,
+        *,
+        with_cost: bool,
+        nomenclature_ids: list[UUID] | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[BalanceListItem], int]:
         self.with_cost_calls.append(with_cost)
+        self.list_calls.append(
+            {
+                "nomenclature_ids": nomenclature_ids,
+                "limit": limit,
+                "offset": offset,
+            }
+        )
 
-        return [
-            self._mask(item, with_cost)
-            for item in self._items
-            if item.org_unit_id == org_unit_id
-        ]
+        matched = [item for item in self._items if item.org_unit_id == org_unit_id]
+
+        if nomenclature_ids is not None:
+            allowed = set(nomenclature_ids)
+            matched = [
+                item for item in matched if item.nomenclature_id in allowed
+            ]
+
+        page = matched[offset : offset + limit]
+
+        return [self._mask(item, with_cost) for item in page], len(matched)
 
     async def get(
         self, org_unit_id: UUID, nomenclature_id: UUID, *, with_cost: bool
@@ -90,9 +110,20 @@ class FakeBalanceReader:
 class FakeCatalogAPI:
     def __init__(self, names: dict[UUID, str] | None = None) -> None:
         self.names = names or {}
+        self.search_calls: list[str] = []
 
     async def nomenclature_names(self, nomenclature_ids) -> dict[UUID, str]:
         return {key: self.names[key] for key in nomenclature_ids if key in self.names}
+
+    async def nomenclature_ids_matching(self, search: str) -> list[UUID]:
+        self.search_calls.append(search)
+        needle = search.lower()
+
+        return [
+            key
+            for key, name in self.names.items()
+            if needle in name.lower()
+        ]
 
 
 class FakeStaffAPI:
@@ -152,16 +183,17 @@ def build_list(
     names: dict[UUID, str] | None = None,
 ):
     reader = FakeBalanceReader(items)
+    catalog_api = FakeCatalogAPI(names)
     staff_api = FakeStaffAPI(denied)
     interactor = ListBalancesInteractor(
         identity_provider=FakeIdentityProvider(),
         business_api=FakeBusinessAPI(location),
         balance_reader=reader,
-        catalog_api=FakeCatalogAPI(names),
+        catalog_api=catalog_api,
         staff_api=staff_api,
     )
 
-    return interactor, reader, staff_api
+    return interactor, reader, staff_api, catalog_api
 
 
 async def test_get_balance_requires_read_permission() -> None:
@@ -228,19 +260,34 @@ async def test_list_balances_returns_items_with_names() -> None:
     location = make_location()
     nomenclature_id = uuid4()
     item = make_balance(location.id, nomenclature_id)
-    interactor, reader, _ = build_list(
+    interactor, reader, _, _ = build_list(
         location, [item], names={nomenclature_id: "Говядина лопатка"}
     )
 
-    items = await interactor(ListBalancesQuery(location.id))
+    items, total = await interactor(ListBalancesQuery(location.id))
 
+    assert total == 1
     assert len(items) == 1
     assert isinstance(items[0], BalanceListItem)
     assert items[0].nomenclature_name == "Говядина лопатка"
     assert reader.with_cost_calls == [True]
 
 
-async def test_list_balances_filters_by_name() -> None:
+async def test_list_balances_without_search_passes_no_nomenclature_filter() -> None:
+    location = make_location()
+    first = make_balance(location.id, uuid4())
+    second = make_balance(location.id, uuid4())
+    interactor, reader, _, catalog = build_list(location, [first, second])
+
+    items, total = await interactor(ListBalancesQuery(location.id))
+
+    assert total == 2
+    assert len(items) == 2
+    assert catalog.search_calls == []
+    assert reader.list_calls[0]["nomenclature_ids"] is None
+
+
+async def test_list_balances_search_uses_catalog_ids() -> None:
     location = make_location()
     first = make_balance(location.id, uuid4())
     second = make_balance(location.id, uuid4())
@@ -248,19 +295,49 @@ async def test_list_balances_filters_by_name() -> None:
         first.nomenclature_id: "Говядина лопатка",
         second.nomenclature_id: "Свинина шея",
     }
-    interactor, _, _ = build_list(location, [first, second], names=names)
+    interactor, reader, _, catalog = build_list(
+        location, [first, second], names=names
+    )
 
-    items = await interactor(ListBalancesQuery(location.id, search="свинина"))
+    items, total = await interactor(
+        ListBalancesQuery(location.id, search="свинина")
+    )
 
+    assert catalog.search_calls == ["свинина"]
+    assert reader.list_calls[0]["nomenclature_ids"] == [second.nomenclature_id]
     assert [item.nomenclature_name for item in items] == ["Свинина шея"]
+    assert total == 1
 
 
-async def test_list_balances_without_search_returns_everything() -> None:
+async def test_list_balances_search_without_matches_returns_nothing() -> None:
     location = make_location()
     first = make_balance(location.id, uuid4())
-    second = make_balance(location.id, uuid4())
-    interactor, _, _ = build_list(location, [first, second])
+    interactor, reader, _, _ = build_list(
+        location, [first], names={first.nomenclature_id: "Говядина лопатка"}
+    )
 
-    items = await interactor(ListBalancesQuery(location.id))
+    items, total = await interactor(
+        ListBalancesQuery(location.id, search="нетакого")
+    )
 
-    assert len(items) == 2
+    assert reader.list_calls[0]["nomenclature_ids"] == []
+    assert items == []
+    assert total == 0
+
+
+async def test_list_balances_paginates_and_returns_total() -> None:
+    location = make_location()
+    items = [make_balance(location.id, uuid4()) for _ in range(5)]
+    interactor, reader, _, _ = build_list(location, items)
+
+    page, total = await interactor(
+        ListBalancesQuery(location.id, limit=2, offset=2)
+    )
+
+    assert total == 5
+    assert len(page) == 2
+    assert reader.list_calls[0]["limit"] == 2
+    assert reader.list_calls[0]["offset"] == 2
+    assert [item.nomenclature_id for item in page] == [
+        item.nomenclature_id for item in items[2:4]
+    ]

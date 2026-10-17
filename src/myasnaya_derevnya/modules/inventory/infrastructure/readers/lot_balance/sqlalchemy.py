@@ -1,9 +1,11 @@
+from collections.abc import Sequence
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import RowMapping, select
+from sqlalchemy import RowMapping, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.database.search import like_pattern
 from myasnaya_derevnya.modules.inventory.application.dto import LotBalanceListItem
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.lot_balance.base import (
     LotBalanceReader,
@@ -25,7 +27,48 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
         with_cost: bool,
         include_empty: bool = False,
         expiring_before: date | None = None,
-    ) -> list[LotBalanceListItem]:
+        search: str | None = None,
+        nomenclature_ids: Sequence[UUID] | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[LotBalanceListItem], int]:
+        source = STOCK_LOT_BALANCES_TABLE.join(
+            STOCK_LOTS_TABLE,
+            STOCK_LOT_BALANCES_TABLE.c.lot_id == STOCK_LOTS_TABLE.c.id,
+        )
+        conditions = [STOCK_LOT_BALANCES_TABLE.c.org_unit_id == org_unit_id]
+
+        if not include_empty:
+            conditions.append(STOCK_LOT_BALANCES_TABLE.c.quantity > 0)
+
+        if expiring_before is not None:
+            conditions.extend(
+                [
+                    STOCK_LOTS_TABLE.c.expires_at.is_not(None),
+                    STOCK_LOTS_TABLE.c.expires_at <= expiring_before,
+                ]
+            )
+
+        if search:
+            conditions.append(
+                or_(
+                    STOCK_LOTS_TABLE.c.lot_code.ilike(
+                        like_pattern(search), escape="\\"
+                    ),
+                    STOCK_LOT_BALANCES_TABLE.c.nomenclature_id.in_(
+                        list(nomenclature_ids or [])
+                    ),
+                )
+            )
+        elif nomenclature_ids is not None:
+            conditions.append(
+                STOCK_LOT_BALANCES_TABLE.c.nomenclature_id.in_(nomenclature_ids)
+            )
+
+        total = await self._session.scalar(
+            select(func.count()).select_from(source).where(*conditions)
+        )
+
         stmt = (
             select(
                 STOCK_LOT_BALANCES_TABLE.c.org_unit_id,
@@ -39,32 +82,22 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
                 STOCK_LOTS_TABLE.c.produced_at,
                 STOCK_LOTS_TABLE.c.supplier_name,
             )
-            .select_from(
-                STOCK_LOT_BALANCES_TABLE.join(
-                    STOCK_LOTS_TABLE,
-                    STOCK_LOT_BALANCES_TABLE.c.lot_id == STOCK_LOTS_TABLE.c.id,
-                )
-            )
-            .where(STOCK_LOT_BALANCES_TABLE.c.org_unit_id == org_unit_id)
+            .select_from(source)
+            .where(*conditions)
             .order_by(
                 STOCK_LOTS_TABLE.c.expires_at.asc().nulls_last(),
                 STOCK_LOT_BALANCES_TABLE.c.nomenclature_id.asc(),
                 STOCK_LOTS_TABLE.c.lot_code.asc(),
             )
+            .limit(limit)
+            .offset(offset)
         )
-
-        if not include_empty:
-            stmt = stmt.where(STOCK_LOT_BALANCES_TABLE.c.quantity > 0)
-
-        if expiring_before is not None:
-            stmt = stmt.where(
-                STOCK_LOTS_TABLE.c.expires_at.is_not(None),
-                STOCK_LOTS_TABLE.c.expires_at <= expiring_before,
-            )
-
         rows = (await self._session.execute(stmt)).mappings().all()
 
-        return [self._to_dto(row, with_cost=with_cost) for row in rows]
+        return (
+            [self._to_dto(row, with_cost=with_cost) for row in rows],
+            int(total or 0),
+        )
 
     @staticmethod
     def _to_dto(row: RowMapping, *, with_cost: bool) -> LotBalanceListItem:

@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, select, update
+from sqlalchemy import RowMapping, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.database.search import like_pattern
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
     UnitOfMeasurement,
@@ -70,6 +71,31 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
         rows = (await self._session.execute(stmt)).all()
 
         return {row[0]: row[1] for row in rows}
+
+    async def get_ids_by_search(self, search: str, *, limit: int) -> list[UUID]:
+        tokens = [token for token in search.split() if token.strip()]
+        if not tokens or limit <= 0:
+            return []
+
+        conditions = [
+            or_(
+                NOMENCLATURES_TABLE.c.name.ilike(like_pattern(token), escape="\\"),
+                NOMENCLATURES_TABLE.c.sku.ilike(like_pattern(token), escape="\\"),
+            )
+            for token in tokens
+        ]
+
+        stmt = (
+            select(NOMENCLATURES_TABLE.c.id)
+            .where(*conditions)
+            .order_by(
+                NOMENCLATURES_TABLE.c.name.asc(),
+                NOMENCLATURES_TABLE.c.id.asc(),
+            )
+            .limit(limit)
+        )
+
+        return list((await self._session.execute(stmt)).scalars().all())
 
     def _to_entity(self, row: RowMapping) -> Nomenclature:
         return Nomenclature(

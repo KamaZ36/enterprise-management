@@ -21,6 +21,8 @@ from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 class ListBalancesQuery:
     org_unit_id: UUID
     search: str | None = None
+    limit: int = 50
+    offset: int = 0
 
 
 class ListBalancesInteractor:
@@ -38,7 +40,9 @@ class ListBalancesInteractor:
         self._catalog_api = catalog_api
         self._staff_api = staff_api
 
-    async def __call__(self, query: ListBalancesQuery) -> list[BalanceListItem]:
+    async def __call__(
+        self, query: ListBalancesQuery
+    ) -> tuple[list[BalanceListItem], int]:
         current_user_id = await self._identity_provider.get_current_user_id()
 
         location = await self._business_api.stock_location(query.org_unit_id)
@@ -59,25 +63,26 @@ class ListBalancesInteractor:
             org_unit_id=location.id,
         )
 
-        items = await self._balance_reader.list_by_org_unit(
-            query.org_unit_id, with_cost=cost_visible
+        needle = (query.search or "").strip()
+        nomenclature_ids = (
+            await self._catalog_api.nomenclature_ids_matching(needle)
+            if needle
+            else None
+        )
+
+        items, total = await self._balance_reader.list_by_org_unit(
+            query.org_unit_id,
+            with_cost=cost_visible,
+            nomenclature_ids=nomenclature_ids,
+            limit=query.limit,
+            offset=query.offset,
         )
 
         names = await self._catalog_api.nomenclature_names(
             {item.nomenclature_id for item in items}
         )
 
-        result = [
+        return [
             replace(item, nomenclature_name=names.get(item.nomenclature_id))
             for item in items
-        ]
-
-        needle = (query.search or "").strip().lower()
-        if needle:
-            result = [
-                item
-                for item in result
-                if needle in (item.nomenclature_name or "").lower()
-            ]
-
-        return result
+        ], total

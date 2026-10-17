@@ -93,6 +93,8 @@ class BalanceSchema(BaseModel):
 class BalanceListSchema(BaseModel):
     items: list[BalanceSchema]
     total: int
+    limit: int
+    offset: int
 
 
 class LotBalanceSchema(BaseModel):
@@ -134,6 +136,8 @@ class LotBalanceSchema(BaseModel):
 class LotBalanceListSchema(BaseModel):
     items: list[LotBalanceSchema]
     total: int
+    limit: int
+    offset: int
 
 
 class MovementItemSchema(BaseModel):

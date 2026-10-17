@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import RowMapping, select
+from sqlalchemy import RowMapping, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.inventory.application.dto import BalanceListItem
@@ -28,16 +29,38 @@ class SQLAlchemyBalanceReader(BalanceReader):
         self._session = session
 
     async def list_by_org_unit(
-        self, org_unit_id: UUID, *, with_cost: bool
-    ) -> list[BalanceListItem]:
+        self,
+        org_unit_id: UUID,
+        *,
+        with_cost: bool,
+        nomenclature_ids: Sequence[UUID] | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[BalanceListItem], int]:
+        conditions = [STOCK_BALANCES_TABLE.c.org_unit_id == org_unit_id]
+
+        if nomenclature_ids is not None:
+            conditions.append(
+                STOCK_BALANCES_TABLE.c.nomenclature_id.in_(nomenclature_ids)
+            )
+
+        total = await self._session.scalar(
+            select(func.count()).select_from(STOCK_BALANCES_TABLE).where(*conditions)
+        )
+
         stmt = (
             select(*self._columns(with_cost))
-            .where(STOCK_BALANCES_TABLE.c.org_unit_id == org_unit_id)
+            .where(*conditions)
             .order_by(STOCK_BALANCES_TABLE.c.nomenclature_id.asc())
+            .limit(limit)
+            .offset(offset)
         )
         rows = (await self._session.execute(stmt)).mappings().all()
 
-        return [self._to_dto(row, with_cost=with_cost) for row in rows]
+        return (
+            [self._to_dto(row, with_cost=with_cost) for row in rows],
+            int(total or 0),
+        )
 
     async def get(
         self, org_unit_id: UUID, nomenclature_id: UUID, *, with_cost: bool

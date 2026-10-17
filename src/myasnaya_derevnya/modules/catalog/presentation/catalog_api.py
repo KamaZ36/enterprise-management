@@ -11,6 +11,10 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.
 
 
 class CatalogAPI:
+    # Сколько совпадений поиска отдавать в другие модули. Ограничение защищает
+    # от разрастания ``IN (...)`` в чужих запросах.
+    SEARCH_MATCH_LIMIT = 500
+
     def __init__(
         self,
         get_point_prices_interactor: GetPointPricesInteractor,
@@ -23,6 +27,13 @@ class CatalogAPI:
         self, nomenclature_ids: Iterable[UUID]
     ) -> dict[UUID, str]:
         return await self._nomenclature_repository.get_names(set(nomenclature_ids))
+
+    async def nomenclature_ids_matching(self, search: str) -> list[UUID]:
+        """Идентификаторы номенклатур, подходящих под поиск по названию/артикулу."""
+
+        return await self._nomenclature_repository.get_ids_by_search(
+            search, limit=self.SEARCH_MATCH_LIMIT
+        )
 
     async def prices_for_point(
         self, org_unit_id: UUID, nomenclature_ids: list[UUID]

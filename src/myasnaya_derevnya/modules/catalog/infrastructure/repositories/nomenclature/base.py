@@ -20,3 +20,8 @@ class NomenclatureRepository(ABC):
     @abstractmethod
     async def get_names(self, nomenclature_ids: set[UUID]) -> dict[UUID, str]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_ids_by_search(self, search: str, *, limit: int) -> list[UUID]:
+        """Идентификаторы номенклатур, найденных по названию или артикулу."""
+        raise NotImplementedError

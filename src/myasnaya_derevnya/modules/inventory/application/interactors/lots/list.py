@@ -24,6 +24,8 @@ class ListLotBalancesQuery:
     search: str | None = None
     expiring_before: date | None = None
     include_empty: bool = False
+    limit: int = 50
+    offset: int = 0
 
 
 class ListLotBalancesInteractor:
@@ -43,7 +45,7 @@ class ListLotBalancesInteractor:
 
     async def __call__(
         self, query: ListLotBalancesQuery
-    ) -> list[LotBalanceListItem]:
+    ) -> tuple[list[LotBalanceListItem], int]:
         current_user_id = await self._identity_provider.get_current_user_id()
 
         location = await self._business_api.stock_location(query.org_unit_id)
@@ -64,29 +66,29 @@ class ListLotBalancesInteractor:
             org_unit_id=location.id,
         )
 
-        items = await self._lot_balance_reader.list_by_org_unit(
+        needle = (query.search or "").strip()
+        nomenclature_ids = (
+            await self._catalog_api.nomenclature_ids_matching(needle)
+            if needle
+            else None
+        )
+
+        items, total = await self._lot_balance_reader.list_by_org_unit(
             query.org_unit_id,
             with_cost=cost_visible,
             include_empty=query.include_empty,
             expiring_before=query.expiring_before,
+            search=needle or None,
+            nomenclature_ids=nomenclature_ids,
+            limit=query.limit,
+            offset=query.offset,
         )
 
         names = await self._catalog_api.nomenclature_names(
             {item.nomenclature_id for item in items}
         )
 
-        result = [
+        return [
             replace(item, nomenclature_name=names.get(item.nomenclature_id))
             for item in items
-        ]
-
-        needle = (query.search or "").strip().lower()
-        if needle:
-            result = [
-                item
-                for item in result
-                if needle in (item.nomenclature_name or "").lower()
-                or needle in item.lot_code.lower()
-            ]
-
-        return result
+        ], total
