@@ -1,16 +1,12 @@
 
-from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from myasnaya_derevnya.core.seed import bootstrap_system
-from myasnaya_derevnya.core.settings import settings
-from myasnaya_derevnya.main import create_app
 from tests.modules.helpers import TEST_PREFIX
 
 pytestmark = pytest.mark.db
@@ -24,48 +20,6 @@ async def _root_org_unit_id(session: AsyncSession) -> UUID:
             text("select id from business.org_units where parent_id is null limit 1")
         )
     ).scalar_one()
-
-
-async def _admin_session_id(session: AsyncSession) -> UUID:
-    user_id = (
-        await session.execute(
-            text(
-                "select user_id from auth.user_identities"
-                " where identity_type = 'username' and identifier = :identifier"
-            ),
-            {"identifier": settings.initial_admin_username},
-        )
-    ).scalar_one()
-
-    session_id = uuid4()
-    await session.execute(
-        text(
-            "insert into auth.user_sessions (id, user_id, expires_at, created_at)"
-            " values (:id, :user_id, :expires_at, now())"
-        ),
-        {
-            "id": session_id,
-            "user_id": user_id,
-            "expires_at": datetime.now(UTC) + timedelta(days=1),
-        },
-    )
-    await session.commit()
-
-    return session_id
-
-
-@pytest.fixture
-async def client(db_session: AsyncSession):
-    await bootstrap_system()
-    session_id = await _admin_session_id(db_session)
-
-    transport = ASGITransport(app=create_app())
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-        headers={"Authorization": f"Bearer {session_id}"},
-    ) as api_client:
-        yield api_client
 
 
 async def _create_location(client: AsyncClient, session: AsyncSession) -> str:

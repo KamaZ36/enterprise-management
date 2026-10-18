@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.core.seed import bootstrap_system
@@ -64,19 +63,13 @@ async def test_reader_aggregates_permission_codes(db_session: AsyncSession) -> N
     await repository.add(without_permissions)
     await db_session.commit()
 
-    try:
-        items = await SQLAlchemyRoleReader(db_session).list()
-        by_code = {item.code: item for item in items}
+    items = await SQLAlchemyRoleReader(db_session).list()
+    by_code = {item.code: item for item in items}
 
-        assert by_code[
-            f"PYTEST-{marker}-WITH-PERMISSIONS"
-        ].permission_codes == frozenset({"nomenclature.read", "inventory.balance.read"})
-        assert (
-            by_code[f"PYTEST-{marker}-WITHOUT-PERMISSIONS"].permission_codes
-            == frozenset()
-        )
-    finally:
-        await db_session.execute(
-            text("delete from staff.roles where code like 'PYTEST-%'")
-        )
-        await db_session.commit()
+    assert by_code[
+        f"PYTEST-{marker}-WITH-PERMISSIONS"
+    ].permission_codes == frozenset({"nomenclature.read", "inventory.balance.read"})
+    assert (
+        by_code[f"PYTEST-{marker}-WITHOUT-PERMISSIONS"].permission_codes
+        == frozenset()
+    )

@@ -44,20 +44,14 @@ async def test_reader_returns_flat_items_with_parent(
     await repository.add(child)
     await db_session.commit()
 
-    try:
-        items = await SQLAlchemyOrgUnitReader(db_session).list()
+    items = await SQLAlchemyOrgUnitReader(db_session).list()
 
-        by_id = {item.id: item for item in items}
-        assert child.id in by_id
-        assert by_id[child.id].parent_id == root_id
-        assert by_id[child.id].type is OrgUnitType.CAFE
-        assert by_id[child.id].is_active is True
-        assert by_id[child.id].address == "ул. Ленина, 1"
-        assert by_id[child.id].phone_number == "+79001112233"
-        assert by_id[child.id].code == f"{TEST_PREFIX}{marker}"
-        assert not hasattr(by_id[child.id], "created_at")
-    finally:
-        await db_session.execute(
-            text("delete from business.org_units where id = :id"), {"id": child.id}
-        )
-        await db_session.commit()
+    by_id = {item.id: item for item in items}
+    assert child.id in by_id
+    assert by_id[child.id].parent_id == root_id
+    assert by_id[child.id].type is OrgUnitType.CAFE
+    assert by_id[child.id].is_active is True
+    assert by_id[child.id].address == "ул. Ленина, 1"
+    assert by_id[child.id].phone_number == "+79001112233"
+    assert by_id[child.id].code == f"{TEST_PREFIX}{marker}"
+    assert not hasattr(by_id[child.id], "created_at")

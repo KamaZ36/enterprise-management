@@ -44,37 +44,30 @@ async def test_reader_returns_active_roles_with_names(
     await repository.add(assignment)
     await db_session.commit()
 
-    try:
-        items = await SQLAlchemyEmployeeRoleReader(db_session).list_active_for_user(
-            user_id
-        )
+    items = await SQLAlchemyEmployeeRoleReader(db_session).list_active_for_user(
+        user_id
+    )
 
-        assert len(items) == 1
-        assert items[0].id == assignment.id
-        assert items[0].role_code == settings.admin_role_code
-        assert items[0].role_name == settings.admin_role_name
-        assert items[0].status is RoleAssignmentStatus.ACTIVE
-        assert items[0].include_descendants is True
-        assert not hasattr(items[0], "granted_by")
+    assert len(items) == 1
+    assert items[0].id == assignment.id
+    assert items[0].role_code == settings.admin_role_code
+    assert items[0].role_name == settings.admin_role_name
+    assert items[0].status is RoleAssignmentStatus.ACTIVE
+    assert items[0].include_descendants is True
+    assert not hasattr(items[0], "granted_by")
 
-        others = await SQLAlchemyEmployeeRoleReader(db_session).list_active_for_user(
-            uuid4()
-        )
-        assert others == []
+    others = await SQLAlchemyEmployeeRoleReader(db_session).list_active_for_user(
+        uuid4()
+    )
+    assert others == []
 
-        await db_session.execute(
-            text("update staff.role_assignments set status = :status where id = :id"),
-            {"status": RoleAssignmentStatus.REVOKED.value, "id": assignment.id},
-        )
-        await db_session.commit()
+    await db_session.execute(
+        text("update staff.role_assignments set status = :status where id = :id"),
+        {"status": RoleAssignmentStatus.REVOKED.value, "id": assignment.id},
+    )
+    await db_session.commit()
 
-        revoked = await SQLAlchemyEmployeeRoleReader(db_session).list_active_for_user(
-            user_id
-        )
-        assert revoked == []
-    finally:
-        await db_session.execute(
-            text("delete from staff.role_assignments where id = :id"),
-            {"id": assignment.id},
-        )
-        await db_session.commit()
+    revoked = await SQLAlchemyEmployeeRoleReader(db_session).list_active_for_user(
+        user_id
+    )
+    assert revoked == []

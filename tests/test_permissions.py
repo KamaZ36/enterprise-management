@@ -11,22 +11,30 @@ def test_every_permission_has_a_unique_code_and_description() -> None:
     assert all(permission.description for permission in permissions)
 
 
-def test_registry_is_sorted_and_covers_every_module() -> None:
+EXPECTED_NAMESPACES = {
+    "category",
+    "customer",
+    "image",
+    "inventory",
+    "nomenclature",
+    "order",
+    "org_unit",
+    "price",
+    "price_list",
+    "production",
+    "staff",
+}
+
+
+def test_registry_is_sorted_and_covers_every_namespace() -> None:
     permissions = all_permissions()
 
     codes = [permission.code for permission in permissions]
     assert codes == sorted(codes)
 
-    for module_code in (
-        "org_unit",
-        "category",
-        "nomenclature",
-        "price",
-        "inventory",
-        "production",
-        "staff",
-    ):
-        assert any(code.startswith(f"{module_code}.") for code in codes), module_code
+    namespaces = {code.split(".", 1)[0] for code in codes}
+
+    assert namespaces == EXPECTED_NAMESPACES
 
 
 def test_registry_matches_permissions_declared_in_modules() -> None:

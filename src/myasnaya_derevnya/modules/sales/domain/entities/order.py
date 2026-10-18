@@ -15,6 +15,7 @@ from myasnaya_derevnya.utils import get_datetime_utc
 
 
 class OrderStatus(StrEnum):
+    NEW = "new"
     DRAFT = "draft"
     CONFIRMED = "confirmed"
     PREPARING = "preparing"

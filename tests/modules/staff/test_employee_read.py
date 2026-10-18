@@ -3,7 +3,6 @@ from datetime import date
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.staff.domain.entities.employee import Employee
@@ -13,7 +12,6 @@ from myasnaya_derevnya.modules.staff.infrastructure.readers.employee.sqlalchemy 
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.sqlalchemy import (
     SQLAlchemyEmployeeRepository,
 )
-from myasnaya_derevnya.modules.staff.infrastructure.tables import EMPLOYEES_TABLE
 
 pytestmark = pytest.mark.db
 
@@ -56,40 +54,32 @@ async def test_words_are_matched_in_any_order(
     await repository.add(other)
     await db_session.commit()
 
-    try:
-        items, total = await reader.list(
-            limit=10, offset=0, search=f"Фамилия{marker} Имя{marker}"
-        )
-        assert total == 1
-        assert [item.id for item in items] == [target.id]
+    items, total = await reader.list(
+        limit=10, offset=0, search=f"Фамилия{marker} Имя{marker}"
+    )
+    assert total == 1
+    assert [item.id for item in items] == [target.id]
 
-        items, total = await reader.list(
-            limit=10, offset=0, search=f"Имя{marker} Фамилия{marker}"
-        )
-        assert total == 1
-        assert [item.id for item in items] == [target.id]
+    items, total = await reader.list(
+        limit=10, offset=0, search=f"Имя{marker} Фамилия{marker}"
+    )
+    assert total == 1
+    assert [item.id for item in items] == [target.id]
 
-        _, total = await reader.list(limit=10, offset=0, search=marker)
-        assert total == 2
+    _, total = await reader.list(limit=10, offset=0, search=marker)
+    assert total == 2
 
-        items, total = await reader.list(limit=10, offset=0, search=f"Обвал{marker}")
-        assert total == 0
+    items, total = await reader.list(limit=10, offset=0, search=f"Обвал{marker}")
+    assert total == 0
 
-        items, total = await reader.list(
-            limit=10, offset=0, search=f"Фамилия{marker} Обвальщик"
-        )
-        assert total == 1
-        assert [item.id for item in items] == [target.id]
+    items, total = await reader.list(
+        limit=10, offset=0, search=f"Фамилия{marker} Обвальщик"
+    )
+    assert total == 1
+    assert [item.id for item in items] == [target.id]
 
-        _, total = await reader.list(limit=10, offset=0, search=f"несуществует{marker}")
-        assert total == 0
+    _, total = await reader.list(limit=10, offset=0, search=f"несуществует{marker}")
+    assert total == 0
 
-        _, total = await reader.list(limit=10, offset=0, search=None)
-        assert total >= 2
-    finally:
-        await db_session.execute(
-            delete(EMPLOYEES_TABLE).where(
-                EMPLOYEES_TABLE.c.id.in_([target.id, other.id])
-            )
-        )
-        await db_session.commit()
+    _, total = await reader.list(limit=10, offset=0, search=None)
+    assert total >= 2
