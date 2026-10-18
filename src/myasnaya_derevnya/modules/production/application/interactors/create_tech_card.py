@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -30,6 +31,8 @@ from myasnaya_derevnya.modules.production.infrastructure.repositories.tech_card.
     TechCardRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +92,15 @@ class CreateTechCardInteractor:
 
         await self._tech_card_repository.add(tech_card)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создана технологическая карта",
+            extra={
+                "tech_card_id": str(tech_card.id),
+                "tech_card_code": tech_card.code,
+                "version": version,
+            },
+        )
 
         return tech_card.id
 

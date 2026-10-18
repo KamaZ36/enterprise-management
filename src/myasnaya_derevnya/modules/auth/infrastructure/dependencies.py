@@ -99,7 +99,7 @@ class AuthDepProvider(Provider):
 
     @provide(scope=Scope.APP)
     def get_login_code_sender(self) -> LoginCodeSender:
-        return LoggingLoginCodeSender()
+        return LoggingLoginCodeSender(debug=settings.debug)
 
 
     @provide(scope=Scope.REQUEST)

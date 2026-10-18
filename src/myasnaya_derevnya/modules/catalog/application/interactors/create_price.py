@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
@@ -12,6 +13,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price.base im
     PriceRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,5 +58,15 @@ class CreatePriceInteractor:
 
         await self._price_repository.add(price)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Добавлена цена",
+            extra={
+                "price_id": str(price.id),
+                "nomenclature_id": str(command.nomenclature_id),
+                "price_list_id": str(command.price_list_id),
+                "value_kopecks": kopecks_value,
+            },
+        )
 
         return price.id

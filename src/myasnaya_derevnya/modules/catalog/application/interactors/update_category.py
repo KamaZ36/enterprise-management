@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -14,6 +15,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base
     CategoryRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,3 +75,5 @@ class UpdateCategoryInteractor:
 
         await self._category_repository.save(category)
         await self._transaction_manager.commit()
+
+        logger.info("Изменена категория", extra={"category_id": str(category.id)})

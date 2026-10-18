@@ -36,6 +36,8 @@ Permissions: declared per module in `domain/permissions.py`, aggregated (sorted,
 
 Settings: a single `AppSettings` reads `<repo>/.env` (copy `.env.example`). `LOGIN_CODE_SECRET` (min 16 chars) is required or the app won't start. `.env` ships `DB_HOST=postgres` (Docker service name) — host runs must override `DB_HOST=localhost`.
 
+Logging: configured once in `create_app` via `core/logging/config.py::setup_logging(LoggingSettings())` (`LOG_LEVEL`, `LOG_JSON`, `LOG_ACCESS`). Console in dev, JSON in prod; stdout only, no file handlers. `RequestContextMiddleware` puts `X-Request-ID` into a contextvar and `IdentityProvider` binds `user_id`, so `ContextFilter` stamps `request_id`/`user_id` onto every record automatically. Business events are logged in the application layer (interactors) with `logging.getLogger(__name__).info("Событие", extra={"order_id": ...})`; both formatters render arbitrary `extra` fields (console as `key=value`, JSON as top-level fields, non-JSON values stringified), so do not pass clash-prone keys such as `name`/`module`/`message` (ruff `G101` enforces this). Reads are covered by the access log — log mutating use-cases and auth events, not queries. Access lines and 5xx tracebacks are logged there; 4xx/`DomainError` at INFO. Never log secrets (codes, passwords, `Authorization`); `LoggingLoginCodeSender` prints the code only when `DEBUG=true`.
+
 Startup (`core/seed.py::bootstrap_system`, run in the app lifespan) seeds a root org unit, the `SUPER_ADMIN` role, and the initial admin from `INITIAL_ADMIN_*` (default admin/admin).
 
 Media: files live on disk under `MEDIA_ROOT`, the DB stores only relative refs, served at `MEDIA_URL_PREFIX`. Uploads are resized/encoded to WEBP.

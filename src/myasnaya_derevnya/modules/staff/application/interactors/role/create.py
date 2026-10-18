@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -16,6 +17,8 @@ from myasnaya_derevnya.modules.staff.domain.permissions import MANAGE_ROLES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base import (
     RoleRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,5 +75,10 @@ class CreateRoleInteractor:
 
         await self._role_repository.add(role)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создана роль",
+            extra={"role_id": str(role.id), "code": role.code},
+        )
 
         return role.id

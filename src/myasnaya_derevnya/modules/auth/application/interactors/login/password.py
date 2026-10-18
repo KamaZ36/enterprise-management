@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import timedelta
 from uuid import UUID
@@ -20,6 +21,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.bas
     UserSessionRepository,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +52,7 @@ class LoginByPasswordInteractor:
         )
 
         if user_identity is None:
+            logger.warning("Неудачный вход: неизвестный пользователь %s", command.username)
             raise IncorrectCredentials()
 
         user_credential = await self._credential_repository.get_by_user_id_and_type(
@@ -56,9 +60,17 @@ class LoginByPasswordInteractor:
         )
 
         if user_credential is None:
+            logger.warning(
+                "Неудачный вход: у пользователя нет пароля",
+                extra={"user_id": str(user_identity.user_id)},
+            )
             raise IncorrectCredentials()
 
         if not self._password_service.verify(command.password, user_credential.secret):
+            logger.warning(
+                "Неудачный вход: неверный пароль",
+                extra={"user_id": str(user_credential.user_id)},
+            )
             raise IncorrectCredentials()
 
         session = UserSession.create(
@@ -68,5 +80,7 @@ class LoginByPasswordInteractor:
 
         await self._session_repository.add(session)
         await self._transaction_manager.commit()
+
+        logger.info("Вход по паролю", extra={"user_id": str(session.user_id)})
 
         return session.id

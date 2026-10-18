@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
@@ -17,6 +18,8 @@ from myasnaya_derevnya.modules.production.infrastructure.repositories.production
     ProductionOrderRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,3 +73,8 @@ class UpdateProductionOrderInteractor:
 
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Внесены фактические данные производства",
+            extra={"production_order_id": str(order.id)},
+        )

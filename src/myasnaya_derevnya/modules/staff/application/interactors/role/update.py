@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -19,6 +20,8 @@ from myasnaya_derevnya.modules.staff.domain.permissions import MANAGE_ROLES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base import (
     RoleRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,3 +85,11 @@ class UpdateRoleInteractor:
 
         await self._role_repository.save(role)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Изменена роль",
+            extra={
+                "role_id": str(role.id),
+                "changed_fields": sorted(command.provided),
+            },
+        )

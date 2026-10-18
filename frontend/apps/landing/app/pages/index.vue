@@ -36,7 +36,7 @@
             </div>
           </div>
 
-          <NuxtLink to="/cafe" class="button">Меню кафе</NuxtLink>
+          <a :href="cafeAppUrl" class="button">Меню кафе</a>
         </div>
 
         <div v-reveal="120" class="photo">
@@ -137,6 +137,9 @@
 </template>
 
 <script setup lang="ts">
+const config = useRuntimeConfig();
+const cafeAppUrl = String(config.public.cafeAppUrl);
+
 const cafe = [
   { icon: "plate", title: "Блюда из нашей продукции" },
   { icon: "cup", title: "Уютная атмосфера" },

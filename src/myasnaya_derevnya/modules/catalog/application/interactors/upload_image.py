@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import uuid7
 
@@ -10,6 +11,8 @@ from myasnaya_derevnya.modules.catalog.domain.permissions import UPLOAD_IMAGE
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
 FOLDER = "menu"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +63,11 @@ class UploadImageInteractor:
             folder=FOLDER,
             filename=f"{uuid7().hex}.{image.extension}",
             data=image.data,
+        )
+
+        logger.info(
+            "Загружено изображение",
+            extra={"url": url, "size_bytes": image.size_bytes},
         )
 
         return UploadedImage(

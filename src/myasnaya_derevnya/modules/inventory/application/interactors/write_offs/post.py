@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
@@ -31,6 +32,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.b
     WriteOffRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +110,14 @@ class PostWriteOffInteractor:
         write_off.post()
         await self._write_off_repository.save(write_off)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Списание проведено",
+            extra={
+                "write_off_id": str(write_off.id),
+                "org_unit_id": str(write_off.org_unit_id),
+            },
+        )
 
     async def _line_slices(
         self,

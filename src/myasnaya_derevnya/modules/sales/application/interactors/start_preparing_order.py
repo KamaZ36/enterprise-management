@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -14,6 +15,8 @@ from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,3 +51,5 @@ class StartPreparingOrderInteractor:
         order.set_status(OrderStatus.PREPARING)
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info("Заказ взят в подготовку", extra={"order_id": str(order.id)})

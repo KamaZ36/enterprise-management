@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -17,6 +18,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_bi
     PriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,3 +66,11 @@ class BindPriceListInteractor:
             )
         )
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Прайс-лист привязан к точке",
+            extra={
+                "org_unit_id": str(command.org_unit_id),
+                "price_list_id": str(command.price_list_id),
+            },
+        )

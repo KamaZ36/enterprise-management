@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -15,6 +16,8 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base i
     EmployeeRepository,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
+
+logger = logging.getLogger(__name__)
 
 NAME_FIELDS = ("first_name", "last_name", "middle_name")
 
@@ -101,3 +104,11 @@ class UpdateEmployeeInteractor:
 
         await self._employee_repository.save(employee)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Изменён сотрудник",
+            extra={
+                "employee_id": str(employee.id),
+                "changed_fields": sorted(command.provided),
+            },
+        )

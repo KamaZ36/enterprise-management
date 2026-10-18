@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -11,6 +12,8 @@ from myasnaya_derevnya.modules.business.infrastructure.repositories.org_unit_rep
     OrgUnitRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,3 +83,11 @@ class UpdateOrgUnitInteractor:
 
         await self._org_unit_repository.save(org_unit)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Изменён орг. узел",
+            extra={
+                "org_unit_id": str(org_unit.id),
+                "changed_fields": sorted(command.provided),
+            },
+        )

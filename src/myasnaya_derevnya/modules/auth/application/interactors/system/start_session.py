@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from uuid import UUID
 
@@ -6,6 +7,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.bas
     UserSessionRepository,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
+
+logger = logging.getLogger(__name__)
 
 
 class StartSessionInteractor:
@@ -18,5 +21,7 @@ class StartSessionInteractor:
             expires_at=get_datetime_utc() + timedelta(days=30),
         )
         await self._session_repository.add(session)
+
+        logger.info("Открыта сессия", extra={"user_id": str(user_id)})
 
         return session.id

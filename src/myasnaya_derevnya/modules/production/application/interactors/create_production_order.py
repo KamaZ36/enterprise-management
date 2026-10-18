@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -24,6 +25,8 @@ from myasnaya_derevnya.modules.production.infrastructure.repositories.tech_card.
     TechCardRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,5 +85,14 @@ class CreateProductionOrderInteractor:
 
         await self._order_repository.add(order)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создан производственный заказ",
+            extra={
+                "production_order_id": str(order.id),
+                "org_unit_id": str(order.org_unit_id),
+                "tech_card_id": str(command.tech_card_id),
+            },
+        )
 
         return order.id

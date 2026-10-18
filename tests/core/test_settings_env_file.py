@@ -4,6 +4,7 @@ from myasnaya_derevnya.core.settings import PROJECT_ROOT, AppSettings, Settings
 from myasnaya_derevnya.core.settings.base import BaseAppSettings
 from myasnaya_derevnya.core.settings.cors import CorsSettings
 from myasnaya_derevnya.core.settings.database import DatabaseSettings
+from myasnaya_derevnya.core.settings.logging import LoggingSettings
 from myasnaya_derevnya.core.settings.login_codes import LoginCodeSettings
 from myasnaya_derevnya.core.settings.media import MediaSettings
 from myasnaya_derevnya.core.settings.seed import InitSeedSettings
@@ -15,6 +16,7 @@ SETTINGS_CLASSES = (
     DatabaseSettings,
     InitSeedSettings,
     LoginCodeSettings,
+    LoggingSettings,
     MediaSettings,
     CorsSettings,
 )

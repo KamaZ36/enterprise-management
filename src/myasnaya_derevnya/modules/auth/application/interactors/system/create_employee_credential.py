@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -23,6 +24,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,3 +71,8 @@ class CreateEmployeeCredentialInteractor:
 
         await self._identity_repository.add(user_identity)
         await self._credential_repository.add(user_credential)
+
+        logger.info(
+            "Созданы учётные данные сотрудника",
+            extra={"target_user_id": str(user.id), "username": command.username},
+        )

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -18,6 +19,8 @@ from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base impo
     OrderRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +103,14 @@ class CreateOrderInteractor:
 
         await self._order_repository.add(order)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Заказ создан",
+            extra={
+                "order_id": str(order.id),
+                "org_unit_id": str(order.org_unit_id),
+            },
+        )
 
         return order.id
 

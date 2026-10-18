@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from uuid import UUID, uuid7
 
@@ -244,3 +245,28 @@ async def test_contact_phone_is_copied_into_order() -> None:
     )
 
     assert repository.saved[0].contact_phone == "+7 (999) 123-45-67"  # type: ignore[attr-defined]
+
+
+async def test_created_order_is_logged_with_business_fields(caplog) -> None:
+    staff_id, nomenclature_id = uuid7(), uuid7()
+    interactor, _, _, _ = build(
+        user_id=staff_id, staff_users={staff_id}, prices={nomenclature_id: 10000}
+    )
+    org_unit_id = uuid7()
+
+    with caplog.at_level(
+        logging.INFO,
+        logger="myasnaya_derevnya.modules.sales.application.interactors.create_order",
+    ):
+        order_id = await interactor(
+            CreateOrderCommand(
+                org_unit_id=org_unit_id,
+                channel=OrderChannel.POS,
+                lines=(OrderLineCommand(nomenclature_id, Decimal(1)),),
+            )
+        )
+
+    record = caplog.records[-1]
+    assert record.getMessage() == "Заказ создан"
+    assert record.order_id == str(order_id)  # type: ignore[attr-defined]
+    assert record.org_unit_id == str(org_unit_id)  # type: ignore[attr-defined]

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -11,6 +12,8 @@ from myasnaya_derevnya.modules.customer.domain.entities.customer import Customer
 from myasnaya_derevnya.modules.customer.infrastructure.repositories.customer.base import (
     CustomerRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,9 +48,12 @@ class LoginCustomerInteractor:
         customer = await self._customer_repository.get_by_user_id(user_id)
 
         if customer is None or customer.status is CustomerStatus.BLOCKED:
+            logger.warning("Вход клиента отклонён: профиль заблокирован или отсутствует")
             raise CustomerBlocked()
 
         session_id = await self._auth_api.start_session(user_id)
         await self._transaction_manager.commit()
+
+        logger.info("Вход клиента", extra={"user_id": str(user_id)})
 
         return session_id

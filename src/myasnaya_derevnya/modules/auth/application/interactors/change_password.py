@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -13,6 +14,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base 
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +49,7 @@ class ChangePasswordInteractor:
         if credential is None or not self._password_service.verify(
             command.current_password, credential.secret
         ):
+            logger.warning("Неверный текущий пароль при смене пароля")
             raise IncorrectCredentials()
 
         credential.change_secret(self._password_service.hash(command.new_password))
@@ -53,3 +57,5 @@ class ChangePasswordInteractor:
 
         await self._user_session_repository.delete_others_for_user(user_id, session_id)
         await self._transaction_manager.commit()
+
+        logger.info("Пароль изменён, прочие сессии отозваны")

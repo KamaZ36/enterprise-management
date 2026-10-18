@@ -7,6 +7,7 @@ from myasnaya_derevnya.core.identity_provider import (
     IdentityProvider,
     SessionIdGetter,
 )
+from myasnaya_derevnya.core.logging.context import set_user_id
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
@@ -63,6 +64,7 @@ class HTTPIdentityProvider(IdentityProvider):
             raise UnauthorizedError()
 
         self._active_session = session
+        set_user_id(session.user_id)
 
         return session
 

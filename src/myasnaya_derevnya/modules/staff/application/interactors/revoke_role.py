@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -13,6 +14,8 @@ from myasnaya_derevnya.modules.staff.domain.permissions import ASSIGN_ROLES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment.base import (
     RoleAssignmentRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,3 +62,11 @@ class RevokeRoleInteractor:
 
         await self._role_assignment_repository.save(assignment)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Роль отозвана",
+            extra={
+                "assignment_id": str(command.assignment_id),
+                "target_user_id": str(assignment.user_id),
+            },
+        )

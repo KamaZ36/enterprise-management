@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -21,6 +22,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.ba
     TransferRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +65,15 @@ class PostTransferInteractor:
         transfer.post()
         await self._transfer_repository.save(transfer)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Перемещение проведено",
+            extra={
+                "transfer_id": str(transfer.id),
+                "from_org_unit_id": str(transfer.from_org_unit_id),
+                "to_org_unit_id": str(transfer.to_org_unit_id),
+            },
+        )
 
     async def _ensure_locations_ready(
         self, transfer: Transfer

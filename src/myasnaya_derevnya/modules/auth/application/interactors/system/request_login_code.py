@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -18,6 +19,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.service.login_code_sender.bas
     LoginCodeSender,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
+
+logger = logging.getLogger(__name__)
 
 
 class RequestLoginCodeInteractor:
@@ -70,3 +73,5 @@ class RequestLoginCodeInteractor:
         )
         await self._transaction_manager.commit()
         await self._login_code_sender.send(identifier, code)
+
+        logger.info("Запрошен код входа", extra={"identifier": identifier})

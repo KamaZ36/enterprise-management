@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -12,6 +13,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base 
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,3 +45,8 @@ class ResetEmployeePasswordInteractor:
         await self._credential_repository.save(credential)
 
         await self._user_session_repository.delete_all_for_user(command.user_id)
+
+        logger.info(
+            "Сброшен пароль сотрудника, все его сессии отозваны",
+            extra={"target_user_id": str(command.user_id)},
+        )

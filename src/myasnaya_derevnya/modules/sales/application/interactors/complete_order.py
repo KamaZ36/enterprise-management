@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -21,6 +22,8 @@ from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base impo
     OrderRepository,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +69,8 @@ class CompleteOrderInteractor:
 
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info("Заказ выполнен", extra={"order_id": str(order.id)})
 
     async def _write_off_stock(self, *, order: Order, user_id: UUID) -> None:
         lines = order.lines

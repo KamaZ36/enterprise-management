@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -20,6 +21,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.ba
     TransferRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,3 +92,5 @@ class UpdateTransferInteractor:
 
         await self._transfer_repository.save(transfer)
         await self._transaction_manager.commit()
+
+        logger.info("Перемещение изменено", extra={"transfer_id": str(transfer.id)})

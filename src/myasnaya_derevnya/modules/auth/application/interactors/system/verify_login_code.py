@@ -1,3 +1,5 @@
+import logging
+
 from myasnaya_derevnya.modules.auth.application.errors import (
     InvalidPhoneNumber,
     LoginCodeAttemptsExceeded,
@@ -13,6 +15,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.one_time_code.ba
     OneTimeCodeRepository,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
+
+logger = logging.getLogger(__name__)
 
 
 class VerifyLoginCodeInteractor:
@@ -45,6 +49,8 @@ class VerifyLoginCodeInteractor:
         if not one_time_code.matches(self._login_code_service.hash(identifier, code)):
             one_time_code.register_failed_attempt()
             await self._code_repository.update(one_time_code)
+            logger.warning("Неверный код входа", extra={"identifier": identifier})
             raise LoginCodeInvalid()
 
         await self._code_repository.delete_by_identifier(identifier)
+        logger.info("Код входа подтверждён", extra={"identifier": identifier})

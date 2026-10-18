@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -24,6 +25,8 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base impor
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment.base import (
     RoleAssignmentRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,3 +89,12 @@ class AssignRoleInteractor:
 
         await self._role_assignment_repository.add(assigned_role)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Назначена роль",
+            extra={
+                "target_user_id": str(employee.user_id),
+                "role_id": str(role.id),
+                "org_unit_id": str(command.org_unit_id),
+            },
+        )

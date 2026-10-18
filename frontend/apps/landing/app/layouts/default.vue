@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const menuOpen = ref(false);
+const config = useRuntimeConfig();
+const cafeAppUrl = String(config.public.cafeAppUrl);
 </script>
 
 <template>
@@ -11,14 +13,14 @@ const menuOpen = ref(false);
         </NuxtLink>
 
         <nav class="nav" :class="{ 'nav--open': menuOpen }" @click="menuOpen = false">
-          <a href="/#cafe">Кафе</a>
+          <a :href="cafeAppUrl">Кафе</a>
           <a href="/#shops">Магазины</a>
           <a href="/#company">О компании</a>
           <a href="/#contacts">Контакты</a>
         </nav>
 
         <div class="top__right">
-          <NuxtLink to="/cafe" class="button button--small">Кафе</NuxtLink>
+          <a :href="cafeAppUrl" class="button button--small">Кафе</a>
 
           <button
             class="burger"

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
@@ -14,6 +15,8 @@ from myasnaya_derevnya.modules.sales.domain.errors import (
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,5 +77,13 @@ class SubmitCartInteractor:
 
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Корзина отправлена в заказ",
+            extra={
+                "order_id": str(order.id),
+                "org_unit_id": str(order.org_unit_id),
+            },
+        )
 
         return order.id

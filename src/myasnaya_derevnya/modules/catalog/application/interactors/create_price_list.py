@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -12,6 +13,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list.ba
     PriceListRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,5 +53,10 @@ class CreatePriceListInteractor:
 
         await self._price_list_repository.add(price_list)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создан прайс-лист",
+            extra={"price_list_id": str(price_list.id), "price_list_name": price_list.name},
+        )
 
         return price_list.id

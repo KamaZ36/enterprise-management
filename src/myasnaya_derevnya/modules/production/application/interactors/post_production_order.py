@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -20,6 +21,8 @@ from myasnaya_derevnya.modules.production.infrastructure.repositories.production
     ProductionOrderRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 class PostProductionOrderInteractor:
@@ -95,6 +98,15 @@ class PostProductionOrderInteractor:
 
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Производственный заказ проведён",
+            extra={
+                "production_order_id": str(order.id),
+                "org_unit_id": str(order.org_unit_id),
+                "issued_cost_kopecks": posted.issued_cost_kopecks,
+            },
+        )
 
     def _lot_code(self, order: ProductionOrder) -> str:
         day = order.occurred_at.strftime("%Y%m%d")

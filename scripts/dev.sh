@@ -122,6 +122,7 @@ cmd_up() {
   say "Сервисы"
   start backend env TMPDIR="$ROOT/.tmp" DB_HOST=localhost \
     .venv/bin/uvicorn --factory myasnaya_derevnya.main:create_app \
+    --no-access-log \
     --host 127.0.0.1 --port "$BACKEND_PORT"
   wait_http "$BACKEND_PORT" "Бэкенд" /docs 90 || return 1
 

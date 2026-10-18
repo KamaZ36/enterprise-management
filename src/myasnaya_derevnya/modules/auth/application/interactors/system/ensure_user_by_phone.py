@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from myasnaya_derevnya.modules.auth.application.errors import InvalidPhoneNumber
@@ -13,6 +14,8 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class EnsureUserByPhoneInteractor:
@@ -46,5 +49,7 @@ class EnsureUserByPhoneInteractor:
                 identifier=identifier,
             )
         )
+
+        logger.info("Создан пользователь по телефону", extra={"user_id": str(user.id)})
 
         return user.id

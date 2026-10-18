@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
@@ -17,6 +18,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.bas
     ReceiptRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,5 +92,13 @@ class CreateReceiptInteractor:
 
         await self._receipt_repository.add(receipt)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создан черновик поступления",
+            extra={
+                "receipt_id": str(receipt.id),
+                "org_unit_id": str(receipt.org_unit_id),
+            },
+        )
 
         return receipt.id

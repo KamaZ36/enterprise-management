@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -15,6 +16,8 @@ from myasnaya_derevnya.modules.production.infrastructure.repositories.production
     ProductionOrderRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 class CancelProductionOrderInteractor:
@@ -54,3 +57,8 @@ class CancelProductionOrderInteractor:
         order.cancel()
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Производственный заказ отменён",
+            extra={"production_order_id": str(order.id)},
+        )

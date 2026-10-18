@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
@@ -16,6 +17,8 @@ from myasnaya_derevnya.modules.staff.domain.permissions import MANAGE_EMPLOYEES
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.employee.base import (
     EmployeeRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,5 +83,14 @@ class CreateEmployeeInteractor:
 
         await self._employee_repository.add(employee)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создан сотрудник",
+            extra={
+                "employee_id": str(employee.id),
+                "org_unit_id": str(employee.org_unit_id),
+                "target_user_id": str(employee.user_id),
+            },
+        )
 
         return employee.id

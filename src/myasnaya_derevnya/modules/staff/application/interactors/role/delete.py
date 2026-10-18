@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -20,6 +21,8 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role.base impor
 from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment.base import (
     RoleAssignmentRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,3 +74,8 @@ class DeleteRoleInteractor:
 
         await self._role_repository.delete(command.role_id)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Удалена роль",
+            extra={"role_id": str(role.id), "code": role.code},
+        )

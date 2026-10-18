@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -5,6 +7,8 @@ from myasnaya_derevnya.core.database.conflicts import conflict_error
 from myasnaya_derevnya.core.database.transaction_manager.base import (
     TransactionManager,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SQLAlchemyTransactionManager(TransactionManager):
@@ -16,7 +20,9 @@ class SQLAlchemyTransactionManager(TransactionManager):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            raise conflict_error(exc) from exc
+            error = conflict_error(exc)
+            logger.warning("Конфликт при сохранении: %s", error)
+            raise error from exc
 
     async def rollback(self) -> None:
         await self._session.rollback()

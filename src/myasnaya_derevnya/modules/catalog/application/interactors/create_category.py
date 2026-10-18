@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -12,6 +13,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base
     CategoryRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,5 +58,10 @@ class CreateCategoryInteractor:
 
         await self._category_repository.add(category)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создана категория",
+            extra={"category_id": str(category.id), "category_name": category.name},
+        )
 
         return category.id

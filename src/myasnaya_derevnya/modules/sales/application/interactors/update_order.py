@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -17,6 +18,8 @@ from myasnaya_derevnya.modules.sales.domain.permissions import UPDATE_ORDER
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,3 +83,5 @@ class UpdateOrderInteractor:
 
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info("Заказ изменён", extra={"order_id": str(order.id)})

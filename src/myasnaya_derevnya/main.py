@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -17,9 +18,12 @@ from myasnaya_derevnya.core.errors import (
     UnauthorizedError,
     ValidationError,
 )
+from myasnaya_derevnya.core.logging import RequestContextMiddleware, setup_logging
+from myasnaya_derevnya.core.logging.context import reset_request_id, set_request_id
 from myasnaya_derevnya.core.media.paths import media_root
 from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.core.settings.cors import CorsSettings
+from myasnaya_derevnya.core.settings.logging import LoggingSettings
 from myasnaya_derevnya.core.settings.media import MediaSettings
 from myasnaya_derevnya.modules.auth.presentation.api.v1.endpoints import (
     login_router,
@@ -65,6 +69,8 @@ STATUS_BY_CATEGORY: dict[type[AppError], int] = {
     ConflictError: 409,
 }
 
+logger = logging.getLogger(__name__)
+
 
 async def api_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, ProjectError):
@@ -73,6 +79,7 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
         )
 
     if isinstance(exc, DomainError):
+        logger.info("Нарушено доменное правило: %s: %s", type(exc).__name__, exc)
         return JSONResponse(
             status_code=400, content={"error": type(exc).__name__, "message": str(exc)}
         )
@@ -86,10 +93,21 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
         400,
     )
 
+    logger.info("Отклонён запрос: %s: %s", type(exc).__name__, exc)
+
     return JSONResponse(
         status_code=status_code,
         content={"error": type(exc).__name__, "message": str(exc)},
     )
+
+
+async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    token = set_request_id(request.scope.get("request_id"))
+    try:
+        logger.exception("Необработанная ошибка")
+    finally:
+        reset_request_id(token)
+    return JSONResponse(status_code=500, content={"message": "Internal server error"})
 
 
 @asynccontextmanager
@@ -123,10 +141,14 @@ def include_media(app: FastAPI) -> None:
 
 
 def create_app() -> FastAPI:
+    logging_settings = LoggingSettings()
+    setup_logging(logging_settings)
+
     api_key_scheme = APIKeyHeader(name="Authorization", auto_error=False)
     app = FastAPI(lifespan=lifespan, dependencies=[Depends(api_key_scheme)])
 
     app.add_exception_handler(ProjectError, api_exception_handler)
+    app.add_exception_handler(Exception, unhandled_error_handler)
 
     app.add_middleware(
         CORSMiddleware,
@@ -134,6 +156,9 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+    app.add_middleware(
+        RequestContextMiddleware, enabled=logging_settings.log_access
     )
 
     include_routers(app)
@@ -144,7 +169,7 @@ def create_app() -> FastAPI:
 
 def main() -> None:
     app = create_app()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None, access_log=False)
 
 
 if __name__ == "__main__":

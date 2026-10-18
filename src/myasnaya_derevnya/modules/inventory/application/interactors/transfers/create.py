@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -20,6 +21,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.ba
     TransferRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +89,15 @@ class CreateTransferInteractor:
 
         await self._transfer_repository.add(transfer)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создан черновик перемещения",
+            extra={
+                "transfer_id": str(transfer.id),
+                "from_org_unit_id": str(transfer.from_org_unit_id),
+                "to_org_unit_id": str(transfer.to_org_unit_id),
+            },
+        )
 
         return transfer.id
 

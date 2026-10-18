@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.dependencies import container
@@ -39,9 +40,11 @@ from myasnaya_derevnya.modules.staff.infrastructure.repositories.role_assignment
     RoleAssignmentRepository,
 )
 
+logger = logging.getLogger(__name__)
+
 
 async def bootstrap_system() -> None:
-    print("=== Инициализация ===")
+    logger.info("Инициализация системы")
 
     username = settings.initial_admin_username
     password = settings.initial_admin_password
@@ -68,6 +71,7 @@ async def bootstrap_system() -> None:
             )
             await org_unit_repository.add(root_org_unit)
             root_org_unit_id = root_org_unit.id
+            logger.info("Создан корневой орг. узел %s", root_org_unit_id)
 
         role = await role_repository.get_by_code(role_code)
         if role is None:
@@ -83,6 +87,7 @@ async def bootstrap_system() -> None:
                 grantable_role_ids=frozenset(),
             )
             await role_repository.add(role)
+            logger.info("Создана роль %s", role_code)
 
         user_identity = await user_identity_repository.get_by_identifier_and_type(
             identifier=username, identity_type=UserIdentityType.USERNAME
@@ -104,6 +109,7 @@ async def bootstrap_system() -> None:
             await user_repository.add(user)
             await user_identity_repository.add(user_identity)
             await user_credential_repository.add(user_credential)
+            logger.info("Создан начальный администратор %s", username)
 
         existing = await role_assignment_repository.load_active_for_user(
             user_id=user_identity.user_id,
@@ -123,7 +129,7 @@ async def bootstrap_system() -> None:
             await role_assignment_repository.add(role_assignment)
 
         await transaction_manager.commit()
-        print("\nСистема успешно инициализирована! Настройки применены.")
+        logger.info("Система инициализирована")
 
 
 if __name__ == "__main__":

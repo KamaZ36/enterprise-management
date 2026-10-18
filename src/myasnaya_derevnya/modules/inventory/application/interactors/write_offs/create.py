@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -17,6 +18,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.b
     WriteOffRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,5 +86,13 @@ class CreateWriteOffInteractor:
 
         await self._write_off_repository.add(write_off)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создан черновик списания",
+            extra={
+                "write_off_id": str(write_off.id),
+                "org_unit_id": str(write_off.org_unit_id),
+            },
+        )
 
         return write_off.id

@@ -1,8 +1,12 @@
+import logging
+
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LogoutInteractor:
@@ -20,3 +24,5 @@ class LogoutInteractor:
         current_session_id = await self._identity_provider.get_current_session_id()
         await self._session_repository.delete_by_id(current_session_id)
         await self._transaction_manager.commit()
+
+        logger.info("Выход из системы", extra={"session_id": str(current_session_id)})

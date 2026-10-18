@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
@@ -5,6 +6,8 @@ from myasnaya_derevnya.modules.auth.domain.entities.user import User
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class CreateUserInteractor:
@@ -17,4 +20,7 @@ class CreateUserInteractor:
     async def __call__(self) -> UUID:
         user = User.create()
         await self._user_repository.add(user)
+
+        logger.debug("Создан пользователь %s", user.id)
+
         return user.id

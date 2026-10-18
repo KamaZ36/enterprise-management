@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -18,6 +19,8 @@ from myasnaya_derevnya.modules.sales.domain.value_objects.payment import Payment
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,3 +66,5 @@ class ConfirmOrderInteractor:
         order.set_status(OrderStatus.CONFIRMED)
         await self._order_repository.save(order)
         await self._transaction_manager.commit()
+
+        logger.info("Заказ подтверждён", extra={"order_id": str(order.id)})

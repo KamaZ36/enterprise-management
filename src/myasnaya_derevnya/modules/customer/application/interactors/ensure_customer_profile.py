@@ -1,9 +1,12 @@
+import logging
 from uuid import UUID
 
 from myasnaya_derevnya.modules.customer.domain.entities.customer import Customer
 from myasnaya_derevnya.modules.customer.infrastructure.repositories.customer.base import (
     CustomerRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class EnsureCustomerProfileInteractor:
@@ -18,5 +21,7 @@ class EnsureCustomerProfileInteractor:
 
         customer = Customer.create(user_id=user_id)
         await self._customer_repository.add(customer)
+
+        logger.info("Создан профиль клиента", extra={"customer_id": str(customer.id)})
 
         return customer.id

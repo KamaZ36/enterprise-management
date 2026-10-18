@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -18,6 +19,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.
     NomenclatureRepository,
 )
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,5 +72,10 @@ class CreateNomenclatureInteractor:
 
         await self._nomenclature_repository.add(nomenclature)
         await self._transaction_manager.commit()
+
+        logger.info(
+            "Создана номенклатура",
+            extra={"nomenclature_id": str(nomenclature.id), "sku": nomenclature.sku},
+        )
 
         return nomenclature.id
