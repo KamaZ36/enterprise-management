@@ -30,6 +30,28 @@
       <el-descriptions-item label="Канал">
         {{ CHANNEL_TITLES[order.channel] ?? order.channel }}
       </el-descriptions-item>
+      <el-descriptions-item label="Получение">
+        {{ FULFILLMENT_TITLES[order.fulfillment_type] ?? order.fulfillment_type }}
+      </el-descriptions-item>
+      <el-descriptions-item label="Оплата">
+        <el-tag
+          v-if="order.payment_status === 'paid'"
+          type="success"
+          effect="light"
+        >
+          Оплачен
+        </el-tag>
+        <el-tag
+          v-else-if="order.payment_method === 'online'"
+          type="warning"
+          effect="light"
+        >
+          Ожидает оплаты
+        </el-tag>
+        <span v-else>
+          {{ PAYMENT_TITLES[order.payment_method] ?? order.payment_method }}
+        </span>
+      </el-descriptions-item>
       <el-descriptions-item label="К выдаче">
         {{ order.planned_at ? formatTime(order.planned_at) : "как можно скорее" }}
       </el-descriptions-item>
@@ -90,7 +112,7 @@
       </el-button>
 
       <el-button
-        v-if="order.status === 'draft' && can('order.update')"
+        v-if="order.status === 'new' && can('order.update')"
         type="primary"
         :loading="acting"
         @click="confirmOrder"
@@ -192,6 +214,7 @@ type OrderDetail = components["schemas"]["OrderDetailSchema"];
 
 const STATUS_TITLES: Record<string, string> = {
   draft: "Черновик",
+  new: "Новый",
   confirmed: "Подтверждён",
   preparing: "Готовится",
   ready: "Готов",
@@ -201,6 +224,7 @@ const STATUS_TITLES: Record<string, string> = {
 
 const STATUS_TYPES: Record<string, "success" | "warning" | "info" | "danger"> = {
   draft: "info",
+  new: "warning",
   confirmed: "warning",
   preparing: "warning",
   ready: "success",
@@ -214,7 +238,18 @@ const CHANNEL_TITLES: Record<string, string> = {
   phone: "Телефон",
 };
 
-const OPEN_STATUSES = ["draft", "confirmed", "preparing", "ready"];
+const FULFILLMENT_TITLES: Record<string, string> = {
+  pickup: "Самовывоз",
+  delivery: "Доставка",
+};
+
+const PAYMENT_TITLES: Record<string, string> = {
+  online: "Онлайн",
+  on_pickup: "При получении",
+  on_delivery: "При получении",
+};
+
+const OPEN_STATUSES = ["new", "confirmed", "preparing", "ready"];
 
 const api = useApi();
 const route = useRoute();

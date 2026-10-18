@@ -9,8 +9,13 @@ from myasnaya_derevnya.modules.sales.application.interactors.create_order import
     CreateOrderInteractor,
     OrderLineCommand,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import OrderChannel
 from myasnaya_derevnya.modules.sales.domain.errors import NotSoldAtPointError
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
+)
 
 
 class FakeIdentityProvider:
@@ -66,6 +71,9 @@ class FakeOrderRepository:
 
     async def add(self, order: object) -> None:
         self.saved.append(order)
+
+    async def next_number(self, org_unit_id: UUID, day: object) -> int:
+        return 1
 
 
 class FakeTransactionManager:
@@ -123,6 +131,8 @@ async def test_staff_creates_order_for_customer_at_any_channel() -> None:
     order = repository.saved[0]
     assert order.customer_id == customer_id  # type: ignore[attr-defined]
     assert order.total == 90000  # type: ignore[attr-defined]
+    assert order.status is OrderStatus.NEW  # type: ignore[attr-defined]
+    assert order.number == 1  # type: ignore[attr-defined]
 
 
 async def test_customer_creates_order_for_themselves_from_site() -> None:

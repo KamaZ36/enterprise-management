@@ -56,3 +56,13 @@ class NotSoldAtPointError(SalesDomainError):
 
     def __str__(self) -> str:
         return f"Позиция {self._nomenclature_id} не продаётся в этой точке."
+
+
+class OrderNotPaidError(ConflictError):
+    def __str__(self) -> str:
+        return "Нельзя принять в работу заказ с онлайн-оплатой до оплаты."
+
+
+class EmptyCartError(SalesDomainError):
+    def __str__(self) -> str:
+        return "Нельзя оформить пустую корзину."

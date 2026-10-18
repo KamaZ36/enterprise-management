@@ -10,9 +10,13 @@ from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import Order, OrderStatus
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order
 from myasnaya_derevnya.modules.sales.domain.errors import OrderNotFoundError
 from myasnaya_derevnya.modules.sales.domain.permissions import UPDATE_ORDER
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.payment import PaymentMethod
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
@@ -51,6 +55,13 @@ class CompleteOrderInteractor:
         )
 
         order.set_status(OrderStatus.COMPLETED)
+
+        if order.payment_method in (
+            PaymentMethod.ON_PICKUP,
+            PaymentMethod.ON_DELIVERY,
+        ):
+            order.mark_paid()
+
         await self._write_off_stock(order=order, user_id=user_id)
 
         await self._order_repository.save(order)

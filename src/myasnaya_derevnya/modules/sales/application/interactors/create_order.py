@@ -8,12 +8,12 @@ from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 from myasnaya_derevnya.modules.customer.presentation.customer_api import CustomerAPI
-from myasnaya_derevnya.modules.sales.domain.entities.order import (
-    Order,
-    OrderChannel,
-)
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order
 from myasnaya_derevnya.modules.sales.domain.errors import NotSoldAtPointError
 from myasnaya_derevnya.modules.sales.domain.permissions import CREATE_ORDER
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
@@ -90,6 +90,13 @@ class CreateOrderInteractor:
                 quantity=line.quantity,
                 unit_price=price,
             )
+
+        order.assign_number(
+            await self._order_repository.next_number(
+                order.org_unit_id, order.created_at.date()
+            )
+        )
+        order.submit()
 
         await self._order_repository.add(order)
         await self._transaction_manager.commit()

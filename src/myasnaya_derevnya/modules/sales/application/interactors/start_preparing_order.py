@@ -6,9 +6,11 @@ from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import OrderStatus
 from myasnaya_derevnya.modules.sales.domain.errors import OrderNotFoundError
 from myasnaya_derevnya.modules.sales.domain.permissions import UPDATE_ORDER
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
+)
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )

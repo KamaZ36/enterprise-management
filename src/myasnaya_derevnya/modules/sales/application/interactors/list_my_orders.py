@@ -44,4 +44,5 @@ class ListMyOrdersInteractor:
             day=query.day,
             limit=query.limit,
             offset=query.offset,
+            exclude_drafts=True,
         )

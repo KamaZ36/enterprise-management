@@ -28,14 +28,16 @@ from myasnaya_derevnya.modules.sales.application.interactors.start_preparing_ord
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import (
-    Order,
-    OrderChannel,
-    OrderStatus,
-)
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order
 from myasnaya_derevnya.modules.sales.domain.errors import (
     OrderNotFoundError,
     OrderStatusTransitionError,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
 )
 
 
@@ -209,10 +211,20 @@ async def make_order(
     return order
 
 
+async def make_new_order(
+    repository: FakeOrderRepository, customer_id: UUID | None
+) -> Order:
+    order = await make_order(repository, customer_id)
+    order.submit()
+    await repository.save(order)
+
+    return order
+
+
 async def test_staff_confirms_order_and_number_is_assigned() -> None:
     staff_id = uuid7()
     actions = build(user_id=staff_id, staff={staff_id})
-    order = await make_order(actions.repository, customer_id=uuid7())
+    order = await make_new_order(actions.repository, customer_id=uuid7())
 
     await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
@@ -225,7 +237,7 @@ async def test_staff_confirms_order_and_number_is_assigned() -> None:
 async def test_customer_confirms_own_order() -> None:
     user_id, customer_id = uuid7(), uuid7()
     actions = build(user_id=user_id, profiles={user_id: customer_id})
-    order = await make_order(actions.repository, customer_id=customer_id)
+    order = await make_new_order(actions.repository, customer_id=customer_id)
 
     await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
@@ -246,7 +258,7 @@ async def test_stranger_cannot_confirm_order() -> None:
 async def test_confirming_twice_is_rejected() -> None:
     staff_id = uuid7()
     actions = build(user_id=staff_id, staff={staff_id})
-    order = await make_order(actions.repository, customer_id=uuid7())
+    order = await make_new_order(actions.repository, customer_id=uuid7())
     await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
     with pytest.raises(OrderStatusTransitionError):
@@ -274,7 +286,7 @@ async def test_unknown_order_is_reported() -> None:
 async def test_staff_moves_confirmed_order_to_preparing() -> None:
     staff_id = uuid7()
     actions = build(user_id=staff_id, staff={staff_id})
-    order = await make_order(actions.repository, customer_id=uuid7())
+    order = await make_new_order(actions.repository, customer_id=uuid7())
     await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
     await actions.preparing(StartPreparingOrderCommand(order_id=order.id))
@@ -285,7 +297,7 @@ async def test_staff_moves_confirmed_order_to_preparing() -> None:
 async def test_customer_cannot_start_preparing() -> None:
     user_id, customer_id = uuid7(), uuid7()
     actions = build(user_id=user_id, profiles={user_id: customer_id})
-    order = await make_order(actions.repository, customer_id=customer_id)
+    order = await make_new_order(actions.repository, customer_id=customer_id)
     await actions.confirm(ConfirmOrderCommand(order_id=order.id))
 
     with pytest.raises(ForbiddenError):
@@ -298,6 +310,7 @@ async def test_staff_marks_preparing_order_ready() -> None:
     staff_id = uuid7()
     actions = build(user_id=staff_id, staff={staff_id})
     order = await make_order(actions.repository, customer_id=uuid7())
+    order.set_status(OrderStatus.NEW)
     order.set_status(OrderStatus.CONFIRMED)
     order.set_status(OrderStatus.PREPARING)
     await actions.repository.save(order)
@@ -320,6 +333,7 @@ async def test_staff_completes_ready_order() -> None:
     staff_id = uuid7()
     actions = build(user_id=staff_id, staff={staff_id})
     order = await make_order(actions.repository, customer_id=uuid7())
+    order.set_status(OrderStatus.NEW)
     order.set_status(OrderStatus.CONFIRMED)
     order.set_status(OrderStatus.PREPARING)
     order.set_status(OrderStatus.READY)
@@ -336,6 +350,7 @@ async def test_customer_cannot_complete_order() -> None:
     user_id, customer_id = uuid7(), uuid7()
     actions = build(user_id=user_id, profiles={user_id: customer_id})
     order = await make_order(actions.repository, customer_id=customer_id)
+    order.set_status(OrderStatus.NEW)
     order.set_status(OrderStatus.CONFIRMED)
     order.set_status(OrderStatus.PREPARING)
     order.set_status(OrderStatus.READY)
@@ -363,6 +378,7 @@ async def test_completing_order_writes_off_stock_and_records_costs() -> None:
     actions = build(user_id=staff_id, staff={staff_id}, inventory=inventory)
     order = await make_order(actions.repository, customer_id=uuid7())
     order.add_line(nomenclature_id=uuid7(), quantity=Decimal(2), unit_price=10_000)
+    order.set_status(OrderStatus.NEW)
     order.set_status(OrderStatus.CONFIRMED)
     order.set_status(OrderStatus.PREPARING)
     order.set_status(OrderStatus.READY)
@@ -382,6 +398,7 @@ async def test_completing_order_without_location_skips_write_off() -> None:
     actions = build(user_id=staff_id, staff={staff_id})
     order = await make_order(actions.repository, customer_id=uuid7())
     order.add_line(nomenclature_id=uuid7(), quantity=Decimal(1), unit_price=10_000)
+    order.set_status(OrderStatus.NEW)
     order.set_status(OrderStatus.CONFIRMED)
     order.set_status(OrderStatus.PREPARING)
     order.set_status(OrderStatus.READY)

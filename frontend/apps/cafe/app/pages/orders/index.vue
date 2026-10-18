@@ -4,7 +4,13 @@
       <div class="kicker">Кабинет</div>
       <h1 class="section__title">Мои заказы</h1>
 
-      <p v-if="pending" class="loading">Загружаем заказы…</p>
+      <p v-if="!isAuthenticated" class="muted">
+        Войдите, чтобы увидеть свои заказы.
+        <button class="link-button" type="button" @click="showAuthModal">
+          Войти
+        </button>
+      </p>
+      <p v-else-if="pending" class="loading">Загружаем заказы…</p>
       <p v-else-if="error" class="notice notice--error">{{ error }}</p>
 
       <p v-else-if="!items.length" class="muted">
@@ -53,6 +59,7 @@ type MyOrderListItem = components["schemas"]["MyOrderListItemSchema"];
 
 const api = useApi();
 const { isAuthenticated } = useSession();
+const { show: showAuthModal } = useAuthModal();
 
 const items = ref<MyOrderListItem[]>([]);
 const pending = ref(false);
@@ -60,7 +67,7 @@ const error = ref("");
 
 async function loadOrders(): Promise<void> {
   if (!isAuthenticated.value) {
-    await navigateTo("/login?next=/orders");
+    showAuthModal();
     return;
   }
 
@@ -73,7 +80,7 @@ async function loadOrders(): Promise<void> {
     });
 
     if (response.status === 401) {
-      await navigateTo("/login?next=/orders");
+      showAuthModal();
       return;
     }
 
@@ -90,4 +97,10 @@ async function loadOrders(): Promise<void> {
 }
 
 onMounted(loadOrders);
+
+watch(isAuthenticated, (value) => {
+  if (value) {
+    void loadOrders();
+  }
+});
 </script>

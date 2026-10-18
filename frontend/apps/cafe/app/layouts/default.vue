@@ -34,14 +34,15 @@
             <AppIcon name="user" :size="17" />
             Выйти
           </button>
-          <NuxtLink
+          <button
             v-else
-            to="/login"
             class="button button--ghost button--small top-button"
+            type="button"
+            @click="showAuthModal"
           >
             <AppIcon name="user" :size="17" />
             Войти
-          </NuxtLink>
+          </button>
 
           <NuxtLink
             to="/cart"
@@ -72,6 +73,8 @@
         </div>
       </div>
     </footer>
+
+    <AuthModal />
   </div>
 </template>
 
@@ -83,7 +86,8 @@ const landingUrl = String(config.public.landingUrl);
 const { cafes, active, select, code } = useCafe();
 const { count, clear } = useCart();
 const { isAuthenticated, clear: clearSession } = useSession();
-
+const { sync } = useCartServer();
+const { show: showAuthModal } = useAuthModal();
 
 const bump = ref(false);
 let bumpTimer: ReturnType<typeof setTimeout> | undefined;
@@ -127,6 +131,15 @@ watch(
     if (active.value && code.value !== active.value.code) {
       select(active.value);
     }
+  },
+  { immediate: true },
+);
+
+// После входа или смены кафе сводим локальную корзину с серверной.
+watch(
+  [() => active.value?.id, isAuthenticated],
+  () => {
+    void sync();
   },
   { immediate: true },
 );

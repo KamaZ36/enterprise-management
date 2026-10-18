@@ -3,7 +3,13 @@
     <div class="wrap">
       <NuxtLink to="/orders" class="link-button">← Мои заказы</NuxtLink>
 
-      <p v-if="pending" class="loading">Загружаем заказ…</p>
+      <p v-if="!isAuthenticated" class="muted">
+        Войдите, чтобы посмотреть заказ.
+        <button class="link-button" type="button" @click="showAuthModal">
+          Войти
+        </button>
+      </p>
+      <p v-else-if="pending" class="loading">Загружаем заказ…</p>
 
       <template v-else-if="order">
         <div class="kicker" style="margin-top: 20px">Заказ</div>
@@ -14,6 +20,8 @@
             {{ ORDER_STATUS_TITLES[order.status] ?? order.status }}
           </span>
           <span class="muted small">
+            · {{ order.fulfillment_type === "delivery" ? "Доставка" : "Самовывоз" }}
+            · {{ order.payment_status === "paid" ? "Оплачен" : "Оплата при получении" }}
             · оформлен {{ formatOrderTime(order.created_at) }}
           </span>
         </p>
@@ -69,6 +77,8 @@ type MyOrderDetail = components["schemas"]["MyOrderDetailSchema"];
 
 const api = useApi();
 const route = useRoute();
+const { isAuthenticated } = useSession();
+const { show: showAuthModal } = useAuthModal();
 
 const orderId = String(route.params.id);
 const order = ref<MyOrderDetail | null>(null);
@@ -78,10 +88,15 @@ const error = ref("");
 
 const canCancel = computed(
   () =>
-    order.value !== null && ["draft", "confirmed"].includes(order.value.status),
+    order.value !== null && ["new", "confirmed"].includes(order.value.status),
 );
 
 async function loadOrder(): Promise<void> {
+  if (!isAuthenticated.value) {
+    showAuthModal();
+    return;
+  }
+
   pending.value = true;
   error.value = "";
 
@@ -92,7 +107,7 @@ async function loadOrder(): Promise<void> {
     );
 
     if (response.status === 401) {
-      await navigateTo(`/login?next=/orders/${orderId}`);
+      showAuthModal();
       return;
     }
 
@@ -126,4 +141,10 @@ async function cancelOrder(): Promise<void> {
 }
 
 onMounted(loadOrder);
+
+watch(isAuthenticated, (value) => {
+  if (value) {
+    void loadOrder();
+  }
+});
 </script>

@@ -11,6 +11,9 @@ from myasnaya_derevnya.modules.sales.application.dto import (
     OrderLineItem,
     OrderListItem,
 )
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
+)
 from myasnaya_derevnya.modules.sales.infrastructure.readers.order.base import (
     OrderReader,
 )
@@ -34,6 +37,7 @@ class SQLAlchemyOrderReader(OrderReader):
         search: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        exclude_drafts: bool = False,
     ) -> tuple[list[OrderListItem], int]:
         conditions = self._conditions(
             org_unit_ids=org_unit_ids,
@@ -41,6 +45,7 @@ class SQLAlchemyOrderReader(OrderReader):
             day=day,
             customer_id=customer_id,
             search=search,
+            exclude_drafts=exclude_drafts,
         )
 
         total = await self._session.scalar(
@@ -99,6 +104,12 @@ class SQLAlchemyOrderReader(OrderReader):
                 planned_at=row["planned_at"],
                 total=int(sums.get(row["id"], (0, 0))[0]),
                 line_count=int(sums.get(row["id"], (0, 0))[1]),
+                fulfillment_type=row["fulfillment_type"],
+                payment_method=row["payment_method"],
+                payment_status=row["payment_status"],
+                payment_provider=row["payment_provider"],
+                payment_provider_id=row["payment_provider_id"],
+                paid_at=row["paid_at"],
             )
             for row in rows
         ]
@@ -172,6 +183,12 @@ class SQLAlchemyOrderReader(OrderReader):
             completed_at=row["completed_at"],
             cancelled_at=row["cancelled_at"],
             total=total,
+            fulfillment_type=row["fulfillment_type"],
+            payment_method=row["payment_method"],
+            payment_status=row["payment_status"],
+            payment_provider=row["payment_provider"],
+            payment_provider_id=row["payment_provider_id"],
+            paid_at=row["paid_at"],
             lines=items,
             cost_total=cost_total,
             margin_total=margin_total,
@@ -185,6 +202,7 @@ class SQLAlchemyOrderReader(OrderReader):
         day: date | None,
         customer_id: UUID | None,
         search: str | None,
+        exclude_drafts: bool = False,
     ) -> list[object]:
         conditions: list[object] = []
 
@@ -193,6 +211,8 @@ class SQLAlchemyOrderReader(OrderReader):
 
         if statuses:
             conditions.append(ORDERS_TABLE.c.status.in_(statuses))
+        elif exclude_drafts:
+            conditions.append(ORDERS_TABLE.c.status != OrderStatus.DRAFT.value)
 
         if day is not None:
             conditions.append(ORDERS_TABLE.c.day == day)

@@ -19,5 +19,11 @@ class OrderRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def get_open_draft(
+        self, customer_id: UUID, org_unit_id: UUID
+    ) -> Order | None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def next_number(self, org_unit_id: UUID, day: date) -> int:
         raise NotImplementedError

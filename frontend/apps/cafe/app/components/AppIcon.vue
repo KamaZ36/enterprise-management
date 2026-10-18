@@ -35,6 +35,8 @@ const ICONS: Record<string, string> = {
   user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   check: '<path d="M20 6L9 17l-5-5"/>',
   cart: '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.5 12.2a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L22 7H6"/>',
+  truck:
+    '<path d="M2 7h11v8H2z"/><path d="M13 10h4l4 3v2h-8z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/>',
 };
 
 const props = defineProps<{ name: string; size?: number }>();

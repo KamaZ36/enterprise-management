@@ -4,11 +4,7 @@ from uuid import uuid7
 
 import pytest
 
-from myasnaya_derevnya.modules.sales.domain.entities.order import (
-    Order,
-    OrderChannel,
-    OrderStatus,
-)
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order
 from myasnaya_derevnya.modules.sales.domain.errors import (
     EmptyOrderLineError,
     NegativePriceError,
@@ -16,6 +12,12 @@ from myasnaya_derevnya.modules.sales.domain.errors import (
     OrderIsNotDraftError,
     OrderStatusTransitionError,
     TimezoneRequiredError,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
 )
 
 
@@ -66,9 +68,9 @@ def test_naive_planned_time_is_rejected() -> None:
         )
 
 
-def test_confirmed_order_cannot_be_edited() -> None:
+def test_submitted_order_cannot_be_edited() -> None:
     order = make_order()
-    order.set_status(OrderStatus.CONFIRMED)
+    order.submit()
 
     assert not order.is_editable
 
@@ -92,6 +94,7 @@ def test_statuses_move_only_forward() -> None:
         order.set_status(OrderStatus.COMPLETED)
 
     for status in (
+        OrderStatus.NEW,
         OrderStatus.CONFIRMED,
         OrderStatus.PREPARING,
         OrderStatus.READY,
@@ -109,6 +112,7 @@ def test_statuses_move_only_forward() -> None:
 def test_completed_order_cannot_be_cancelled() -> None:
     order = make_order()
     for status in (
+        OrderStatus.NEW,
         OrderStatus.CONFIRMED,
         OrderStatus.PREPARING,
         OrderStatus.READY,

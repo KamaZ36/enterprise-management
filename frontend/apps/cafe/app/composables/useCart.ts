@@ -14,7 +14,10 @@ export type CartLine = {
   image_url: string | null;
 };
 
+export type Fulfillment = "pickup" | "delivery";
+
 const STORAGE_KEY = "cafe_cart";
+const FULFILLMENT_KEY = "cafe_fulfillment";
 
 
 export function stepFor(unit: string | null | undefined): number {
@@ -29,6 +32,7 @@ export function firstQuantityFor(unit: string | null | undefined): number {
 
 export function useCart() {
   const lines = useState<CartLine[]>("cafe-cart", () => []);
+  const fulfillment = useState<Fulfillment>("cafe-fulfillment", () => "pickup");
 
   if (import.meta.client) {
     onMounted(() => {
@@ -39,6 +43,11 @@ export function useCart() {
         }
       } catch {
         lines.value = [];
+      }
+
+      const storedFulfillment = window.localStorage.getItem(FULFILLMENT_KEY);
+      if (storedFulfillment === "pickup" || storedFulfillment === "delivery") {
+        fulfillment.value = storedFulfillment;
       }
     });
 
@@ -53,6 +62,14 @@ export function useCart() {
       },
       { deep: true },
     );
+
+    watch(fulfillment, (value) => {
+      try {
+        window.localStorage.setItem(FULFILLMENT_KEY, value);
+      } catch {
+
+      }
+    });
   }
 
 
@@ -138,15 +155,29 @@ export function useCart() {
     lines.value = [];
   }
 
+  function hydrate(next: CartLine[]): void {
+    lines.value = next;
+  }
+
+  const apiLines = computed(() =>
+    lines.value.map((line) => ({
+      nomenclature_id: line.nomenclature_id,
+      quantity: String(trimQuantity(line.quantity)),
+    })),
+  );
+
   return {
     lines,
     count,
     total,
+    fulfillment,
+    apiLines,
     add,
     setQuantity,
     increase,
     decrease,
     remove,
     clear,
+    hydrate,
   };
 }

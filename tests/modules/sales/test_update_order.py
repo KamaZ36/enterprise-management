@@ -13,15 +13,17 @@ from myasnaya_derevnya.modules.sales.application.interactors.update_order import
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import (
-    Order,
-    OrderChannel,
-    OrderStatus,
-)
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order
 from myasnaya_derevnya.modules.sales.domain.errors import (
     NotSoldAtPointError,
     OrderIsNotDraftError,
     OrderNotFoundError,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
 )
 
 PLANNED_AT = datetime(2026, 10, 14, 12, 0, tzinfo=UTC)
@@ -187,7 +189,7 @@ async def test_non_draft_cannot_be_edited() -> None:
         user_id=staff_id, staff={staff_id}, prices={nomenclature_id: 1000}
     )
     order = await make_draft(repository)
-    order.set_status(OrderStatus.CONFIRMED)
+    order.submit()
     await repository.save(order)
 
     with pytest.raises(OrderIsNotDraftError):

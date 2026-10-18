@@ -1,110 +1,29 @@
 from datetime import datetime
 from decimal import Decimal
-from enum import StrEnum
 from uuid import UUID, uuid7
 
+from myasnaya_derevnya.modules.sales.domain.entities.order_line import OrderLine
 from myasnaya_derevnya.modules.sales.domain.errors import (
-    EmptyOrderLineError,
-    NegativePriceError,
     OrderAlreadyClosedError,
     OrderIsNotDraftError,
     OrderStatusTransitionError,
     TimezoneRequiredError,
 )
+from myasnaya_derevnya.modules.sales.domain.value_objects.fulfillment import (
+    FulfillmentType,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    TRANSITIONS,
+    OrderStatus,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.payment import (
+    PaymentMethod,
+    PaymentStatus,
+)
 from myasnaya_derevnya.utils import get_datetime_utc
-
-
-class OrderStatus(StrEnum):
-    NEW = "new"
-    DRAFT = "draft"
-    CONFIRMED = "confirmed"
-    PREPARING = "preparing"
-    READY = "ready"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-
-
-class OrderChannel(StrEnum):
-    SITE = "site"
-    POS = "pos"
-    PHONE = "phone"
-
-
-TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
-    OrderStatus.DRAFT: {OrderStatus.CONFIRMED, OrderStatus.CANCELLED},
-    OrderStatus.CONFIRMED: {OrderStatus.PREPARING, OrderStatus.CANCELLED},
-    OrderStatus.PREPARING: {OrderStatus.READY, OrderStatus.CANCELLED},
-    OrderStatus.READY: {OrderStatus.COMPLETED, OrderStatus.CANCELLED},
-    OrderStatus.COMPLETED: set(),
-    OrderStatus.CANCELLED: set(),
-}
-
-
-class OrderLine:
-    def __init__(
-        self,
-        id_: UUID,
-        nomenclature_id: UUID,
-        quantity: Decimal,
-        unit_price: int,
-        cost_kopecks: int | None = None,
-    ) -> None:
-        self._id = id_
-        self._nomenclature_id = nomenclature_id
-        self._quantity = quantity
-        self._unit_price = unit_price
-        self._cost_kopecks = cost_kopecks
-
-    @classmethod
-    def create(
-        cls, nomenclature_id: UUID, quantity: Decimal, unit_price: int
-    ) -> OrderLine:
-        if quantity <= 0:
-            raise EmptyOrderLineError()
-
-        if unit_price < 0:
-            raise NegativePriceError()
-
-        return cls(
-            id_=uuid7(),
-            nomenclature_id=nomenclature_id,
-            quantity=quantity,
-            unit_price=unit_price,
-        )
-
-    @property
-    def id(self) -> UUID:
-        return self._id
-
-    @property
-    def nomenclature_id(self) -> UUID:
-        return self._nomenclature_id
-
-    @property
-    def quantity(self) -> Decimal:
-        return self._quantity
-
-    @property
-    def unit_price(self) -> int:
-        return self._unit_price
-
-    @property
-    def cost_kopecks(self) -> int | None:
-        return self._cost_kopecks
-
-    @property
-    def total(self) -> int:
-        return int(self._quantity * self._unit_price)
-
-    @property
-    def margin(self) -> int | None:
-        if self._cost_kopecks is None:
-            return None
-
-        return self.total - self._cost_kopecks
-
-    def set_cost(self, cost_kopecks: int) -> None:
-        self._cost_kopecks = cost_kopecks
 
 
 class Order:
@@ -124,6 +43,12 @@ class Order:
         completed_at: datetime | None = None,
         cancelled_at: datetime | None = None,
         contact_phone: str | None = None,
+        fulfillment_type: FulfillmentType = FulfillmentType.PICKUP,
+        payment_method: PaymentMethod = PaymentMethod.ON_PICKUP,
+        payment_status: PaymentStatus = PaymentStatus.PENDING,
+        payment_provider: str | None = None,
+        payment_provider_id: str | None = None,
+        paid_at: datetime | None = None,
         lines: list[OrderLine] | None = None,
     ) -> None:
         self._id = id_
@@ -140,6 +65,12 @@ class Order:
         self._completed_at = completed_at
         self._cancelled_at = cancelled_at
         self._contact_phone = contact_phone
+        self._fulfillment_type = fulfillment_type
+        self._payment_method = payment_method
+        self._payment_status = payment_status
+        self._payment_provider = payment_provider
+        self._payment_provider_id = payment_provider_id
+        self._paid_at = paid_at
         self._lines = lines if lines is not None else []
 
     @classmethod
@@ -152,6 +83,9 @@ class Order:
         planned_at: datetime | None = None,
         comment: str | None = None,
         contact_phone: str | None = None,
+        status: OrderStatus = OrderStatus.DRAFT,
+        fulfillment_type: FulfillmentType = FulfillmentType.PICKUP,
+        payment_method: PaymentMethod = PaymentMethod.ON_PICKUP,
     ) -> Order:
         if planned_at is not None and planned_at.tzinfo is None:
             raise TimezoneRequiredError()
@@ -164,12 +98,14 @@ class Order:
             channel=channel,
             created_by=created_by,
             customer_id=customer_id,
-            status=OrderStatus.DRAFT,
+            status=status,
             created_at=now,
             updated_at=now,
             planned_at=planned_at,
             comment=comment,
             contact_phone=contact_phone,
+            fulfillment_type=fulfillment_type,
+            payment_method=payment_method,
         )
 
     @property
@@ -211,6 +147,30 @@ class Order:
     @property
     def contact_phone(self) -> str | None:
         return self._contact_phone
+
+    @property
+    def fulfillment_type(self) -> FulfillmentType:
+        return self._fulfillment_type
+
+    @property
+    def payment_method(self) -> PaymentMethod:
+        return self._payment_method
+
+    @property
+    def payment_status(self) -> PaymentStatus:
+        return self._payment_status
+
+    @property
+    def payment_provider(self) -> str | None:
+        return self._payment_provider
+
+    @property
+    def payment_provider_id(self) -> str | None:
+        return self._payment_provider_id
+
+    @property
+    def paid_at(self) -> datetime | None:
+        return self._paid_at
 
     @property
     def created_at(self) -> datetime:
@@ -281,6 +241,36 @@ class Order:
     def assign_number(self, number: int) -> None:
         self._number = number
         self._touch()
+
+    def set_fulfillment(
+        self, fulfillment_type: FulfillmentType, payment_method: PaymentMethod
+    ) -> None:
+        if not self.is_editable:
+            raise OrderIsNotDraftError()
+
+        self._fulfillment_type = fulfillment_type
+        self._payment_method = payment_method
+        self._touch()
+
+    def submit(self) -> None:
+        """Подтверждает корзину: ``draft → new``."""
+        if not self.is_editable:
+            raise OrderIsNotDraftError()
+
+        self.set_status(OrderStatus.NEW)
+
+    def mark_paid(
+        self, *, provider: str | None = None, provider_id: str | None = None
+    ) -> None:
+        self._payment_status = PaymentStatus.PAID
+        self._payment_provider = provider or self._payment_provider
+        self._payment_provider_id = provider_id or self._payment_provider_id
+        self._paid_at = get_datetime_utc()
+        self._touch()
+
+    @property
+    def is_paid(self) -> bool:
+        return self._payment_status is PaymentStatus.PAID
 
     def apply_costs(self, costs_kopecks: list[int]) -> None:
         """Проставляет себестоимость строк, полученную при списании со склада."""

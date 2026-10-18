@@ -74,6 +74,26 @@
       <el-table-column label="Канал" width="120">
         <template #default="{ row }">{{ CHANNEL_TITLES[row.channel] ?? row.channel }}</template>
       </el-table-column>
+      <el-table-column label="Получение" width="130">
+        <template #default="{ row }">
+          {{ FULFILLMENT_TITLES[row.fulfillment_type] ?? row.fulfillment_type }}
+        </template>
+      </el-table-column>
+      <el-table-column label="Оплата" width="150">
+        <template #default="{ row }">
+          <el-tag v-if="row.payment_status === 'paid'" type="success" effect="light">
+            Оплачен
+          </el-tag>
+          <el-tag
+            v-else-if="row.payment_method === 'online'"
+            type="warning"
+            effect="light"
+          >
+            Ожидает оплаты
+          </el-tag>
+          <el-tag v-else type="info" effect="light">При получении</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="Позиций" width="100" align="right">
         <template #default="{ row }">{{ row.line_count }}</template>
       </el-table-column>
@@ -181,6 +201,7 @@ type OrderListItem = components["schemas"]["OrderListItemSchema"];
 
 const STATUS_TITLES: Record<string, string> = {
   draft: "Черновик",
+  new: "Новый",
   confirmed: "Подтверждён",
   preparing: "Готовится",
   ready: "Готов",
@@ -190,6 +211,7 @@ const STATUS_TITLES: Record<string, string> = {
 
 const STATUS_TYPES: Record<string, "success" | "warning" | "info" | "danger"> = {
   draft: "info",
+  new: "warning",
   confirmed: "warning",
   preparing: "warning",
   ready: "success",
@@ -203,8 +225,13 @@ const CHANNEL_TITLES: Record<string, string> = {
   phone: "Телефон",
 };
 
+const FULFILLMENT_TITLES: Record<string, string> = {
+  pickup: "Самовывоз",
+  delivery: "Доставка",
+};
+
 const PAGE_SIZE = 50;
-const ACTIVE_STATUSES = ["draft", "confirmed", "preparing", "ready"];
+const ACTIVE_STATUSES = ["new", "confirmed", "preparing", "ready"];
 
 const api = useApi();
 const { can } = useCurrentUser();

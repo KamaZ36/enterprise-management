@@ -60,4 +60,5 @@ class ListOrdersInteractor:
             search=query.search,
             limit=query.limit,
             offset=query.offset,
+            exclude_drafts=True,
         )

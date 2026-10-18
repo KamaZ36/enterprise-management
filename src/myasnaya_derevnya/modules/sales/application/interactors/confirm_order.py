@@ -6,9 +6,15 @@ from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.sales.application.services.order_access import (
     OrderAccess,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import OrderStatus
-from myasnaya_derevnya.modules.sales.domain.errors import OrderNotFoundError
+from myasnaya_derevnya.modules.sales.domain.errors import (
+    OrderNotFoundError,
+    OrderNotPaidError,
+)
 from myasnaya_derevnya.modules.sales.domain.permissions import UPDATE_ORDER
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
+    OrderStatus,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.payment import PaymentMethod
 from myasnaya_derevnya.modules.sales.infrastructure.repositories.order.base import (
     OrderRepository,
 )
@@ -43,6 +49,9 @@ class ConfirmOrderInteractor:
         await self._order_access.ensure_can_act(
             user_id=user_id, order=order, permission=UPDATE_ORDER
         )
+
+        if order.payment_method is PaymentMethod.ONLINE and not order.is_paid:
+            raise OrderNotPaidError()
 
         if order.number is None:
             order.assign_number(

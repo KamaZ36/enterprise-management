@@ -22,6 +22,10 @@ from myasnaya_derevnya.modules.sales.application.interactors.create_order import
     CreateOrderInteractor,
     OrderLineCommand,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.get_cart import (
+    GetCartInteractor,
+    GetCartQuery,
+)
 from myasnaya_derevnya.modules.sales.application.interactors.get_my_order import (
     GetMyOrderInteractor,
     GetMyOrderQuery,
@@ -46,13 +50,22 @@ from myasnaya_derevnya.modules.sales.application.interactors.start_preparing_ord
     StartPreparingOrderCommand,
     StartPreparingOrderInteractor,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.submit_cart import (
+    SubmitCartCommand,
+    SubmitCartInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.update_cart import (
+    CartLineCommand,
+    UpdateCartCommand,
+    UpdateCartInteractor,
+)
 from myasnaya_derevnya.modules.sales.application.interactors.update_order import (
     UpdateOrderCommand,
     UpdateOrderInteractor,
     UpdateOrderLineCommand,
 )
-from myasnaya_derevnya.modules.sales.domain.entities.order import OrderChannel
 from myasnaya_derevnya.modules.sales.presentation.api.v1.schemas import (
+    CartSchema,
     CreatedOrderSchema,
     CreateOrderSchema,
     MyOrderDetailSchema,
@@ -61,6 +74,8 @@ from myasnaya_derevnya.modules.sales.presentation.api.v1.schemas import (
     OrderDetailSchema,
     OrderListItemSchema,
     OrderListSchema,
+    SubmitCartSchema,
+    UpdateCartSchema,
     UpdateOrderSchema,
 )
 
@@ -243,17 +258,23 @@ async def get_my_order(request: Request, order_id: UUID) -> MyOrderDetailSchema:
     return MyOrderDetailSchema.from_dto(order)
 
 
-@router.post(
-    "/me/orders", response_model=CreatedOrderSchema, description="Оформить заказ"
-)
-async def create_my_order(request: Request, data: CreateOrderSchema) -> JSONResponse:
-    command = CreateOrderCommand(
+@router.get("/me/cart", response_model=CartSchema, description="Моя корзина")
+async def get_cart(request: Request, org_unit_id: UUID) -> CartSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetCartInteractor)
+        cart = await interactor(GetCartQuery(org_unit_id=org_unit_id))
+
+    return CartSchema.from_dto(cart)
+
+
+@router.put("/me/cart", response_model=CartSchema, description="Сохранить корзину")
+async def update_cart(request: Request, data: UpdateCartSchema) -> CartSchema:
+    command = UpdateCartCommand(
         org_unit_id=data.org_unit_id,
-        channel=OrderChannel.SITE,
-        planned_at=data.planned_at,
+        fulfillment_type=data.fulfillment_type,
         comment=data.comment,
         lines=tuple(
-            OrderLineCommand(
+            CartLineCommand(
                 nomenclature_id=line.nomenclature_id, quantity=line.quantity
             )
             for line in data.lines
@@ -261,8 +282,21 @@ async def create_my_order(request: Request, data: CreateOrderSchema) -> JSONResp
     )
 
     async with container(context={Request: request}) as context:
-        interactor = await context.get(CreateOrderInteractor)
-        order_id = await interactor(command)
+        interactor = await context.get(UpdateCartInteractor)
+        cart = await interactor(command)
+
+    return CartSchema.from_dto(cart)
+
+
+@router.post(
+    "/me/cart/submit",
+    response_model=CreatedOrderSchema,
+    description="Оформить заказ из корзины",
+)
+async def submit_cart(request: Request, data: SubmitCartSchema) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(SubmitCartInteractor)
+        order_id = await interactor(SubmitCartCommand(org_unit_id=data.org_unit_id))
 
     return JSONResponse(status_code=201, content={"order_id": str(order_id)})
 

@@ -12,6 +12,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -33,6 +34,12 @@ ORDERS_TABLE = Table(
     Column("planned_at", DateTime(timezone=True), nullable=True),
     Column("comment", String(512), nullable=True),
     Column("contact_phone", String(32), nullable=True),
+    Column("fulfillment_type", String(16), nullable=False, server_default="pickup"),
+    Column("payment_method", String(16), nullable=False, server_default="on_pickup"),
+    Column("payment_status", String(16), nullable=False, server_default="pending"),
+    Column("payment_provider", String(32), nullable=True),
+    Column("payment_provider_id", String(128), nullable=True),
+    Column("paid_at", DateTime(timezone=True), nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column(
         "updated_at",
@@ -47,6 +54,13 @@ ORDERS_TABLE = Table(
     Index("ix_orders_org_unit_id", "org_unit_id"),
     Index("ix_orders_status", "status"),
     Index("ix_orders_customer_id", "customer_id"),
+    Index(
+        "uq_orders_open_cart",
+        "customer_id",
+        "org_unit_id",
+        unique=True,
+        postgresql_where=text("status = 'draft'"),
+    ),
     schema=DATABASE_SCHEMA,
 )
 

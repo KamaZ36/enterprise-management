@@ -13,6 +13,9 @@ from myasnaya_derevnya.modules.sales.application.interactors.confirm_order impor
 from myasnaya_derevnya.modules.sales.application.interactors.create_order import (
     CreateOrderInteractor,
 )
+from myasnaya_derevnya.modules.sales.application.interactors.get_cart import (
+    GetCartInteractor,
+)
 from myasnaya_derevnya.modules.sales.application.interactors.get_my_order import (
     GetMyOrderInteractor,
 )
@@ -30,6 +33,12 @@ from myasnaya_derevnya.modules.sales.application.interactors.mark_order_ready im
 )
 from myasnaya_derevnya.modules.sales.application.interactors.start_preparing_order import (
     StartPreparingOrderInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.submit_cart import (
+    SubmitCartInteractor,
+)
+from myasnaya_derevnya.modules.sales.application.interactors.update_cart import (
+    UpdateCartInteractor,
 )
 from myasnaya_derevnya.modules.sales.application.interactors.update_order import (
     UpdateOrderInteractor,
@@ -74,3 +83,6 @@ class SalesDepProvider(Provider):
         StartPreparingOrderInteractor, scope=Scope.REQUEST
     )
     mark_order_ready_interactor = provide(MarkOrderReadyInteractor, scope=Scope.REQUEST)
+    get_cart_interactor = provide(GetCartInteractor, scope=Scope.REQUEST)
+    update_cart_interactor = provide(UpdateCartInteractor, scope=Scope.REQUEST)
+    submit_cart_interactor = provide(SubmitCartInteractor, scope=Scope.REQUEST)

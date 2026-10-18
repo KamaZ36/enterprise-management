@@ -4,7 +4,10 @@ from uuid import uuid7
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from myasnaya_derevnya.modules.sales.domain.entities.order import Order, OrderChannel
+from myasnaya_derevnya.modules.sales.domain.entities.order import Order
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
 from myasnaya_derevnya.modules.sales.infrastructure.readers.order.sqlalchemy import (
     SQLAlchemyOrderReader,
 )

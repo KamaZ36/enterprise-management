@@ -1,11 +1,10 @@
-
-import { trimQuantity } from "~/utils/money";
-
 export function useCheckout() {
   const api = useApi();
   const { active } = useCafe();
-  const { lines, clear } = useCart();
+  const { lines, fulfillment, clear } = useCart();
+  const { push } = useCartServer();
   const { isAuthenticated } = useSession();
+  const { show: showAuthModal } = useAuthModal();
 
   const saving = ref(false);
   const error = ref("");
@@ -18,8 +17,13 @@ export function useCheckout() {
       return;
     }
 
+    if (fulfillment.value === "delivery") {
+      error.value = "Доставка пока в разработке — выберите самовывоз";
+      return;
+    }
+
     if (!isAuthenticated.value) {
-      await navigateTo("/login?next=/");
+      showAuthModal();
       return;
     }
 
@@ -32,24 +36,16 @@ export function useCheckout() {
     saving.value = true;
 
     try {
-      const {
-        data,
-        response,
-        error: failure,
-      } = await api.POST("/api/sales/me/orders", {
-        body: {
-          org_unit_id: cafe.id,
-          channel: "site",
-          planned_at: null,
-          comment: null,
-          lines: lines.value.map((line) => ({
-            nomenclature_id: line.nomenclature_id,
+      const saved = await push(cafe.id);
+      if (!saved) {
+        error.value = "Не удалось сохранить корзину";
+        return;
+      }
 
-
-            quantity: String(trimQuantity(line.quantity)),
-          })),
-        },
-      });
+      const { data, response, error: failure } = await api.POST(
+        "/api/sales/me/cart/submit",
+        { body: { org_unit_id: cafe.id } },
+      );
 
       if (!response.ok || !data) {
         const payload = failure as { message?: string } | undefined;
@@ -58,7 +54,7 @@ export function useCheckout() {
         return;
       }
 
-      const orderId = (data as { order_id?: string }).order_id;
+      const orderId = data.order_id;
       clear();
       await navigateTo(orderId ? `/orders/${orderId}` : "/orders");
     } finally {

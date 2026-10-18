@@ -4,7 +4,12 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from myasnaya_derevnya.modules.sales.domain.entities.order import OrderChannel
+from myasnaya_derevnya.modules.sales.domain.value_objects.fulfillment import (
+    FulfillmentType,
+)
+from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
+    OrderChannel,
+)
 
 
 class OrderListItemSchema(BaseModel):
@@ -18,6 +23,12 @@ class OrderListItemSchema(BaseModel):
     planned_at: datetime | None
     total: int
     line_count: int
+    fulfillment_type: str
+    payment_method: str
+    payment_status: str
+    payment_provider: str | None
+    payment_provider_id: str | None
+    paid_at: datetime | None
 
     @classmethod
     def from_dto(cls, item) -> OrderListItemSchema:
@@ -32,6 +43,12 @@ class OrderListItemSchema(BaseModel):
             planned_at=item.planned_at,
             total=item.total,
             line_count=item.line_count,
+            fulfillment_type=item.fulfillment_type,
+            payment_method=item.payment_method,
+            payment_status=item.payment_status,
+            payment_provider=item.payment_provider,
+            payment_provider_id=item.payment_provider_id,
+            paid_at=item.paid_at,
         )
 
 
@@ -102,6 +119,12 @@ class OrderDetailSchema(BaseModel):
     completed_at: datetime | None
     cancelled_at: datetime | None
     total: int
+    fulfillment_type: str
+    payment_method: str
+    payment_status: str
+    payment_provider: str | None
+    payment_provider_id: str | None
+    paid_at: datetime | None
     lines: list[OrderLineViewSchema]
     cost_total: int | None = None
     margin_total: int | None = None
@@ -124,6 +147,12 @@ class OrderDetailSchema(BaseModel):
             completed_at=item.completed_at,
             cancelled_at=item.cancelled_at,
             total=item.total,
+            fulfillment_type=item.fulfillment_type,
+            payment_method=item.payment_method,
+            payment_status=item.payment_status,
+            payment_provider=item.payment_provider,
+            payment_provider_id=item.payment_provider_id,
+            paid_at=item.paid_at,
             lines=[OrderLineViewSchema.from_dto(line) for line in item.lines],
             cost_total=item.cost_total,
             margin_total=item.margin_total,
@@ -140,6 +169,9 @@ class MyOrderListItemSchema(BaseModel):
     planned_at: datetime | None
     total: int
     line_count: int
+    fulfillment_type: str
+    payment_method: str
+    payment_status: str
 
     @classmethod
     def from_dto(cls, item) -> MyOrderListItemSchema:
@@ -153,6 +185,9 @@ class MyOrderListItemSchema(BaseModel):
             planned_at=item.planned_at,
             total=item.total,
             line_count=item.line_count,
+            fulfillment_type=item.fulfillment_type,
+            payment_method=item.payment_method,
+            payment_status=item.payment_status,
         )
 
 
@@ -173,6 +208,10 @@ class MyOrderDetailSchema(BaseModel):
     completed_at: datetime | None
     cancelled_at: datetime | None
     total: int
+    fulfillment_type: str
+    payment_method: str
+    payment_status: str
+    paid_at: datetime | None
     lines: list[OrderLineViewSchema]
 
     @classmethod
@@ -189,5 +228,60 @@ class MyOrderDetailSchema(BaseModel):
             completed_at=item.completed_at,
             cancelled_at=item.cancelled_at,
             total=item.total,
+            fulfillment_type=item.fulfillment_type,
+            payment_method=item.payment_method,
+            payment_status=item.payment_status,
+            paid_at=item.paid_at,
             lines=[OrderLineViewSchema.from_dto(line) for line in item.lines],
         )
+
+
+class CartLineSchema(BaseModel):
+    nomenclature_id: UUID
+    quantity: Decimal
+    unit_price: int
+    total: int
+
+    @classmethod
+    def from_dto(cls, item) -> CartLineSchema:
+        return cls(
+            nomenclature_id=item.nomenclature_id,
+            quantity=item.quantity,
+            unit_price=item.unit_price,
+            total=item.total,
+        )
+
+
+class CartSchema(BaseModel):
+    id: UUID | None
+    org_unit_id: UUID
+    fulfillment_type: str
+    payment_method: str
+    payment_status: str
+    comment: str | None
+    total: int
+    lines: list[CartLineSchema]
+
+    @classmethod
+    def from_dto(cls, cart) -> CartSchema:
+        return cls(
+            id=cart.id,
+            org_unit_id=cart.org_unit_id,
+            fulfillment_type=cart.fulfillment_type,
+            payment_method=cart.payment_method,
+            payment_status=cart.payment_status,
+            comment=cart.comment,
+            total=cart.total,
+            lines=[CartLineSchema.from_dto(line) for line in cart.lines],
+        )
+
+
+class UpdateCartSchema(BaseModel):
+    org_unit_id: UUID
+    fulfillment_type: FulfillmentType = FulfillmentType.PICKUP
+    comment: str | None = None
+    lines: list[OrderLineCommandSchema] = []
+
+
+class SubmitCartSchema(BaseModel):
+    org_unit_id: UUID

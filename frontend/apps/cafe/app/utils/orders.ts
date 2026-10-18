@@ -1,5 +1,6 @@
 export const ORDER_STATUS_TITLES: Record<string, string> = {
   draft: "Черновик",
+  new: "Принят, ждёт подтверждения",
   confirmed: "Подтверждён",
   preparing: "Готовится",
   ready: "Можно забирать",
@@ -9,6 +10,7 @@ export const ORDER_STATUS_TITLES: Record<string, string> = {
 
 const STATUS_CLASSES: Record<string, string> = {
   draft: "pill--info",
+  new: "pill--info",
   confirmed: "pill--warning",
   preparing: "pill--warning",
   ready: "pill--success",

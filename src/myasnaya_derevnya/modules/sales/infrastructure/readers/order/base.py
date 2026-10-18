@@ -17,6 +17,7 @@ class OrderReader(ABC):
         search: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        exclude_drafts: bool = False,
     ) -> tuple[list[OrderListItem], int]:
         raise NotImplementedError
 
