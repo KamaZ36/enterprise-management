@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 
 from myasnaya_derevnya.modules.inventory.application.dto import (
     BalanceListItem,
+    InventoryCountDetail,
+    InventoryCountLineItem,
+    InventoryCountListItem,
     LocationListItem,
     LotBalanceListItem,
     MovementListItem,
@@ -425,3 +428,95 @@ class UpdateTransferSchema(BaseModel):
     occurred_at: datetime
     lines: list[TransferLineSchema] = Field(min_length=1)
     comment: str | None = None
+
+
+class InventoryCountLineSchema(BaseModel):
+    nomenclature_id: UUID
+    counted_quantity: Decimal = Field(ge=0)
+    lot_code: str | None = None
+
+
+class CreateInventoryCountSchema(BaseModel):
+    org_unit_id: UUID
+    occurred_at: datetime
+    lines: list[InventoryCountLineSchema] = Field(min_length=1)
+    comment: str | None = None
+
+
+class UpdateInventoryCountSchema(BaseModel):
+    occurred_at: datetime
+    lines: list[InventoryCountLineSchema] = Field(min_length=1)
+    comment: str | None = None
+
+
+class InventoryCountListItemSchema(BaseModel):
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    line_count: int
+
+    @classmethod
+    def from_dto(
+        cls, item: InventoryCountListItem
+    ) -> InventoryCountListItemSchema:
+        return cls(
+            id=item.id,
+            org_unit_id=item.org_unit_id,
+            status=item.status,
+            occurred_at=item.occurred_at,
+            posted_at=item.posted_at,
+            comment=item.comment,
+            line_count=item.line_count,
+        )
+
+
+class InventoryCountLineViewSchema(BaseModel):
+    id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None
+    counted_quantity: Decimal
+    lot_code: str | None
+
+    @classmethod
+    def from_dto(cls, item: InventoryCountLineItem) -> InventoryCountLineViewSchema:
+        return cls(
+            id=item.id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            counted_quantity=item.counted_quantity,
+            lot_code=item.lot_code,
+        )
+
+
+class InventoryCountListSchema(BaseModel):
+    items: list[InventoryCountListItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class InventoryCountDetailSchema(BaseModel):
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    lines: list[InventoryCountLineViewSchema]
+
+    @classmethod
+    def from_dto(cls, detail: InventoryCountDetail) -> InventoryCountDetailSchema:
+        return cls(
+            id=detail.id,
+            org_unit_id=detail.org_unit_id,
+            status=detail.status,
+            occurred_at=detail.occurred_at,
+            posted_at=detail.posted_at,
+            comment=detail.comment,
+            lines=[
+                InventoryCountLineViewSchema.from_dto(line) for line in detail.lines
+            ],
+        )

@@ -129,6 +129,18 @@ class StockPostingHandle:
                 await self._lot_balance_repository.lock_many(fresh_lots)
             )
 
+    async def balance_quantity(
+        self, *, org_unit_id: UUID, nomenclature_id: UUID
+    ) -> Decimal:
+        """Учётное количество по заблокированному балансу."""
+        return self._locked_balance(org_unit_id, nomenclature_id).quantity
+
+    async def balance_average_cost(
+        self, *, org_unit_id: UUID, nomenclature_id: UUID
+    ) -> Decimal:
+        """Средняя себестоимость единицы по заблокированному балансу, рубли."""
+        return self._locked_balance(org_unit_id, nomenclature_id).average_unit_cost
+
     async def receive(
         self,
         *,

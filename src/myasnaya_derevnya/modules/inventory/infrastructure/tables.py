@@ -295,3 +295,55 @@ TRANSFER_LINES_TABLE = Table(
     Index("ix_transfer_lines_transfer_id", "transfer_id"),
     schema=DATABASE_SCHEMA,
 )
+
+
+INVENTORY_COUNTS_TABLE = Table(
+    "inventory_counts",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("status", String(32), nullable=False),
+    Column("occurred_at", DateTime(timezone=True), nullable=False),
+    Column("org_unit_id", UUID, nullable=False),
+    Column("comment", String(512), nullable=True),
+    Column("created_by", UUID, nullable=True),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column("posted_at", DateTime(timezone=True), nullable=True),
+    Index(
+        "ix_inventory_counts_org_unit_occurred_at",
+        "org_unit_id",
+        "occurred_at",
+    ),
+    Index("ix_inventory_counts_status", "status"),
+    schema=DATABASE_SCHEMA,
+)
+
+
+INVENTORY_COUNT_LINES_TABLE = Table(
+    "inventory_count_lines",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column(
+        "inventory_count_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.inventory_counts.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("nomenclature_id", UUID, nullable=False),
+    Column(
+        "lot_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.stock_lots.id", ondelete="RESTRICT"),
+        nullable=True,
+    ),
+    Column("lot_code", String(64), nullable=True),
+    Column("counted_quantity", QUANTITY, nullable=False),
+    CheckConstraint(
+        "counted_quantity >= 0", name="counted_quantity_non_negative"
+    ),
+    Index(
+        "ix_inventory_count_lines_inventory_count_id", "inventory_count_id"
+    ),
+    schema=DATABASE_SCHEMA,
+)

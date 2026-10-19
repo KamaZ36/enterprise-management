@@ -7,6 +7,8 @@ TEST_PREFIX = "PYTEST-"
 INVENTORY_TABLES = (
     "inventory.stock_movements",
     "inventory.stock_postings",
+    "inventory.inventory_count_lines",
+    "inventory.inventory_counts",
     "inventory.transfer_lines",
     "inventory.transfers",
     "inventory.receipt_lines",

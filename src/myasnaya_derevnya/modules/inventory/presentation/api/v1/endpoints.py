@@ -14,6 +14,28 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.list i
     ListBalancesInteractor,
     ListBalancesQuery,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.create import (
+    CreateInventoryCountCommand,
+    CreateInventoryCountInteractor,
+    InventoryCountLineCommand,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.get import (
+    GetInventoryCountInteractor,
+    GetInventoryCountQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.list import (
+    ListInventoryCountsInteractor,
+    ListInventoryCountsQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.post import (
+    PostInventoryCountCommand,
+    PostInventoryCountInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.update import (
+    UpdateInventoryCountCommand,
+    UpdateInventoryCountInteractor,
+    UpdateInventoryCountLineCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.locations.list import (
     ListLocationsInteractor,
 )
@@ -84,9 +106,14 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post
 from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     BalanceListSchema,
     BalanceSchema,
+    CreateInventoryCountSchema,
     CreateReceiptSchema,
     CreateTransferSchema,
     CreateWriteOffSchema,
+    InventoryCountDetailSchema,
+    InventoryCountLineSchema,
+    InventoryCountListItemSchema,
+    InventoryCountListSchema,
     LocationSchema,
     LotBalanceListSchema,
     LotBalanceSchema,
@@ -100,6 +127,7 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     TransferLineSchema,
     TransferListItemSchema,
     TransferListSchema,
+    UpdateInventoryCountSchema,
     UpdateTransferSchema,
     WriteOffDetailSchema,
     WriteOffLineSchema,
@@ -524,3 +552,135 @@ async def get_transfer(request: Request, transfer_id: UUID) -> TransferDetailSch
         detail = await interactor(GetTransferQuery(transfer_id=transfer_id))
 
     return TransferDetailSchema.from_dto(detail)
+
+
+def _inventory_count_lines(
+    lines: list[InventoryCountLineSchema],
+) -> list[InventoryCountLineCommand]:
+    return [
+        InventoryCountLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            counted_quantity=line.counted_quantity,
+            lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
+def _update_inventory_count_lines(
+    lines: list[InventoryCountLineSchema],
+) -> list[UpdateInventoryCountLineCommand]:
+    return [
+        UpdateInventoryCountLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            counted_quantity=line.counted_quantity,
+            lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
+@router.post(
+    "/inventory-counts",
+    description="Создать инвентаризацию (черновик)",
+    status_code=201,
+)
+async def create_inventory_count(
+    request: Request, data: CreateInventoryCountSchema
+) -> JSONResponse:
+    command = CreateInventoryCountCommand(
+        org_unit_id=data.org_unit_id,
+        occurred_at=data.occurred_at,
+        lines=_inventory_count_lines(data.lines),
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(CreateInventoryCountInteractor)
+        inventory_count_id = await interactor(command)
+
+    return JSONResponse(
+        status_code=201, content={"inventory_count_id": str(inventory_count_id)}
+    )
+
+
+@router.patch(
+    "/inventory-counts/{inventory_count_id}",
+    description="Изменить черновик инвентаризации",
+)
+async def update_inventory_count(
+    request: Request, inventory_count_id: UUID, data: UpdateInventoryCountSchema
+) -> JSONResponse:
+    command = UpdateInventoryCountCommand(
+        inventory_count_id=inventory_count_id,
+        occurred_at=data.occurred_at,
+        lines=_update_inventory_count_lines(data.lines),
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateInventoryCountInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/inventory-counts/{inventory_count_id}/post",
+    description="Провести инвентаризацию",
+)
+async def post_inventory_count(
+    request: Request, inventory_count_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(PostInventoryCountInteractor)
+        await interactor(
+            PostInventoryCountCommand(inventory_count_id=inventory_count_id)
+        )
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.get(
+    "/inventory-counts",
+    response_model=InventoryCountListSchema,
+    description="Журнал инвентаризаций",
+)
+async def list_inventory_counts(
+    request: Request,
+    org_unit_id: UUID | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    search: str | None = None,
+) -> InventoryCountListSchema:
+    query = ListInventoryCountsQuery(
+        org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListInventoryCountsInteractor)
+        page = await interactor(query)
+
+    return InventoryCountListSchema(
+        items=[InventoryCountListItemSchema.from_dto(item) for item in page.items],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
+@router.get(
+    "/inventory-counts/{inventory_count_id}",
+    response_model=InventoryCountDetailSchema,
+    description="Карточка инвентаризации",
+)
+async def get_inventory_count(
+    request: Request, inventory_count_id: UUID
+) -> InventoryCountDetailSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetInventoryCountInteractor)
+        detail = await interactor(
+            GetInventoryCountQuery(inventory_count_id=inventory_count_id)
+        )
+
+    return InventoryCountDetailSchema.from_dto(detail)

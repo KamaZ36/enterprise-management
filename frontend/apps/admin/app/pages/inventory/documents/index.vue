@@ -19,6 +19,9 @@
       <el-button v-if="canCreateDocument" @click="openWriteOffCreate">
         Новое списание
       </el-button>
+      <el-button v-if="canCreateDocument" @click="openInventoryCountCreate">
+        Новая инвентаризация
+      </el-button>
       <el-input
         v-model="filter"
         placeholder="Поставщик, номер документа или причина"
@@ -43,6 +46,7 @@
       <el-tab-pane label="Поступления" name="receipts" />
       <el-tab-pane label="Списания" name="write-offs" />
       <el-tab-pane label="Перемещения" name="transfers" />
+      <el-tab-pane label="Инвентаризации" name="inventory-counts" />
     </el-tabs>
 
     <el-alert
@@ -152,14 +156,57 @@
       </template>
     </el-table>
 
+    <el-table
+      v-else-if="tab === 'inventory-counts'"
+      v-loading="pending"
+      :data="inventoryCounts"
+      stripe
+      border
+      @row-click="openInventoryCount"
+    >
+      <el-table-column label="Дата" width="120">
+        <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
+      </el-table-column>
+      <el-table-column label="Подразделение" min-width="180">
+        <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
+      </el-table-column>
+      <el-table-column label="Комментарий" min-width="220">
+        <template #default="{ row }">{{ row.comment ?? "—" }}</template>
+      </el-table-column>
+      <el-table-column prop="line_count" label="Строк" width="90" align="right" />
+      <el-table-column label="Статус" width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 'posted' ? 'success' : 'info'" effect="light">
+            {{ row.status === "posted" ? "проведён" : "черновик" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column width="130" align="right">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.status === 'draft' && can('inventory.document.post')"
+            text
+            :disabled="icPosting"
+            @click.stop="postInventoryCount(row.id)"
+          >
+            Провести
+          </el-button>
+        </template>
+      </el-table-column>
+      <template #empty>
+        <el-empty description="Инвентаризаций пока нет" />
+      </template>
+    </el-table>
+
     <el-pagination
+      v-if="tab !== 'transfers'"
       v-model:current-page="page"
       class="pager"
       layout="prev, pager, next, total"
       :page-size="PAGE_SIZE"
-      :total="tab === 'receipts' ? receiptsTotal : writeOffsTotal"
+      :total="pagerTotal"
       :disabled="pending"
-      @current-change="load"
+      @current-change="onPageChange"
     />
 
 
@@ -592,6 +639,177 @@
         />
       </template>
     </el-drawer>
+
+    <el-dialog
+      v-model="icOpen"
+      :title="icEditingId ? 'Изменить инвентаризацию' : 'Новая инвентаризация'"
+      width="860"
+    >
+      <el-alert
+        v-if="icError"
+        :title="icError"
+        type="error"
+        :closable="false"
+        show-icon
+        class="page__error"
+      />
+
+      <el-form label-position="top" @submit.prevent>
+        <div class="form-grid">
+          <el-form-item label="Подразделение">
+            <el-select
+              v-model="icForm.org_unit_id"
+              style="width: 100%"
+              :disabled="Boolean(icEditingId)"
+            >
+              <LocationOptions :locations="locations" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="Дата и время">
+            <el-date-picker
+              v-model="icForm.occurred_at"
+              type="datetime"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </div>
+
+        <el-form-item label="Комментарий">
+          <el-input v-model="icForm.comment" placeholder="Необязательно" />
+        </el-form-item>
+
+        <div class="lines-head">
+          <span>Строки документа</span>
+          <el-button size="small" @click="addInventoryCountLine">Добавить строку</el-button>
+        </div>
+
+        <div class="line line--head line--count">
+          <span class="line__name">Номенклатура</span>
+          <span class="line__qty line__qty--book">Учёт</span>
+          <span class="line__qty">Факт</span>
+          <span class="line__lot">Партия</span>
+          <span class="line__action" />
+        </div>
+
+        <div v-for="(line, index) in icLines" :key="index" class="line line--count">
+          <el-select
+            v-model="line.nomenclature_id"
+            filterable
+            remote
+            placeholder="Начните вводить название или артикул"
+            :remote-method="(query: string) => searchNomenclature(line, query)"
+            class="line__name"
+          >
+            <el-option
+              v-for="option in line.options"
+              :key="option.id"
+              :label="option.sku ? `${option.name} · ${option.sku}` : option.name"
+              :value="option.id"
+            />
+          </el-select>
+
+          <span class="line__qty line__qty--book">{{ bookQuantity(line.nomenclature_id) }}</span>
+          <el-input
+            v-model="line.counted_quantity"
+            class="line__qty"
+            placeholder="например 12,5"
+          />
+          <el-input v-model="line.lot_code" class="line__lot" placeholder="если нужна" />
+          <el-button
+            text
+            type="danger"
+            :disabled="icLines.length === 1"
+            @click="removeInventoryCountLine(index)"
+          >
+            Убрать
+          </el-button>
+        </div>
+
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="Разница считается при проведении"
+          description="Фактическое количество сравнивается с учётным остатком в момент проведения: излишек приходуется по средней себестоимости, недостача списывается по FEFO или указанной партии."
+        />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="icOpen = false">Отмена</el-button>
+        <el-button :loading="icSaving" :disabled="!icCanSubmit" @click="saveInventoryCount(false)">
+          {{ icEditingId ? "Сохранить" : "Сохранить черновик" }}
+        </el-button>
+        <el-button
+          v-if="!icEditingId"
+          type="primary"
+          :loading="icSaving"
+          :disabled="!icCanSubmit"
+          @click="saveInventoryCount(true)"
+        >
+          Сохранить и провести
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-drawer v-model="icDrawerOpen" :title="icDrawerTitle" size="640px">
+      <template v-if="inventoryCountDetail">
+        <el-alert
+          v-if="icDetailError"
+          :title="icDetailError"
+          type="error"
+          :closable="false"
+          show-icon
+          class="page__error"
+        />
+
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="Дата">
+            {{ formatDate(inventoryCountDetail.occurred_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Подразделение">
+            {{ locationName(inventoryCountDetail.org_unit_id) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Статус">
+            <el-tag
+              :type="inventoryCountDetail.status === 'posted' ? 'success' : 'info'"
+              effect="light"
+            >
+              {{ inventoryCountDetail.status === "posted" ? "проведён" : "черновик" }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Проведён">
+            {{ inventoryCountDetail.posted_at ? formatDate(inventoryCountDetail.posted_at) : "нет" }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="inventoryCountDetail.comment" label="Комментарий" :span="2">
+            {{ inventoryCountDetail.comment }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-table :data="inventoryCountDetail.lines" border class="lines">
+          <el-table-column prop="nomenclature_name" label="Номенклатура" min-width="200" />
+          <el-table-column label="Факт" width="130" align="right">
+            <template #default="{ row }">{{ formatQuantity(row.counted_quantity) }}</template>
+          </el-table-column>
+          <el-table-column label="Партия" width="140">
+            <template #default="{ row }">{{ row.lot_code ?? "—" }}</template>
+          </el-table-column>
+        </el-table>
+
+        <div
+          v-if="inventoryCountDetail.status !== 'posted'"
+          style="display: flex; gap: 8px; margin-top: 16px"
+        >
+          <el-button @click="openInventoryCountEdit">Редактировать</el-button>
+          <el-button
+            type="primary"
+            :loading="icPosting"
+            @click="postInventoryCount(inventoryCountDetail.id)"
+          >
+            Провести
+          </el-button>
+        </div>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
@@ -608,6 +826,9 @@ type ReceiptListItem = components["schemas"]["ReceiptListItemSchema"];
 type ReceiptDetail = components["schemas"]["ReceiptDetailSchema"];
 type WriteOffListItem = components["schemas"]["WriteOffListItemSchema"];
 type WriteOffDetail = components["schemas"]["WriteOffDetailSchema"];
+type InventoryCountListItem =
+  components["schemas"]["InventoryCountListItemSchema"];
+type InventoryCountDetail = components["schemas"]["InventoryCountDetailSchema"];
 type Location = components["schemas"]["LocationSchema"];
 
 const PAGE_SIZE = 20;
@@ -617,12 +838,16 @@ const { can } = useCurrentUser();
 
 const canCreateDocument = computed(() => canAll(CAN.documentsCreate));
 
-const tab = ref<"receipts" | "write-offs" | "transfers">("receipts");
+const tab = ref<"receipts" | "write-offs" | "transfers" | "inventory-counts">(
+  "receipts",
+);
 const transfers = ref<components["schemas"]["TransferListItemSchema"][]>([]);
 const receipts = ref<ReceiptListItem[]>([]);
 const writeOffs = ref<WriteOffListItem[]>([]);
+const inventoryCounts = ref<InventoryCountListItem[]>([]);
 const receiptsTotal = ref(0);
 const writeOffsTotal = ref(0);
+const inventoryCountsTotal = ref(0);
 const locations = ref<Location[]>([]);
 const locationId = ref<string | null>(null);
 const page = ref(1);
@@ -791,8 +1016,69 @@ async function load(): Promise<void> {
   }
 }
 
+async function loadInventoryCounts(): Promise<void> {
+  pending.value = true;
+  error.value = "";
+
+  const { data, response } = await api.GET("/api/inventory/inventory-counts", {
+    params: {
+      query: {
+        org_unit_id: locationId.value ?? undefined,
+        limit: PAGE_SIZE,
+        offset: (page.value - 1) * PAGE_SIZE,
+        search: filter.value.trim() || undefined,
+      },
+    },
+  });
+
+  if (response.ok && data) {
+    inventoryCounts.value = data.items;
+    inventoryCountsTotal.value = data.total;
+  } else {
+    error.value = reasonOf(
+      response.status,
+      "Не удалось загрузить инвентаризации",
+    );
+  }
+
+  pending.value = false;
+}
+
+const pagerTotal = computed(() => {
+  if (tab.value === "receipts") {
+    return receiptsTotal.value;
+  }
+  if (tab.value === "write-offs") {
+    return writeOffsTotal.value;
+  }
+
+  return inventoryCountsTotal.value;
+});
+
+async function refresh(): Promise<void> {
+  if (tab.value === "transfers") {
+    await loadTransfers();
+    return;
+  }
+  if (tab.value === "inventory-counts") {
+    await loadInventoryCounts();
+    return;
+  }
+
+  await load();
+}
+
 async function reload(): Promise<void> {
   page.value = 1;
+  await refresh();
+}
+
+async function onPageChange(): Promise<void> {
+  if (tab.value === "inventory-counts") {
+    await loadInventoryCounts();
+    return;
+  }
+
   await load();
 }
 
@@ -1067,7 +1353,7 @@ function onFilter(): void {
 
   filterTimer = setTimeout(() => {
     page.value = 1;
-    void load();
+    void refresh();
   }, 300);
 }
 
@@ -1075,11 +1361,6 @@ function onFilter(): void {
 onMounted(async () => {
   await loadLocations();
   await load();
-});
-watch(tab, async (value) => {
-  if (value === "transfers") {
-    await loadTransfers();
-  }
 });
 
 async function loadTransfers(): Promise<void> {
@@ -1186,7 +1467,6 @@ async function createTransfer(postAfterCreate: boolean): Promise<void> {
       notice.value = "Изменения сохранены";
       await openTransfer({ id: editedId });
       await reload();
-      await loadTransfers();
       return;
     }
 
@@ -1227,7 +1507,6 @@ async function createTransfer(postAfterCreate: boolean): Promise<void> {
       : "Черновик перемещения сохранён";
     tab.value = "transfers";
     await reload();
-    await loadTransfers();
   } finally {
     trSaving.value = false;
   }
@@ -1285,7 +1564,6 @@ async function postTransfer(): Promise<void> {
     const transferId = transferDetail.value.id;
     await openTransfer({ id: transferId });
     await reload();
-    await loadTransfers();
   } finally {
     trPosting.value = false;
   }
@@ -1321,6 +1599,311 @@ function openTransferEdit(): void {
   }));
   transferDrawerOpen.value = false;
   transferOpen.value = true;
+}
+
+type InventoryCountLine = {
+  nomenclature_id: string;
+  options: NomenclatureOption[];
+  counted_quantity: string;
+  lot_code: string;
+};
+
+function emptyInventoryCountLine(): InventoryCountLine {
+  return { nomenclature_id: "", options: [], counted_quantity: "", lot_code: "" };
+}
+
+const icOpen = ref(false);
+const icSaving = ref(false);
+const icError = ref("");
+const icEditingId = ref<string | null>(null);
+const icForm = reactive({
+  org_unit_id: "",
+  occurred_at: new Date(),
+  comment: "",
+});
+const icLines = ref<InventoryCountLine[]>([emptyInventoryCountLine()]);
+const bookQuantities = ref<Record<string, string>>({});
+
+function isCompleteInventoryCountLine(line: InventoryCountLine): boolean {
+  return (
+    Boolean(line.nomenclature_id) &&
+    line.counted_quantity !== "" &&
+    Number(line.counted_quantity) >= 0
+  );
+}
+
+const icCanSubmit = computed(
+  () =>
+    Boolean(icForm.org_unit_id) &&
+    icLines.value.some(isCompleteInventoryCountLine),
+);
+
+const icDrawerOpen = ref(false);
+const inventoryCountDetail = ref<InventoryCountDetail | null>(null);
+const icDetailError = ref("");
+const icPosting = ref(false);
+
+const icDrawerTitle = computed(() =>
+  inventoryCountDetail.value
+    ? `Инвентаризация от ${formatDate(inventoryCountDetail.value.occurred_at)}`
+    : "Инвентаризация",
+);
+
+function bookQuantity(nomenclatureId: string): string {
+  if (!nomenclatureId) {
+    return "—";
+  }
+
+  const value = bookQuantities.value[nomenclatureId];
+
+  return value === undefined ? "—" : formatQuantity(value);
+}
+
+async function loadBookQuantities(): Promise<void> {
+  bookQuantities.value = {};
+
+  if (!icForm.org_unit_id || !can("inventory.balance.read")) {
+    return;
+  }
+
+  const { data, response } = await api.GET(
+    "/api/inventory/locations/{org_unit_id}/balances",
+    {
+      params: {
+        path: { org_unit_id: icForm.org_unit_id },
+        query: { limit: 200 },
+      },
+    },
+  );
+
+  if (response.ok && data) {
+    const map: Record<string, string> = {};
+    for (const item of data.items) {
+      map[item.nomenclature_id] = item.quantity;
+    }
+    bookQuantities.value = map;
+  }
+}
+
+watch(
+  () => icForm.org_unit_id,
+  () => {
+    void loadBookQuantities();
+  },
+);
+
+function openInventoryCountCreate(): void {
+  icEditingId.value = null;
+  icError.value = "";
+  notice.value = "";
+  icForm.org_unit_id = locations.value[0]?.id ?? "";
+  icForm.occurred_at = new Date();
+  icForm.comment = "";
+  icLines.value = [emptyInventoryCountLine()];
+  bookQuantities.value = {};
+  icOpen.value = true;
+  void loadBookQuantities();
+}
+
+function addInventoryCountLine(): void {
+  icLines.value = [...icLines.value, emptyInventoryCountLine()];
+}
+
+function removeInventoryCountLine(index: number): void {
+  icLines.value = icLines.value.filter((_, position) => position !== index);
+}
+
+function inventoryCountBody() {
+  return {
+    occurred_at: icForm.occurred_at.toISOString(),
+    comment: icForm.comment.trim() || null,
+    lines: icLines.value
+      .filter(isCompleteInventoryCountLine)
+      .map((line) => ({
+        nomenclature_id: line.nomenclature_id,
+        counted_quantity: line.counted_quantity,
+        lot_code: line.lot_code.trim() || null,
+      })),
+  };
+}
+
+async function saveInventoryCount(postAfterCreate: boolean): Promise<void> {
+  if (icEditingId.value) {
+    await updateInventoryCount();
+    return;
+  }
+
+  icSaving.value = true;
+  icError.value = "";
+  notice.value = "";
+
+  try {
+    const created = await api.POST("/api/inventory/inventory-counts", {
+      body: {
+        org_unit_id: icForm.org_unit_id,
+        ...inventoryCountBody(),
+      },
+    });
+
+    if (!created.response.ok || !created.data) {
+      throw new Error(
+        serverMessage(
+          created.error,
+          `Не удалось сохранить: ${created.response.status}`,
+        ),
+      );
+    }
+
+    const countId = (created.data as unknown as { inventory_count_id: string })
+      .inventory_count_id;
+
+    if (postAfterCreate) {
+      const posted = await api.POST(
+        "/api/inventory/inventory-counts/{inventory_count_id}/post",
+        { params: { path: { inventory_count_id: countId } } },
+      );
+
+      if (!posted.response.ok) {
+        icError.value = `Черновик создан, но не проведён: ${serverMessage(posted.error, String(posted.response.status))}`;
+        tab.value = "inventory-counts";
+        await refresh();
+        return;
+      }
+
+      notice.value = "Инвентаризация проведена";
+    } else {
+      notice.value = "Черновик инвентаризации сохранён";
+    }
+
+    icOpen.value = false;
+    tab.value = "inventory-counts";
+    await refresh();
+  } catch (cause) {
+    icError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    icSaving.value = false;
+  }
+}
+
+async function updateInventoryCount(): Promise<void> {
+  icSaving.value = true;
+  icError.value = "";
+  notice.value = "";
+
+  try {
+    const updated = await api.PATCH(
+      "/api/inventory/inventory-counts/{inventory_count_id}",
+      {
+        params: { path: { inventory_count_id: icEditingId.value ?? "" } },
+        body: inventoryCountBody(),
+      },
+    );
+
+    if (!updated.response.ok) {
+      throw new Error(
+        serverMessage(
+          updated.error,
+          `Не удалось сохранить: ${updated.response.status}`,
+        ),
+      );
+    }
+
+    const editedId = icEditingId.value;
+    icOpen.value = false;
+    icEditingId.value = null;
+    notice.value = "Изменения сохранены";
+    if (editedId) {
+      await openInventoryCount({ id: editedId });
+    }
+    await refresh();
+  } catch (cause) {
+    icError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    icSaving.value = false;
+  }
+}
+
+async function openInventoryCount(row: { id: string }): Promise<void> {
+  icDetailError.value = "";
+
+  const { data, response } = await api.GET(
+    "/api/inventory/inventory-counts/{inventory_count_id}",
+    { params: { path: { inventory_count_id: row.id } } },
+  );
+
+  if (!response.ok || !data) {
+    error.value = reasonOf(response.status, "Не удалось открыть инвентаризацию");
+    return;
+  }
+
+  inventoryCountDetail.value = data;
+  icDrawerOpen.value = true;
+}
+
+function openInventoryCountEdit(): void {
+  const detail = inventoryCountDetail.value;
+
+  if (!detail) {
+    return;
+  }
+
+  icError.value = "";
+  notice.value = "";
+  icEditingId.value = detail.id;
+  icForm.org_unit_id = detail.org_unit_id;
+  icForm.occurred_at = new Date(detail.occurred_at);
+  icForm.comment = detail.comment ?? "";
+  icLines.value = detail.lines.map((line) => ({
+    nomenclature_id: line.nomenclature_id,
+    counted_quantity: String(line.counted_quantity),
+    lot_code: line.lot_code ?? "",
+    options: [
+      {
+        id: line.nomenclature_id,
+        name: line.nomenclature_name ?? line.nomenclature_id,
+        sku: "",
+      },
+    ],
+  }));
+  icDrawerOpen.value = false;
+  icOpen.value = true;
+  void loadBookQuantities();
+}
+
+async function postInventoryCount(id: string): Promise<void> {
+  icPosting.value = true;
+  icDetailError.value = "";
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/inventory-counts/{inventory_count_id}/post",
+      { params: { path: { inventory_count_id: id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось провести: ${response.status}`),
+      );
+    }
+
+    notice.value = "Инвентаризация проведена";
+
+    if (icDrawerOpen.value) {
+      await openInventoryCount({ id });
+    }
+    await refresh();
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Ошибка проведения";
+    if (icDrawerOpen.value) {
+      icDetailError.value = message;
+    } else {
+      error.value = message;
+    }
+  } finally {
+    icPosting.value = false;
+  }
 }
 </script>
 
@@ -1365,6 +1948,12 @@ function openTransferEdit(): void {
 
 .line__qty {
   width: 110px;
+}
+
+.line__qty--book {
+  text-align: right;
+  padding-right: 8px;
+  color: #606266;
 }
 
 .line__lot {

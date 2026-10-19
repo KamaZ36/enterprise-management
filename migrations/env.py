@@ -26,6 +26,8 @@ from myasnaya_derevnya.modules.catalog.infrastructure.tables import (  # noqa: F
     PRICES_TABLE,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa: F401
+    INVENTORY_COUNT_LINES_TABLE,
+    INVENTORY_COUNTS_TABLE,
     RECEIPT_LINES_TABLE,
     RECEIPTS_TABLE,
     STOCK_BALANCES_TABLE,
@@ -33,6 +35,8 @@ from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa:
     STOCK_LOTS_TABLE,
     STOCK_MOVEMENTS_TABLE,
     STOCK_POSTINGS_TABLE,
+    TRANSFER_LINES_TABLE,
+    TRANSFERS_TABLE,
     WRITE_OFF_LINES_TABLE,
     WRITE_OFFS_TABLE,
 )

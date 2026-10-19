@@ -154,6 +154,20 @@ class TransferNotFoundError(NotFoundError):
 
 
 @dataclass(slots=True, eq=False)
+class InventoryCountNotFoundError(NotFoundError):
+    inventory_count_id: UUID
+
+    def __str__(self) -> str:
+        return f"Инвентаризация {self.inventory_count_id} не найдена"
+
+
+@dataclass(slots=True, eq=False)
+class NegativeCountError(InventoryDomainError):
+    def __str__(self) -> str:
+        return "Фактическое количество не может быть отрицательным"
+
+
+@dataclass(slots=True, eq=False)
 class SameLocationTransferError(InventoryDomainError):
     org_unit_id: UUID
 

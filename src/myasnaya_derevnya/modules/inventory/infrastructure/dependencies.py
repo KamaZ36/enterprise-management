@@ -9,6 +9,21 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.get im
 from myasnaya_derevnya.modules.inventory.application.interactors.balances.list import (
     ListBalancesInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.create import (
+    CreateInventoryCountInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.get import (
+    GetInventoryCountInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.list import (
+    ListInventoryCountsInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.post import (
+    PostInventoryCountInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.update import (
+    UpdateInventoryCountInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.locations.list import (
     ListLocationsInteractor,
 )
@@ -88,6 +103,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.base imp
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.balance.sqlalchemy import (
     SQLAlchemyBalanceReader,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.inventory_count.base import (
+    InventoryCountReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.inventory_count.sqlalchemy import (
+    SQLAlchemyInventoryCountReader,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.lot_balance.base import (
     LotBalanceReader,
 )
@@ -117,6 +138,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.base i
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.sqlalchemy import (
     SQLAlchemyWriteOffReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.base import (
+    InventoryCountRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.sqlalchemy import (
+    SQLAlchemyInventoryCountRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.base import (
     ReceiptRepository,
@@ -189,6 +216,12 @@ class InventoryDepProvider(Provider):
         return SQLAlchemyWriteOffRepository(session)
 
     @provide(scope=Scope.REQUEST)
+    def get_inventory_count_repository(
+        self, session: AsyncSession
+    ) -> InventoryCountRepository:
+        return SQLAlchemyInventoryCountRepository(session)
+
+    @provide(scope=Scope.REQUEST)
     def get_stock_movement_repository(
         self, session: AsyncSession
     ) -> StockMovementRepository:
@@ -226,6 +259,12 @@ class InventoryDepProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_write_off_reader(self, session: AsyncSession) -> WriteOffReader:
         return SQLAlchemyWriteOffReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_inventory_count_reader(
+        self, session: AsyncSession
+    ) -> InventoryCountReader:
+        return SQLAlchemyInventoryCountReader(session)
 
 
     @provide(scope=Scope.REQUEST)
@@ -276,6 +315,21 @@ class InventoryDepProvider(Provider):
     post_sale_interactor = provide(PostSaleInteractor, scope=Scope.REQUEST)
     create_write_off_interactor = provide(CreateWriteOffInteractor, scope=Scope.REQUEST)
     post_write_off_interactor = provide(PostWriteOffInteractor, scope=Scope.REQUEST)
+    create_inventory_count_interactor = provide(
+        CreateInventoryCountInteractor, scope=Scope.REQUEST
+    )
+    post_inventory_count_interactor = provide(
+        PostInventoryCountInteractor, scope=Scope.REQUEST
+    )
+    list_inventory_counts_interactor = provide(
+        ListInventoryCountsInteractor, scope=Scope.REQUEST
+    )
+    get_inventory_count_interactor = provide(
+        GetInventoryCountInteractor, scope=Scope.REQUEST
+    )
+    update_inventory_count_interactor = provide(
+        UpdateInventoryCountInteractor, scope=Scope.REQUEST
+    )
     get_balance_interactor = provide(GetBalanceInteractor, scope=Scope.REQUEST)
     list_balances_interactor = provide(ListBalancesInteractor, scope=Scope.REQUEST)
     list_locations_interactor = provide(ListLocationsInteractor, scope=Scope.REQUEST)

@@ -1116,6 +1116,74 @@ export interface paths {
         patch: operations["update_transfer_api_inventory_transfers__transfer_id__patch"];
         trace?: never;
     };
+    "/api/inventory/inventory-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Inventory Counts
+         * @description Журнал инвентаризаций
+         */
+        get: operations["list_inventory_counts_api_inventory_inventory_counts_get"];
+        put?: never;
+        /**
+         * Create Inventory Count
+         * @description Создать инвентаризацию (черновик)
+         */
+        post: operations["create_inventory_count_api_inventory_inventory_counts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/inventory-counts/{inventory_count_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Inventory Count
+         * @description Карточка инвентаризации
+         */
+        get: operations["get_inventory_count_api_inventory_inventory_counts__inventory_count_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Inventory Count
+         * @description Изменить черновик инвентаризации
+         */
+        patch: operations["update_inventory_count_api_inventory_inventory_counts__inventory_count_id__patch"];
+        trace?: never;
+    };
+    "/api/inventory/inventory-counts/{inventory_count_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Inventory Count
+         * @description Провести инвентаризацию
+         */
+        post: operations["post_inventory_count_api_inventory_inventory_counts__inventory_count_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/production/tech-cards": {
         parameters: {
             query?: never;
@@ -1548,6 +1616,23 @@ export interface components {
              */
             org_unit_id: string;
         };
+        /** CreateInventoryCountSchema */
+        CreateInventoryCountSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["InventoryCountLineSchema"][];
+            /** Comment */
+            comment?: string | null;
+        };
         /** CreateNomenclatureSchema */
         CreateNomenclatureSchema: {
             /** Sku */
@@ -1946,6 +2031,100 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InventoryCountDetailSchema */
+        InventoryCountDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Lines */
+            lines: components["schemas"]["InventoryCountLineViewSchema"][];
+        };
+        /** InventoryCountLineSchema */
+        InventoryCountLineSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Counted Quantity */
+            counted_quantity: number | string;
+            /** Lot Code */
+            lot_code?: string | null;
+        };
+        /** InventoryCountLineViewSchema */
+        InventoryCountLineViewSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Counted Quantity */
+            counted_quantity: string;
+            /** Lot Code */
+            lot_code: string | null;
+        };
+        /** InventoryCountListItemSchema */
+        InventoryCountListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Line Count */
+            line_count: number;
+        };
+        /** InventoryCountListSchema */
+        InventoryCountListSchema: {
+            /** Items */
+            items: components["schemas"]["InventoryCountListItemSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** LocationSchema */
         LocationSchema: {
@@ -2992,6 +3171,18 @@ export interface components {
             is_active?: boolean | null;
             /** Org Unit Id */
             org_unit_id?: string | null;
+        };
+        /** UpdateInventoryCountSchema */
+        UpdateInventoryCountSchema: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["InventoryCountLineSchema"][];
+            /** Comment */
+            comment?: string | null;
         };
         /** UpdateNomenclatureSchema */
         UpdateNomenclatureSchema: {
@@ -5368,6 +5559,170 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateTransferSchema"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_inventory_counts_api_inventory_inventory_counts_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+                limit?: number;
+                offset?: number;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCountListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_inventory_count_api_inventory_inventory_counts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInventoryCountSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_inventory_count_api_inventory_inventory_counts__inventory_count_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryCountDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_inventory_count_api_inventory_inventory_counts__inventory_count_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInventoryCountSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_inventory_count_api_inventory_inventory_counts__inventory_count_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

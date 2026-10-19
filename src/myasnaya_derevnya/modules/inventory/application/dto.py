@@ -152,3 +152,34 @@ class TransferDetail:
     posted_at: datetime | None
     comment: str | None
     lines: list[TransferLineItem]
+
+
+@dataclass(frozen=True, slots=True)
+class InventoryCountListItem:
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    line_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class InventoryCountLineItem:
+    id: UUID
+    nomenclature_id: UUID
+    counted_quantity: Decimal
+    lot_code: str | None
+    nomenclature_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class InventoryCountDetail:
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    lines: list[InventoryCountLineItem]
