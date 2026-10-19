@@ -83,6 +83,8 @@
         </template>
       </el-dialog>
     </el-container>
+
+    <ConfirmDialog />
   </el-container>
 </template>
 

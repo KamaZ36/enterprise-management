@@ -20,23 +20,20 @@
 
       <div class="card-actions">
         <el-button v-if="can('staff.employee.manage')" @click="openEdit">Изменить</el-button>
-        <el-popconfirm
+        <el-button
           v-if="can('staff.employee.manage')"
-          title="Выдать сотруднику новый пароль? Текущий перестанет работать сразу."
-          confirm-button-text="Выдать"
-          cancel-button-text="Отмена"
-          @confirm="resetPassword"
+          text
+          :disabled="busy"
+          @click="askResetPassword"
         >
-          <template #reference>
-            <el-button text :disabled="busy">Сбросить пароль</el-button>
-          </template>
-        </el-popconfirm>
+          Сбросить пароль
+        </el-button>
         <el-button
           v-if="can('staff.employee.manage')"
           :type="employee.is_active ? 'danger' : 'success'"
           text
           :disabled="busy"
-          @click="toggleActive"
+          @click="askToggleActive"
         >
           {{ employee.is_active ? "Уволить" : "Вернуть в работу" }}
         </el-button>
@@ -104,16 +101,14 @@
         </el-table-column>
         <el-table-column v-if="can('staff.role.assign')" width="130" align="right">
           <template #default="{ row }">
-            <el-popconfirm
-              title="Отозвать роль?"
-              confirm-button-text="Отозвать"
-              cancel-button-text="Отмена"
-              @confirm="revoke(row.id)"
+            <el-button
+              type="danger"
+              text
+              :disabled="busy"
+              @click="askRevoke(row as EmployeeRole)"
             >
-              <template #reference>
-                <el-button type="danger" text :disabled="busy">Отозвать</el-button>
-              </template>
-            </el-popconfirm>
+              Отозвать
+            </el-button>
           </template>
         </el-table-column>
 
@@ -252,6 +247,7 @@ type OrgUnit = components["schemas"]["OrgUnitSchema"];
 
 const api = useApi();
 const { can } = useCurrentUser();
+const { confirm } = useConfirm();
 const route = useRoute();
 const id = String(route.params.id);
 
@@ -387,6 +383,18 @@ async function assign(): Promise<void> {
   }
 }
 
+async function askRevoke(row: EmployeeRole): Promise<void> {
+  const ok = await confirm({
+    title: `Отозвать роль «${row.role_name}»?`,
+    confirmText: "Отозвать",
+    danger: true,
+  });
+
+  if (ok) {
+    await revoke(row.id);
+  }
+}
+
 async function revoke(assignmentId: string): Promise<void> {
   busy.value = true;
   failure.value = "";
@@ -443,6 +451,27 @@ async function resetPassword(): Promise<void> {
     failure.value = cause instanceof Error ? cause.message : "Ошибка сброса пароля";
   } finally {
     busy.value = false;
+  }
+}
+
+
+async function askResetPassword(): Promise<void> {
+  if (await confirm({ title: "Сбросить пароль?" })) {
+    await resetPassword();
+  }
+}
+
+async function askToggleActive(): Promise<void> {
+  const active = employee.value?.is_active;
+
+  const ok = await confirm({
+    title: active ? "Уволить сотрудника?" : "Вернуть сотрудника в работу?",
+    confirmText: active ? "Уволить" : "Вернуть в работу",
+    danger: active,
+  });
+
+  if (ok) {
+    await toggleActive();
   }
 }
 

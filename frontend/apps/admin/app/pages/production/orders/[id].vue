@@ -129,7 +129,7 @@
           v-if="editable && can('production.order.post')"
           type="primary"
           :loading="posting"
-          @click="postOrder"
+          @click="askPostOrder"
         >
           Провести
         </el-button>
@@ -185,6 +185,7 @@ const LOSS_TITLES: Record<string, string> = {
 const api = useApi();
 const route = useRoute();
 const { can } = useCurrentUser();
+const { confirm } = useConfirm();
 
 const orderId = String(route.params.id);
 const order = ref<ProductionOrderDetail | null>(null);
@@ -282,6 +283,12 @@ async function saveActuals(): Promise<void> {
     await load();
   } finally {
     saving.value = false;
+  }
+}
+
+async function askPostOrder(): Promise<void> {
+  if (await confirm({ title: "Провести задание?" })) {
+    await postOrder();
   }
 }
 

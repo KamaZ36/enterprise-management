@@ -103,23 +103,19 @@
             v-if="row.status === 'draft' && can('inventory.document.post')"
             text
             :disabled="busy"
-            @click.stop="postReceipt(row as ReceiptListItem)"
+            @click.stop="askDoc('receipt', 'post', row as ReceiptListItem)"
           >
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="row.status === 'draft' && canCreateDocument"
-            title="Удалить черновик поступления?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteReceipt(row as ReceiptListItem)"
+            text
+            type="danger"
+            :disabled="busy"
+            @click.stop="askDoc('receipt', 'delete', row as ReceiptListItem)"
           >
-            <template #reference>
-              <el-button text type="danger" :disabled="busy" @click.stop>
-                Удалить
-              </el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </template>
       </el-table-column>
       <template #empty>
@@ -158,23 +154,19 @@
             v-if="row.status === 'draft' && can('inventory.document.post')"
             text
             :disabled="busy"
-            @click.stop="postWriteOff(row as WriteOffListItem)"
+            @click.stop="askDoc('write-off', 'post', row as WriteOffListItem)"
           >
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="row.status === 'draft' && canCreateDocument"
-            title="Удалить черновик списания?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteWriteOff(row as WriteOffListItem)"
+            text
+            type="danger"
+            :disabled="busy"
+            @click.stop="askDoc('write-off', 'delete', row as WriteOffListItem)"
           >
-            <template #reference>
-              <el-button text type="danger" :disabled="busy" @click.stop>
-                Удалить
-              </el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </template>
       </el-table-column>
       <template #empty>
@@ -213,23 +205,19 @@
             v-if="row.status === 'draft' && can('inventory.document.post')"
             text
             :disabled="icPosting"
-            @click.stop="postInventoryCount(row.id)"
+            @click.stop="askDoc('inventory-count', 'post', row as InventoryCountListItem)"
           >
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="row.status === 'draft' && canCreateDocument"
-            title="Удалить черновик инвентаризации?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteInventoryCount(row.id)"
+            text
+            type="danger"
+            :disabled="busy"
+            @click.stop="askDoc('inventory-count', 'delete', row as InventoryCountListItem)"
           >
-            <template #reference>
-              <el-button text type="danger" :disabled="busy" @click.stop>
-                Удалить
-              </el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </template>
       </el-table-column>
       <template #empty>
@@ -276,19 +264,15 @@
       </el-table-column>
       <el-table-column width="150" align="right">
         <template #default="{ row }">
-          <el-popconfirm
+          <el-button
             v-if="row.status === 'draft' && canCreateDocument"
-            title="Удалить черновик перемещения?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteTransfer(row as TransferListItem)"
+            text
+            type="danger"
+            :disabled="busy"
+            @click.stop="askDoc('transfer', 'delete', row as TransferListItem)"
           >
-            <template #reference>
-              <el-button text type="danger" :disabled="busy" @click.stop>
-                Удалить
-              </el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -627,20 +611,18 @@
           style="display: flex; gap: 8px; margin-top: 16px"
         >
           <el-button @click="openTransferEdit">Редактировать</el-button>
-          <el-button type="primary" :loading="trPosting" @click="postTransfer">
+          <el-button type="primary" :loading="trPosting" @click="askDoc('transfer', 'post', transferDetail)">
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="canCreateDocument"
-            title="Удалить черновик перемещения?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteTransfer(transferDetail)"
+            type="danger"
+            text
+            :disabled="busy"
+            @click="askDoc('transfer', 'delete', transferDetail)"
           >
-            <template #reference>
-              <el-button type="danger" text :disabled="busy">Удалить</el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </div>
       </template>
     </el-drawer>
@@ -697,21 +679,19 @@
           <el-button
             type="primary"
             :loading="busy"
-            @click="postReceipt(receiptDetail)"
+            @click="askDoc('receipt', 'post', receiptDetail)"
           >
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="canCreateDocument"
-            title="Удалить черновик поступления?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteReceipt(receiptDetail)"
+            type="danger"
+            text
+            :disabled="busy"
+            @click="askDoc('receipt', 'delete', receiptDetail)"
           >
-            <template #reference>
-              <el-button type="danger" text :disabled="busy">Удалить</el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </div>
       </template>
 
@@ -761,21 +741,19 @@
           <el-button
             type="primary"
             :loading="busy"
-            @click="postWriteOff(writeOffDetail)"
+            @click="askDoc('write-off', 'post', writeOffDetail)"
           >
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="canCreateDocument"
-            title="Удалить черновик списания?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteWriteOff(writeOffDetail)"
+            type="danger"
+            text
+            :disabled="busy"
+            @click="askDoc('write-off', 'delete', writeOffDetail)"
           >
-            <template #reference>
-              <el-button type="danger" text :disabled="busy">Удалить</el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </div>
       </template>
     </el-drawer>
@@ -943,21 +921,19 @@
           <el-button
             type="primary"
             :loading="icPosting"
-            @click="postInventoryCount(inventoryCountDetail.id)"
+            @click="askDoc('inventory-count', 'post', inventoryCountDetail)"
           >
             Провести
           </el-button>
-          <el-popconfirm
+          <el-button
             v-if="canCreateDocument"
-            title="Удалить черновик инвентаризации?"
-            confirm-button-text="Удалить"
-            cancel-button-text="Отмена"
-            @confirm="deleteInventoryCount(inventoryCountDetail.id)"
+            type="danger"
+            text
+            :disabled="busy"
+            @click="askDoc('inventory-count', 'delete', inventoryCountDetail)"
           >
-            <template #reference>
-              <el-button type="danger" text :disabled="busy">Удалить</el-button>
-            </template>
-          </el-popconfirm>
+            Удалить
+          </el-button>
         </div>
       </template>
     </el-drawer>
@@ -987,6 +963,7 @@ const PAGE_SIZE = 20;
 
 const api = useApi();
 const { can } = useCurrentUser();
+const { confirm } = useConfirm();
 
 const canCreateDocument = computed(() => canAll(CAN.documentsCreate));
 
@@ -1612,6 +1589,35 @@ async function postReceipt(row: { id: string }): Promise<void> {
   } finally {
     busy.value = false;
   }
+}
+
+
+type DocKind = "receipt" | "write-off" | "transfer" | "inventory-count";
+
+/** Одно окно подтверждения для критичных команд: проведение и удаление черновиков. */
+async function askDoc(
+  kind: DocKind,
+  mode: "post" | "delete",
+  doc: { id: string },
+): Promise<void> {
+  const title = mode === "post" ? "Провести документ?" : "Удалить черновик?";
+
+  if (!(await confirm({ title, danger: mode === "delete" }))) {
+    return;
+  }
+
+  if (mode === "post") {
+    if (kind === "receipt") await postReceipt(doc);
+    else if (kind === "write-off") await postWriteOff(doc);
+    else if (kind === "transfer") await postTransfer();
+    else await postInventoryCount(doc.id);
+    return;
+  }
+
+  if (kind === "receipt") await deleteReceipt(doc);
+  else if (kind === "write-off") await deleteWriteOff(doc);
+  else if (kind === "transfer") await deleteTransfer(doc);
+  else await deleteInventoryCount(doc.id);
 }
 
 
