@@ -108,6 +108,51 @@ def test_cannot_add_line_to_posted_receipt() -> None:
         receipt.add_line(make_line())
 
 
+def test_revise_replaces_header_and_lines() -> None:
+    receipt = make_receipt([make_line("10", "450")])
+
+    receipt.revise(
+        occurred_at=datetime(2026, 10, 5, 9, 0, tzinfo=UTC),
+        supplier_name="Другой",
+        supplier_document_number="УПД-7",
+        comment="Поправили",
+        lines=[make_line("3", "100")],
+    )
+
+    assert receipt.supplier_name == "Другой"
+    assert receipt.supplier_document_number == "УПД-7"
+    assert receipt.comment == "Поправили"
+    assert [line.quantity for line in receipt.lines] == [Decimal(3)]
+    assert receipt.occurred_at == datetime(2026, 10, 5, 9, 0, tzinfo=UTC)
+
+
+def test_revise_of_posted_receipt_is_rejected() -> None:
+    receipt = make_receipt()
+    receipt.post()
+
+    with pytest.raises(DocumentAlreadyPostedError):
+        receipt.revise(
+            occurred_at=get_datetime_utc(),
+            supplier_name=None,
+            supplier_document_number=None,
+            comment=None,
+            lines=[make_line()],
+        )
+
+
+def test_revise_with_naive_occurred_at_is_rejected() -> None:
+    receipt = make_receipt()
+
+    with pytest.raises(TimezoneRequiredError):
+        receipt.revise(
+            occurred_at=datetime(2026, 10, 5, 9, 0),
+            supplier_name=None,
+            supplier_document_number=None,
+            comment=None,
+            lines=[make_line()],
+        )
+
+
 def test_line_with_non_positive_quantity_is_rejected() -> None:
     with pytest.raises(EmptyMovementError):
         make_line(quantity="0")

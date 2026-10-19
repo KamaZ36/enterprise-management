@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import RowMapping, insert, select, update
+from sqlalchemy import RowMapping, delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.inventory.domain.entities.write_off import (
@@ -38,29 +38,48 @@ class SQLAlchemyWriteOffRepository(WriteOffRepository):
             )
         )
 
-        lines = write_off.lines
-        if lines:
-            await self._session.execute(
-                insert(WRITE_OFF_LINES_TABLE).values(
-                    [
-                        {
-                            "id": line.id,
-                            "write_off_id": write_off.id,
-                            "nomenclature_id": line.nomenclature_id,
-                            "lot_id": line.lot_id,
-                            "lot_code": line.lot_code,
-                            "quantity": line.quantity,
-                        }
-                        for line in lines
-                    ]
-                )
-            )
+        await self._insert_lines(write_off)
 
     async def save(self, write_off: WriteOff) -> None:
         await self._session.execute(
             update(WRITE_OFFS_TABLE)
             .where(WRITE_OFFS_TABLE.c.id == write_off.id)
-            .values(status=write_off.status.value, posted_at=write_off.posted_at)
+            .values(
+                status=write_off.status.value,
+                posted_at=write_off.posted_at,
+                occurred_at=write_off.occurred_at,
+                reason=write_off.reason,
+                comment=write_off.comment,
+            )
+        )
+
+        await self._session.execute(
+            delete(WRITE_OFF_LINES_TABLE).where(
+                WRITE_OFF_LINES_TABLE.c.write_off_id == write_off.id
+            )
+        )
+
+        await self._insert_lines(write_off)
+
+    async def _insert_lines(self, write_off: WriteOff) -> None:
+        lines = write_off.lines
+        if not lines:
+            return
+
+        await self._session.execute(
+            insert(WRITE_OFF_LINES_TABLE).values(
+                [
+                    {
+                        "id": line.id,
+                        "write_off_id": write_off.id,
+                        "nomenclature_id": line.nomenclature_id,
+                        "lot_id": line.lot_id,
+                        "lot_code": line.lot_code,
+                        "quantity": line.quantity,
+                    }
+                    for line in lines
+                ]
+            )
         )
 
     async def get_by_id(self, write_off_id: UUID) -> WriteOff | None:

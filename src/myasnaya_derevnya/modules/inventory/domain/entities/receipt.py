@@ -167,6 +167,27 @@ class Receipt:
             raise DocumentAlreadyPostedError(self._id)
         self._lines.append(line)
 
+    def revise(
+        self,
+        *,
+        occurred_at: datetime,
+        supplier_name: str | None,
+        supplier_document_number: str | None,
+        comment: str | None,
+        lines: list[ReceiptLine],
+    ) -> None:
+        if not self.is_draft:
+            raise DocumentAlreadyPostedError(self._id)
+
+        if occurred_at.tzinfo is None:
+            raise TimezoneRequiredError(field="occurred_at")
+
+        self._occurred_at = occurred_at
+        self._supplier_name = supplier_name
+        self._supplier_document_number = supplier_document_number
+        self._comment = comment
+        self._lines = list(lines)
+
     def post(self) -> None:
         if not self.is_draft:
             raise DocumentAlreadyPostedError(self._id)

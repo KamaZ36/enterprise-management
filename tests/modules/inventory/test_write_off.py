@@ -94,6 +94,47 @@ def test_cannot_add_line_to_posted_document() -> None:
         write_off.add_line(make_line())
 
 
+def test_revise_replaces_header_and_lines() -> None:
+    write_off = make_write_off([make_line("3")])
+
+    write_off.revise(
+        occurred_at=datetime(2026, 10, 5, 9, 0, tzinfo=UTC),
+        reason="Брак",
+        comment="Уточнили",
+        lines=[make_line("1", "L-9")],
+    )
+
+    assert write_off.reason == "Брак"
+    assert write_off.comment == "Уточнили"
+    assert [line.quantity for line in write_off.lines] == [Decimal(1)]
+    assert write_off.lines[0].lot_code == "L-9"
+
+
+def test_revise_of_posted_write_off_is_rejected() -> None:
+    write_off = make_write_off()
+    write_off.post()
+
+    with pytest.raises(DocumentAlreadyPostedError):
+        write_off.revise(
+            occurred_at=get_datetime_utc(),
+            reason=None,
+            comment=None,
+            lines=[make_line()],
+        )
+
+
+def test_revise_with_naive_occurred_at_is_rejected() -> None:
+    write_off = make_write_off()
+
+    with pytest.raises(TimezoneRequiredError):
+        write_off.revise(
+            occurred_at=datetime(2026, 10, 5, 9, 0),
+            reason=None,
+            comment=None,
+            lines=[make_line()],
+        )
+
+
 def test_line_with_non_positive_quantity_is_rejected() -> None:
     with pytest.raises(EmptyMovementError):
         make_line(quantity="0")

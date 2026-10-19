@@ -64,6 +64,11 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post i
     PostReceiptCommand,
     PostReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update import (
+    UpdateReceiptCommand,
+    UpdateReceiptInteractor,
+    UpdateReceiptLineCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferCommand,
     CreateTransferInteractor,
@@ -103,6 +108,11 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post
     PostWriteOffCommand,
     PostWriteOffInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.update import (
+    UpdateWriteOffCommand,
+    UpdateWriteOffInteractor,
+    UpdateWriteOffLineCommand,
+)
 from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     BalanceListSchema,
     BalanceSchema,
@@ -128,7 +138,9 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     TransferListItemSchema,
     TransferListSchema,
     UpdateInventoryCountSchema,
+    UpdateReceiptSchema,
     UpdateTransferSchema,
+    UpdateWriteOffSchema,
     WriteOffDetailSchema,
     WriteOffLineSchema,
     WriteOffListItemSchema,
@@ -154,6 +166,34 @@ def _receipt_lines(lines: list[ReceiptLineSchema]) -> list[ReceiptLineCommand]:
 def _write_off_lines(lines: list[WriteOffLineSchema]) -> list[WriteOffLineCommand]:
     return [
         WriteOffLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
+def _update_receipt_lines(
+    lines: list[ReceiptLineSchema],
+) -> list[UpdateReceiptLineCommand]:
+    return [
+        UpdateReceiptLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            unit_cost=line.unit_cost,
+            lot_code=line.lot_code,
+            expires_at=line.expires_at,
+        )
+        for line in lines
+    ]
+
+
+def _update_write_off_lines(
+    lines: list[WriteOffLineSchema],
+) -> list[UpdateWriteOffLineCommand]:
+    return [
+        UpdateWriteOffLineCommand(
             nomenclature_id=line.nomenclature_id,
             quantity=line.quantity,
             lot_code=line.lot_code,
@@ -226,6 +266,45 @@ async def post_write_off(request: Request, write_off_id: UUID) -> JSONResponse:
     async with container(context={Request: request}) as context:
         interactor = await context.get(PostWriteOffInteractor)
         await interactor(PostWriteOffCommand(write_off_id=write_off_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.patch("/receipts/{receipt_id}", description="Изменить черновик поступления")
+async def update_receipt(
+    request: Request, receipt_id: UUID, data: UpdateReceiptSchema
+) -> JSONResponse:
+    command = UpdateReceiptCommand(
+        receipt_id=receipt_id,
+        occurred_at=data.occurred_at,
+        lines=_update_receipt_lines(data.lines),
+        supplier_name=data.supplier_name,
+        supplier_document_number=data.supplier_document_number,
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateReceiptInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.patch("/write-offs/{write_off_id}", description="Изменить черновик списания")
+async def update_write_off(
+    request: Request, write_off_id: UUID, data: UpdateWriteOffSchema
+) -> JSONResponse:
+    command = UpdateWriteOffCommand(
+        write_off_id=write_off_id,
+        occurred_at=data.occurred_at,
+        lines=_update_write_off_lines(data.lines),
+        reason=data.reason,
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateWriteOffInteractor)
+        await interactor(command)
 
     return JSONResponse(content={"message": "ok"})
 

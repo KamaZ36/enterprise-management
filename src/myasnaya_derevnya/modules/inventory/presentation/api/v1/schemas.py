@@ -67,6 +67,21 @@ class CreateWriteOffSchema(BaseModel):
     comment: str | None = None
 
 
+class UpdateReceiptSchema(BaseModel):
+    occurred_at: datetime
+    lines: list[ReceiptLineSchema] = Field(min_length=1)
+    supplier_name: str | None = None
+    supplier_document_number: str | None = None
+    comment: str | None = None
+
+
+class UpdateWriteOffSchema(BaseModel):
+    occurred_at: datetime
+    lines: list[WriteOffLineSchema] = Field(min_length=1)
+    reason: str | None = None
+    comment: str | None = None
+
+
 class BalanceSchema(BaseModel):
     org_unit_id: UUID
     nomenclature_id: UUID

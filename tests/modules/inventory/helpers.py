@@ -35,6 +35,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update import (
+    UpdateReceiptInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
     PostSaleInteractor,
 )
@@ -43,6 +46,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.crea
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.update import (
+    UpdateWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.services.lot_resolver import (
     LotResolver,
@@ -125,8 +131,10 @@ def business_api(session: AsyncSession) -> BusinessAPI:
 class InventoryInteractors:
     create_receipt: CreateReceiptInteractor
     post_receipt: PostReceiptInteractor
+    update_receipt: UpdateReceiptInteractor
     create_write_off: CreateWriteOffInteractor
     post_write_off: PostWriteOffInteractor
+    update_write_off: UpdateWriteOffInteractor
     staff_api: FakeStaffAPI
 
 
@@ -160,6 +168,13 @@ def build_interactors(
             ledger=ledger,
             transaction_manager=transaction_manager,
         ),
+        update_receipt=UpdateReceiptInteractor(
+            identity_provider=identity,
+            business_api=api,
+            receipt_repository=receipts,
+            staff_api=staff_api,
+            transaction_manager=transaction_manager,
+        ),
         create_write_off=CreateWriteOffInteractor(
             identity_provider=identity,
             business_api=api,
@@ -174,6 +189,13 @@ def build_interactors(
             preconditions=preconditions,
             lot_resolver=lot_resolver,
             ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        update_write_off=UpdateWriteOffInteractor(
+            identity_provider=identity,
+            business_api=api,
+            write_off_repository=write_offs,
+            staff_api=staff_api,
             transaction_manager=transaction_manager,
         ),
         staff_api=staff_api,

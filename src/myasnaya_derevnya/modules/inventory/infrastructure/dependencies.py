@@ -48,6 +48,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list i
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update import (
+    UpdateReceiptInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
     PostSaleInteractor,
 )
@@ -77,6 +80,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.update import (
+    UpdateWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.services.document_scope import (
     DocumentScope,
@@ -309,12 +315,16 @@ class InventoryDepProvider(Provider):
 
     create_receipt_interactor = provide(CreateReceiptInteractor, scope=Scope.REQUEST)
     post_receipt_interactor = provide(PostReceiptInteractor, scope=Scope.REQUEST)
+    update_receipt_interactor = provide(UpdateReceiptInteractor, scope=Scope.REQUEST)
     post_production_interactor = provide(
         PostProductionInteractor, scope=Scope.REQUEST
     )
     post_sale_interactor = provide(PostSaleInteractor, scope=Scope.REQUEST)
     create_write_off_interactor = provide(CreateWriteOffInteractor, scope=Scope.REQUEST)
     post_write_off_interactor = provide(PostWriteOffInteractor, scope=Scope.REQUEST)
+    update_write_off_interactor = provide(
+        UpdateWriteOffInteractor, scope=Scope.REQUEST
+    )
     create_inventory_count_interactor = provide(
         CreateInventoryCountInteractor, scope=Scope.REQUEST
     )

@@ -143,6 +143,25 @@ class WriteOff:
             raise DocumentAlreadyPostedError(self._id)
         self._lines.append(line)
 
+    def revise(
+        self,
+        *,
+        occurred_at: datetime,
+        reason: str | None,
+        comment: str | None,
+        lines: list[WriteOffLine],
+    ) -> None:
+        if not self.is_draft:
+            raise DocumentAlreadyPostedError(self._id)
+
+        if occurred_at.tzinfo is None:
+            raise TimezoneRequiredError(field="occurred_at")
+
+        self._occurred_at = occurred_at
+        self._reason = reason
+        self._comment = comment
+        self._lines = list(lines)
+
     def post(self) -> None:
         if not self.is_draft:
             raise DocumentAlreadyPostedError(self._id)

@@ -237,11 +237,19 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="writeOffOpen" title="Новое списание" width="760">
+    <el-dialog
+      v-model="writeOffOpen"
+      :title="editingWriteOffId ? 'Изменить списание' : 'Новое списание'"
+      width="760"
+    >
       <el-form label-position="top" @submit.prevent>
         <div class="form-grid">
           <el-form-item label="Подразделение">
-            <el-select v-model="woForm.org_unit_id" style="width: 100%">
+            <el-select
+              v-model="woForm.org_unit_id"
+              style="width: 100%"
+              :disabled="Boolean(editingWriteOffId)"
+            >
               <LocationOptions :locations="locations" />
             </el-select>
           </el-form-item>
@@ -313,9 +321,10 @@
       <template #footer>
         <el-button @click="writeOffOpen = false">Отмена</el-button>
         <el-button :loading="woSaving" :disabled="!woCanSubmit" @click="createWriteOff(false)">
-          Сохранить черновик
+          {{ editingWriteOffId ? "Сохранить" : "Сохранить черновик" }}
         </el-button>
         <el-button
+          v-if="!editingWriteOffId"
           type="primary"
           :loading="woSaving"
           :disabled="!woCanSubmit"
@@ -326,11 +335,19 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="createOpen" title="Новое поступление" width="900">
+    <el-dialog
+      v-model="createOpen"
+      :title="editingReceiptId ? 'Изменить поступление' : 'Новое поступление'"
+      width="900"
+    >
       <el-form label-position="top" @submit.prevent>
         <div class="form-grid">
           <el-form-item label="Подразделение">
-            <el-select v-model="form.org_unit_id" style="width: 100%">
+            <el-select
+              v-model="form.org_unit_id"
+              style="width: 100%"
+              :disabled="Boolean(editingReceiptId)"
+            >
               <LocationOptions :locations="locations" />
             </el-select>
           </el-form-item>
@@ -405,9 +422,15 @@
       <template #footer>
         <el-button @click="createOpen = false">Отмена</el-button>
         <el-button :loading="saving" :disabled="!canSubmit" @click="createReceipt(false)">
-          Сохранить черновик
+          {{ editingReceiptId ? "Сохранить" : "Сохранить черновик" }}
         </el-button>
-        <el-button type="primary" :loading="saving" :disabled="!canSubmit" @click="createReceipt(true)">
+        <el-button
+          v-if="!editingReceiptId"
+          type="primary"
+          :loading="saving"
+          :disabled="!canSubmit"
+          @click="createReceipt(true)"
+        >
           Сохранить и провести
         </el-button>
       </template>
@@ -598,6 +621,20 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <div
+          v-if="receiptDetail.status !== 'posted'"
+          style="display: flex; gap: 8px; margin-top: 16px"
+        >
+          <el-button @click="openReceiptEdit">Редактировать</el-button>
+          <el-button
+            type="primary"
+            :loading="busy"
+            @click="postReceipt(receiptDetail)"
+          >
+            Провести
+          </el-button>
+        </div>
       </template>
 
       <template v-else-if="writeOffDetail">
@@ -637,6 +674,20 @@
           title="Себестоимость списания"
           description="В документе цены нет: стоимость определяется при проведении по средней. Показывать её будет карточка движений."
         />
+
+        <div
+          v-if="writeOffDetail.status !== 'posted'"
+          style="display: flex; gap: 8px; margin-top: 16px"
+        >
+          <el-button @click="openWriteOffEdit">Редактировать</el-button>
+          <el-button
+            type="primary"
+            :loading="busy"
+            @click="postWriteOff(writeOffDetail)"
+          >
+            Провести
+          </el-button>
+        </div>
       </template>
     </el-drawer>
 
@@ -861,6 +912,7 @@ const createOpen = ref(false);
 const saving = ref(false);
 const busy = ref(false);
 const createError = ref("");
+const editingReceiptId = ref<string | null>(null);
 
 type NomenclatureOption = { id: string; name: string; sku: string };
 type DraftLine = {
@@ -915,6 +967,7 @@ function emptyWriteOffLine(): WriteOffLine {
 const writeOffOpen = ref(false);
 const woSaving = ref(false);
 const woError = ref("");
+const editingWriteOffId = ref<string | null>(null);
 const woForm = reactive({
   org_unit_id: "",
   occurred_at: new Date(),
@@ -1082,7 +1135,7 @@ async function onPageChange(): Promise<void> {
   await load();
 }
 
-async function openReceipt(row: ReceiptListItem): Promise<void> {
+async function openReceipt(row: { id: string }): Promise<void> {
   receiptDetail.value = null;
   writeOffDetail.value = null;
 
@@ -1098,7 +1151,7 @@ async function openReceipt(row: ReceiptListItem): Promise<void> {
   }
 }
 
-async function openWriteOff(row: WriteOffListItem): Promise<void> {
+async function openWriteOff(row: { id: string }): Promise<void> {
   receiptDetail.value = null;
   writeOffDetail.value = null;
 
@@ -1124,12 +1177,47 @@ function serverMessage(error: unknown, fallback: string): string {
 function openCreate(): void {
   createError.value = "";
   notice.value = "";
+  editingReceiptId.value = null;
   form.org_unit_id = locations.value[0]?.id ?? "";
   form.occurred_at = new Date();
   form.supplier_name = "";
   form.supplier_document_number = "";
   form.comment = "";
   lines.value = [emptyLine()];
+  createOpen.value = true;
+}
+
+
+function openReceiptEdit(): void {
+  const detail = receiptDetail.value;
+
+  if (!detail) {
+    return;
+  }
+
+  createError.value = "";
+  notice.value = "";
+  editingReceiptId.value = detail.id;
+  form.org_unit_id = detail.org_unit_id;
+  form.occurred_at = new Date(detail.occurred_at);
+  form.supplier_name = detail.supplier_name ?? "";
+  form.supplier_document_number = detail.supplier_document_number ?? "";
+  form.comment = detail.comment ?? "";
+  lines.value = detail.lines.map((line) => ({
+    nomenclature_id: line.nomenclature_id,
+    quantity: String(line.quantity),
+    unit_cost: String(line.unit_cost),
+    lot_code: line.lot_code ?? "",
+    expires_at: line.expires_at ?? "",
+    options: [
+      {
+        id: line.nomenclature_id,
+        name: line.nomenclature_name ?? line.nomenclature_id,
+        sku: "",
+      },
+    ],
+  }));
+  drawerOpen.value = false;
   createOpen.value = true;
 }
 
@@ -1164,23 +1252,45 @@ async function createReceipt(postAfterCreate: boolean): Promise<void> {
   notice.value = "";
 
   try {
+    const body = {
+      occurred_at: form.occurred_at.toISOString(),
+      supplier_name: form.supplier_name.trim() || null,
+      supplier_document_number: form.supplier_document_number.trim() || null,
+      comment: form.comment.trim() || null,
+      lines: lines.value
+        .filter(isCompleteLine)
+        .map((line) => ({
+          nomenclature_id: line.nomenclature_id,
+          quantity: line.quantity,
+          unit_cost: line.unit_cost,
+          lot_code: line.lot_code.trim() || null,
+          expires_at: line.expires_at || null,
+        })),
+    };
+
+    if (editingReceiptId.value) {
+      const editedId = editingReceiptId.value;
+      const updated = await api.PATCH("/api/inventory/receipts/{receipt_id}", {
+        params: { path: { receipt_id: editedId } },
+        body,
+      });
+
+      if (!updated.response.ok) {
+        throw new Error(
+          serverMessage(updated.error, `Не удалось сохранить: ${updated.response.status}`),
+        );
+      }
+
+      createOpen.value = false;
+      editingReceiptId.value = null;
+      notice.value = "Изменения сохранены";
+      await openReceipt({ id: editedId });
+      await load();
+      return;
+    }
+
     const created = await api.POST("/api/inventory/receipts", {
-      body: {
-        org_unit_id: form.org_unit_id,
-        occurred_at: form.occurred_at.toISOString(),
-        supplier_name: form.supplier_name.trim() || null,
-        supplier_document_number: form.supplier_document_number.trim() || null,
-        comment: form.comment.trim() || null,
-        lines: lines.value
-          .filter(isCompleteLine)
-          .map((line) => ({
-            nomenclature_id: line.nomenclature_id,
-            quantity: line.quantity,
-            unit_cost: line.unit_cost,
-            lot_code: line.lot_code.trim() || null,
-            expires_at: line.expires_at || null,
-          })),
-      },
+      body: { org_unit_id: form.org_unit_id, ...body },
     });
 
     if (!created.response.ok || !created.data) {
@@ -1219,11 +1329,43 @@ async function createReceipt(postAfterCreate: boolean): Promise<void> {
 function openWriteOffCreate(): void {
   woError.value = "";
   notice.value = "";
+  editingWriteOffId.value = null;
   woForm.org_unit_id = locations.value[0]?.id ?? "";
   woForm.occurred_at = new Date();
   woForm.reason = "";
   woForm.comment = "";
   woLines.value = [emptyWriteOffLine()];
+  writeOffOpen.value = true;
+}
+
+
+function openWriteOffEdit(): void {
+  const detail = writeOffDetail.value;
+
+  if (!detail) {
+    return;
+  }
+
+  woError.value = "";
+  notice.value = "";
+  editingWriteOffId.value = detail.id;
+  woForm.org_unit_id = detail.org_unit_id;
+  woForm.occurred_at = new Date(detail.occurred_at);
+  woForm.reason = detail.reason ?? "";
+  woForm.comment = detail.comment ?? "";
+  woLines.value = detail.lines.map((line) => ({
+    nomenclature_id: line.nomenclature_id,
+    quantity: String(line.quantity),
+    lot_code: line.lot_code ?? "",
+    options: [
+      {
+        id: line.nomenclature_id,
+        name: line.nomenclature_name ?? line.nomenclature_id,
+        sku: "",
+      },
+    ],
+  }));
+  drawerOpen.value = false;
   writeOffOpen.value = true;
 }
 
@@ -1244,20 +1386,42 @@ async function createWriteOff(postAfterCreate: boolean): Promise<void> {
   notice.value = "";
 
   try {
+    const body = {
+      occurred_at: woForm.occurred_at.toISOString(),
+      reason: woForm.reason.trim() || null,
+      comment: woForm.comment.trim() || null,
+      lines: woLines.value
+        .filter(isCompleteWriteOffLine)
+        .map((line) => ({
+          nomenclature_id: line.nomenclature_id,
+          quantity: line.quantity,
+          lot_code: line.lot_code.trim() || null,
+        })),
+    };
+
+    if (editingWriteOffId.value) {
+      const editedId = editingWriteOffId.value;
+      const updated = await api.PATCH("/api/inventory/write-offs/{write_off_id}", {
+        params: { path: { write_off_id: editedId } },
+        body,
+      });
+
+      if (!updated.response.ok) {
+        throw new Error(
+          serverMessage(updated.error, `Не удалось сохранить: ${updated.response.status}`),
+        );
+      }
+
+      writeOffOpen.value = false;
+      editingWriteOffId.value = null;
+      notice.value = "Изменения сохранены";
+      await openWriteOff({ id: editedId });
+      await load();
+      return;
+    }
+
     const created = await api.POST("/api/inventory/write-offs", {
-      body: {
-        org_unit_id: woForm.org_unit_id,
-        occurred_at: woForm.occurred_at.toISOString(),
-        reason: woForm.reason.trim() || null,
-        comment: woForm.comment.trim() || null,
-        lines: woLines.value
-          .filter(isCompleteWriteOffLine)
-          .map((line) => ({
-            nomenclature_id: line.nomenclature_id,
-            quantity: line.quantity,
-            lot_code: line.lot_code.trim() || null,
-          })),
-      },
+      body: { org_unit_id: woForm.org_unit_id, ...body },
     });
 
     if (!created.response.ok || !created.data) {
@@ -1294,7 +1458,7 @@ async function createWriteOff(postAfterCreate: boolean): Promise<void> {
 }
 
 
-async function postWriteOff(row: WriteOffListItem): Promise<void> {
+async function postWriteOff(row: { id: string }): Promise<void> {
   busy.value = true;
   error.value = "";
   notice.value = "";
@@ -1310,6 +1474,9 @@ async function postWriteOff(row: WriteOffListItem): Promise<void> {
     }
 
     notice.value = "Списание проведено";
+    if (drawerOpen.value && writeOffDetail.value?.id === row.id) {
+      await openWriteOff({ id: row.id });
+    }
     await load();
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : "Ошибка проведения";
@@ -1319,7 +1486,7 @@ async function postWriteOff(row: WriteOffListItem): Promise<void> {
 }
 
 
-async function postReceipt(row: ReceiptListItem): Promise<void> {
+async function postReceipt(row: { id: string }): Promise<void> {
   busy.value = true;
   error.value = "";
   notice.value = "";
@@ -1335,6 +1502,9 @@ async function postReceipt(row: ReceiptListItem): Promise<void> {
     }
 
     notice.value = "Поступление проведено";
+    if (drawerOpen.value && receiptDetail.value?.id === row.id) {
+      await openReceipt({ id: row.id });
+    }
     await load();
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : "Ошибка проведения";

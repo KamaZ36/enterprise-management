@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from uuid import UUID
 
-from sqlalchemy import RowMapping, insert, select, update
+from sqlalchemy import RowMapping, delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.inventory.domain.entities.receipt import (
@@ -41,32 +41,52 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
             )
         )
 
-        lines = receipt.lines
-        if lines:
-            await self._session.execute(
-                insert(RECEIPT_LINES_TABLE).values(
-                    [
-                        {
-                            "id": line.id,
-                            "receipt_id": receipt.id,
-                            "nomenclature_id": line.nomenclature_id,
-                            "lot_id": line.lot_id,
-                            "lot_code": line.lot_code,
-                            "expires_at": line.expires_at,
-                            "quantity": line.quantity,
-                            "unit_cost": line.unit_cost,
-                            "total_cost": line.total_cost.kopecks,
-                        }
-                        for line in lines
-                    ]
-                )
-            )
+        await self._insert_lines(receipt)
 
     async def save(self, receipt: Receipt) -> None:
         await self._session.execute(
             update(RECEIPTS_TABLE)
             .where(RECEIPTS_TABLE.c.id == receipt.id)
-            .values(status=receipt.status.value, posted_at=receipt.posted_at)
+            .values(
+                status=receipt.status.value,
+                posted_at=receipt.posted_at,
+                occurred_at=receipt.occurred_at,
+                supplier_name=receipt.supplier_name,
+                supplier_document_number=receipt.supplier_document_number,
+                comment=receipt.comment,
+            )
+        )
+
+        await self._session.execute(
+            delete(RECEIPT_LINES_TABLE).where(
+                RECEIPT_LINES_TABLE.c.receipt_id == receipt.id
+            )
+        )
+
+        await self._insert_lines(receipt)
+
+    async def _insert_lines(self, receipt: Receipt) -> None:
+        lines = receipt.lines
+        if not lines:
+            return
+
+        await self._session.execute(
+            insert(RECEIPT_LINES_TABLE).values(
+                [
+                    {
+                        "id": line.id,
+                        "receipt_id": receipt.id,
+                        "nomenclature_id": line.nomenclature_id,
+                        "lot_id": line.lot_id,
+                        "lot_code": line.lot_code,
+                        "expires_at": line.expires_at,
+                        "quantity": line.quantity,
+                        "unit_cost": line.unit_cost,
+                        "total_cost": line.total_cost.kopecks,
+                    }
+                    for line in lines
+                ]
+            )
         )
 
     async def attach_lot_ids(

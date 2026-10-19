@@ -269,3 +269,118 @@ async def test_write_off_uses_average_cost_through_api(
     assert Decimal(payload["quantity"]) == Decimal(6)
     assert payload["total_value_kopecks"] == 300000
     assert Decimal(payload["average_unit_cost"]) == Decimal(500)
+
+
+async def test_update_drafts_through_api(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    org_unit_id = await _create_location(client, db_session)
+    nomenclature_id = await _create_nomenclature(client)
+
+    receipt = await client.post(
+        "/api/inventory/receipts",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-10-01T12:00:00+00:00",
+            "supplier_name": "Старый",
+            "lines": [
+                {
+                    "nomenclature_id": nomenclature_id,
+                    "quantity": "10",
+                    "unit_cost": "450",
+                }
+            ],
+        },
+    )
+    assert receipt.status_code == 201, receipt.text
+    receipt_id = receipt.json()["receipt_id"]
+
+    updated = await client.patch(
+        f"/api/inventory/receipts/{receipt_id}",
+        json={
+            "occurred_at": "2026-10-01T12:00:00+00:00",
+            "supplier_name": "Новый",
+            "supplier_document_number": "УПД-7",
+            "comment": "Поправили",
+            "lines": [
+                {
+                    "nomenclature_id": nomenclature_id,
+                    "quantity": "3",
+                    "unit_cost": "100",
+                    "lot_code": "L-PATCH",
+                }
+            ],
+        },
+    )
+    assert updated.status_code == 200, updated.text
+
+    card = await client.get(f"/api/inventory/receipts/{receipt_id}")
+    assert card.status_code == 200, card.text
+    assert card.json()["supplier_name"] == "Новый"
+    assert card.json()["supplier_document_number"] == "УПД-7"
+    assert len(card.json()["lines"]) == 1
+    assert Decimal(card.json()["lines"][0]["quantity"]) == Decimal(3)
+
+    posted = await client.post(f"/api/inventory/receipts/{receipt_id}/post")
+    assert posted.status_code == 200, posted.text
+
+    balance = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
+    )
+    assert balance.status_code == 200, balance.text
+    assert Decimal(balance.json()["quantity"]) == Decimal(3)
+    assert balance.json()["total_value_kopecks"] == 30000
+
+    late_update = await client.patch(
+        f"/api/inventory/receipts/{receipt_id}",
+        json={
+            "occurred_at": "2026-10-01T12:00:00+00:00",
+            "lines": [
+                {
+                    "nomenclature_id": nomenclature_id,
+                    "quantity": "5",
+                    "unit_cost": "100",
+                }
+            ],
+        },
+    )
+    assert late_update.status_code == 409
+    assert late_update.json()["error"] == "DocumentAlreadyPostedError"
+
+    write_off = await client.post(
+        "/api/inventory/write-offs",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-10-02T12:00:00+00:00",
+            "reason": "Старая причина",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "1"}],
+        },
+    )
+    assert write_off.status_code == 201, write_off.text
+    write_off_id = write_off.json()["write_off_id"]
+
+    updated_write_off = await client.patch(
+        f"/api/inventory/write-offs/{write_off_id}",
+        json={
+            "occurred_at": "2026-10-02T12:00:00+00:00",
+            "reason": "Просрочка",
+            "comment": "Уточнили",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "2"}],
+        },
+    )
+    assert updated_write_off.status_code == 200, updated_write_off.text
+
+    write_off_card = await client.get(f"/api/inventory/write-offs/{write_off_id}")
+    assert write_off_card.status_code == 200, write_off_card.text
+    assert write_off_card.json()["reason"] == "Просрочка"
+    assert Decimal(write_off_card.json()["lines"][0]["quantity"]) == Decimal(2)
+
+    write_off_posted = await client.post(
+        f"/api/inventory/write-offs/{write_off_id}/post"
+    )
+    assert write_off_posted.status_code == 200, write_off_posted.text
+
+    balance_after = await client.get(
+        f"/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
+    )
+    assert Decimal(balance_after.json()["quantity"]) == Decimal(1)

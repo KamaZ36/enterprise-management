@@ -928,6 +928,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory/receipts/{receipt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Receipt
+         * @description Карточка поступления
+         */
+        get: operations["get_receipt_api_inventory_receipts__receipt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Receipt
+         * @description Изменить черновик поступления
+         */
+        patch: operations["update_receipt_api_inventory_receipts__receipt_id__patch"];
+        trace?: never;
+    };
+    "/api/inventory/write-offs/{write_off_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Write Off
+         * @description Карточка списания
+         */
+        get: operations["get_write_off_api_inventory_write_offs__write_off_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Write Off
+         * @description Изменить черновик списания
+         */
+        patch: operations["update_write_off_api_inventory_write_offs__write_off_id__patch"];
+        trace?: never;
+    };
     "/api/inventory/locations/{org_unit_id}/balances": {
         parameters: {
             query?: never;
@@ -1000,46 +1048,6 @@ export interface paths {
          * @description Регистр движений: приход и расход по локациям
          */
         get: operations["list_movements_api_inventory_movements_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/inventory/receipts/{receipt_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Receipt
-         * @description Карточка поступления
-         */
-        get: operations["get_receipt_api_inventory_receipts__receipt_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/inventory/write-offs/{write_off_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Write Off
-         * @description Карточка списания
-         */
-        get: operations["get_write_off_api_inventory_write_offs__write_off_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3226,6 +3234,22 @@ export interface components {
             /** Actuals */
             actuals: components["schemas"]["ProductionOrderActualSchema"][];
         };
+        /** UpdateReceiptSchema */
+        UpdateReceiptSchema: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["ReceiptLineSchema"][];
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /** Supplier Document Number */
+            supplier_document_number?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
         /** UpdateRoleSchema */
         UpdateRoleSchema: {
             /** Name */
@@ -3246,6 +3270,20 @@ export interface components {
             occurred_at: string;
             /** Lines */
             lines: components["schemas"]["TransferLineSchema"][];
+            /** Comment */
+            comment?: string | null;
+        };
+        /** UpdateWriteOffSchema */
+        UpdateWriteOffSchema: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["WriteOffLineSchema"][];
+            /** Reason */
+            reason?: string | null;
             /** Comment */
             comment?: string | null;
         };
@@ -5212,6 +5250,138 @@ export interface operations {
             };
         };
     };
+    get_receipt_api_inventory_receipts__receipt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_receipt_api_inventory_receipts__receipt_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReceiptSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_write_off_api_inventory_write_offs__write_off_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                write_off_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteOffDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_write_off_api_inventory_write_offs__write_off_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                write_off_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWriteOffSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_balances_api_inventory_locations__org_unit_id__balances_get: {
         parameters: {
             query?: {
@@ -5341,68 +5511,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MovementListSchema"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_receipt_api_inventory_receipts__receipt_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                receipt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReceiptDetailSchema"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_write_off_api_inventory_write_offs__write_off_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                write_off_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WriteOffDetailSchema"];
                 };
             };
             /** @description Validation Error */
