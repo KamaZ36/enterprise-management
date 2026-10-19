@@ -19,6 +19,10 @@ class ReceiptRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def delete(self, receipt_id: UUID) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def attach_lot_ids(
         self, receipt_id: UUID, lot_ids: Mapping[UUID, UUID]
     ) -> None:

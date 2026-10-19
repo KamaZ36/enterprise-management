@@ -97,7 +97,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column width="130" align="right">
+      <el-table-column width="230" align="right">
         <template #default="{ row }">
           <el-button
             v-if="row.status === 'draft' && can('inventory.document.post')"
@@ -107,6 +107,19 @@
           >
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="row.status === 'draft' && canCreateDocument"
+            title="Удалить черновик поступления?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteReceipt(row as ReceiptListItem)"
+          >
+            <template #reference>
+              <el-button text type="danger" :disabled="busy" @click.stop>
+                Удалить
+              </el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
       <template #empty>
@@ -139,7 +152,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column width="130" align="right">
+      <el-table-column width="230" align="right">
         <template #default="{ row }">
           <el-button
             v-if="row.status === 'draft' && can('inventory.document.post')"
@@ -149,6 +162,19 @@
           >
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="row.status === 'draft' && canCreateDocument"
+            title="Удалить черновик списания?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteWriteOff(row as WriteOffListItem)"
+          >
+            <template #reference>
+              <el-button text type="danger" :disabled="busy" @click.stop>
+                Удалить
+              </el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
       <template #empty>
@@ -181,7 +207,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column width="130" align="right">
+      <el-table-column width="230" align="right">
         <template #default="{ row }">
           <el-button
             v-if="row.status === 'draft' && can('inventory.document.post')"
@@ -191,6 +217,19 @@
           >
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="row.status === 'draft' && canCreateDocument"
+            title="Удалить черновик инвентаризации?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteInventoryCount(row.id)"
+          >
+            <template #reference>
+              <el-button text type="danger" :disabled="busy" @click.stop>
+                Удалить
+              </el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
       <template #empty>
@@ -233,6 +272,23 @@
           <el-tag :type="row.status === 'posted' ? 'success' : 'info'" effect="light">
             {{ row.status === "posted" ? "проведён" : "черновик" }}
           </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column width="150" align="right">
+        <template #default="{ row }">
+          <el-popconfirm
+            v-if="row.status === 'draft' && canCreateDocument"
+            title="Удалить черновик перемещения?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteTransfer(row as TransferListItem)"
+          >
+            <template #reference>
+              <el-button text type="danger" :disabled="busy" @click.stop>
+                Удалить
+              </el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
@@ -574,6 +630,17 @@
           <el-button type="primary" :loading="trPosting" @click="postTransfer">
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="canCreateDocument"
+            title="Удалить черновик перемещения?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteTransfer(transferDetail)"
+          >
+            <template #reference>
+              <el-button type="danger" text :disabled="busy">Удалить</el-button>
+            </template>
+          </el-popconfirm>
         </div>
       </template>
     </el-drawer>
@@ -634,6 +701,17 @@
           >
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="canCreateDocument"
+            title="Удалить черновик поступления?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteReceipt(receiptDetail)"
+          >
+            <template #reference>
+              <el-button type="danger" text :disabled="busy">Удалить</el-button>
+            </template>
+          </el-popconfirm>
         </div>
       </template>
 
@@ -687,6 +765,17 @@
           >
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="canCreateDocument"
+            title="Удалить черновик списания?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteWriteOff(writeOffDetail)"
+          >
+            <template #reference>
+              <el-button type="danger" text :disabled="busy">Удалить</el-button>
+            </template>
+          </el-popconfirm>
         </div>
       </template>
     </el-drawer>
@@ -858,6 +947,17 @@
           >
             Провести
           </el-button>
+          <el-popconfirm
+            v-if="canCreateDocument"
+            title="Удалить черновик инвентаризации?"
+            confirm-button-text="Удалить"
+            cancel-button-text="Отмена"
+            @confirm="deleteInventoryCount(inventoryCountDetail.id)"
+          >
+            <template #reference>
+              <el-button type="danger" text :disabled="busy">Удалить</el-button>
+            </template>
+          </el-popconfirm>
         </div>
       </template>
     </el-drawer>
@@ -880,6 +980,7 @@ type WriteOffDetail = components["schemas"]["WriteOffDetailSchema"];
 type InventoryCountListItem =
   components["schemas"]["InventoryCountListItemSchema"];
 type InventoryCountDetail = components["schemas"]["InventoryCountDetailSchema"];
+type TransferListItem = components["schemas"]["TransferListItemSchema"];
 type Location = components["schemas"]["LocationSchema"];
 
 const PAGE_SIZE = 20;
@@ -2073,6 +2174,134 @@ async function postInventoryCount(id: string): Promise<void> {
     }
   } finally {
     icPosting.value = false;
+  }
+}
+
+
+function deleteReasonOf(status: number, fallback: string): string {
+  if (status === 403) {
+    return "Нет прав удалять документы склада";
+  }
+  if (status === 404) {
+    return "Документ не найден";
+  }
+  if (status === 409) {
+    return "Проведённый документ удалить нельзя";
+  }
+
+  return `${fallback}: ${status}`;
+}
+
+
+async function deleteReceipt(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response } = await api.DELETE("/api/inventory/receipts/{receipt_id}", {
+      params: { path: { receipt_id: row.id } },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        deleteReasonOf(response.status, "Не удалось удалить поступление"),
+      );
+    }
+
+    notice.value = "Черновик поступления удалён";
+    receiptDetail.value = null;
+    drawerOpen.value = false;
+    await refresh();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
+async function deleteWriteOff(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response } = await api.DELETE("/api/inventory/write-offs/{write_off_id}", {
+      params: { path: { write_off_id: row.id } },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        deleteReasonOf(response.status, "Не удалось удалить списание"),
+      );
+    }
+
+    notice.value = "Черновик списания удалён";
+    writeOffDetail.value = null;
+    drawerOpen.value = false;
+    await refresh();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
+async function deleteTransfer(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response } = await api.DELETE("/api/inventory/transfers/{transfer_id}", {
+      params: { path: { transfer_id: row.id } },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        deleteReasonOf(response.status, "Не удалось удалить перемещение"),
+      );
+    }
+
+    notice.value = "Черновик перемещения удалён";
+    transferDetail.value = null;
+    transferDrawerOpen.value = false;
+    await refresh();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
+async function deleteInventoryCount(id: string): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response } = await api.DELETE(
+      "/api/inventory/inventory-counts/{inventory_count_id}",
+      { params: { path: { inventory_count_id: id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        deleteReasonOf(response.status, "Не удалось удалить инвентаризацию"),
+      );
+    }
+
+    notice.value = "Черновик инвентаризации удалён";
+    inventoryCountDetail.value = null;
+    icDrawerOpen.value = false;
+    await refresh();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
+  } finally {
+    busy.value = false;
   }
 }
 </script>

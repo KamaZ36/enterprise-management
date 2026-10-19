@@ -25,6 +25,9 @@ from myasnaya_derevnya.modules.catalog.infrastructure.tables import (  # noqa: F
     PRICE_LISTS_TABLE,
     PRICES_TABLE,
 )
+from myasnaya_derevnya.modules.customer.infrastructure.tables import (  # noqa: F401
+    CUSTOMERS_TABLE,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa: F401
     INVENTORY_COUNT_LINES_TABLE,
     INVENTORY_COUNTS_TABLE,
@@ -45,6 +48,11 @@ from myasnaya_derevnya.modules.production.infrastructure.tables import (  # noqa
     PRODUCTION_ORDERS_TABLE,
     TECH_CARD_LINES_TABLE,
     TECH_CARDS_TABLE,
+)
+from myasnaya_derevnya.modules.sales.infrastructure.tables import (  # noqa: F401
+    ORDER_LINES_TABLE,
+    ORDER_NUMBER_COUNTERS_TABLE,
+    ORDERS_TABLE,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
     EMPLOYEES_TABLE,

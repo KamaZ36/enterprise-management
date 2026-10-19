@@ -18,3 +18,7 @@ class InventoryCountRepository(ABC):
     @abstractmethod
     async def get_by_id(self, inventory_count_id: UUID) -> InventoryCount | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, inventory_count_id: UUID) -> None:
+        raise NotImplementedError

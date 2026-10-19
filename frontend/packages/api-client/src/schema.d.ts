@@ -942,7 +942,11 @@ export interface paths {
         get: operations["get_receipt_api_inventory_receipts__receipt_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Receipt
+         * @description Удалить черновик поступления
+         */
+        delete: operations["delete_receipt_api_inventory_receipts__receipt_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -966,7 +970,11 @@ export interface paths {
         get: operations["get_write_off_api_inventory_write_offs__write_off_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Write Off
+         * @description Удалить черновик списания
+         */
+        delete: operations["delete_write_off_api_inventory_write_offs__write_off_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -1114,7 +1122,11 @@ export interface paths {
         get: operations["get_transfer_api_inventory_transfers__transfer_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Transfer
+         * @description Удалить черновик перемещения
+         */
+        delete: operations["delete_transfer_api_inventory_transfers__transfer_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -1162,7 +1174,11 @@ export interface paths {
         get: operations["get_inventory_count_api_inventory_inventory_counts__inventory_count_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Inventory Count
+         * @description Удалить черновик инвентаризации
+         */
+        delete: operations["delete_inventory_count_api_inventory_inventory_counts__inventory_count_id__delete"];
         options?: never;
         head?: never;
         /**
@@ -5281,6 +5297,37 @@ export interface operations {
             };
         };
     };
+    delete_receipt_api_inventory_receipts__receipt_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_receipt_api_inventory_receipts__receipt_id__patch: {
         parameters: {
             query?: never;
@@ -5334,6 +5381,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WriteOffDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_write_off_api_inventory_write_offs__write_off_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                write_off_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -5653,6 +5731,37 @@ export interface operations {
             };
         };
     };
+    delete_transfer_api_inventory_transfers__transfer_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_transfer_api_inventory_transfers__transfer_id__patch: {
         parameters: {
             query?: never;
@@ -5773,6 +5882,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InventoryCountDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_inventory_count_api_inventory_inventory_counts__inventory_count_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

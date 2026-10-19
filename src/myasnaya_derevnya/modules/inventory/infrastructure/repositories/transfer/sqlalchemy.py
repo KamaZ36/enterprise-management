@@ -108,6 +108,11 @@ class SQLAlchemyTransferRepository(TransferRepository):
 
         return self._to_entity(row, [self._to_line(line) for line in line_rows])
 
+    async def delete(self, transfer_id: UUID) -> None:
+        await self._session.execute(
+            delete(TRANSFERS_TABLE).where(TRANSFERS_TABLE.c.id == transfer_id)
+        )
+
     def _to_entity(self, row: RowMapping, lines: list[TransferLine]) -> Transfer:
         return Transfer(
             id=row["id"],

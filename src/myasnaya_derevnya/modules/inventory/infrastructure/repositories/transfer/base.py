@@ -16,3 +16,7 @@ class TransferRepository(ABC):
     @abstractmethod
     async def get_by_id(self, transfer_id: UUID) -> Transfer | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, transfer_id: UUID) -> None:
+        raise NotImplementedError

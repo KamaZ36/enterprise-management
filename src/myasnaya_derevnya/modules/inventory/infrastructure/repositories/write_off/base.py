@@ -16,3 +16,7 @@ class WriteOffRepository(ABC):
     @abstractmethod
     async def get_by_id(self, write_off_id: UUID) -> WriteOff | None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, write_off_id: UUID) -> None:
+        raise NotImplementedError

@@ -384,3 +384,174 @@ async def test_update_drafts_through_api(
         f"/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}"
     )
     assert Decimal(balance_after.json()["quantity"]) == Decimal(1)
+
+
+async def test_delete_drafts_through_api(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    org_unit_id = await _create_location(client, db_session)
+    other_org_unit_id = await _create_location(client, db_session)
+    count_org_unit_id = await _create_location(client, db_session)
+    nomenclature_id = await _create_nomenclature(client)
+
+    # --- Черновик поступления удаляется, повторно — уже не найден ---
+    receipt = await client.post(
+        "/api/inventory/receipts",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-10-01T12:00:00+00:00",
+            "lines": [
+                {
+                    "nomenclature_id": nomenclature_id,
+                    "quantity": "1",
+                    "unit_cost": "100",
+                }
+            ],
+        },
+    )
+    assert receipt.status_code == 201, receipt.text
+    receipt_id = receipt.json()["receipt_id"]
+
+    assert (
+        await client.delete(f"/api/inventory/receipts/{receipt_id}")
+    ).status_code == 200
+    assert (
+        await client.get(f"/api/inventory/receipts/{receipt_id}")
+    ).status_code == 404
+    assert (
+        await client.delete(f"/api/inventory/receipts/{receipt_id}")
+    ).status_code == 404
+
+    # --- Проведённое поступление удалить нельзя ---
+    posted_receipt = await client.post(
+        "/api/inventory/receipts",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-10-01T12:00:00+00:00",
+            "lines": [
+                {
+                    "nomenclature_id": nomenclature_id,
+                    "quantity": "5",
+                    "unit_cost": "100",
+                }
+            ],
+        },
+    )
+    posted_receipt_id = posted_receipt.json()["receipt_id"]
+    await client.post(f"/api/inventory/receipts/{posted_receipt_id}/post")
+
+    rejected_receipt = await client.delete(
+        f"/api/inventory/receipts/{posted_receipt_id}"
+    )
+    assert rejected_receipt.status_code == 409
+    assert rejected_receipt.json()["error"] == "DocumentAlreadyPostedError"
+
+    # --- Черновик списания удаляется, проведённый — нет ---
+    write_off = await client.post(
+        "/api/inventory/write-offs",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-10-02T12:00:00+00:00",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "1"}],
+        },
+    )
+    write_off_id = write_off.json()["write_off_id"]
+    assert (
+        await client.delete(f"/api/inventory/write-offs/{write_off_id}")
+    ).status_code == 200
+
+    posted_write_off = await client.post(
+        "/api/inventory/write-offs",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-10-02T12:00:00+00:00",
+            "reason": "Просрочка",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "1"}],
+        },
+    )
+    posted_write_off_id = posted_write_off.json()["write_off_id"]
+    await client.post(f"/api/inventory/write-offs/{posted_write_off_id}/post")
+
+    rejected_write_off = await client.delete(
+        f"/api/inventory/write-offs/{posted_write_off_id}"
+    )
+    assert rejected_write_off.status_code == 409
+    assert rejected_write_off.json()["error"] == "DocumentAlreadyPostedError"
+
+    # --- Черновик перемещения удаляется, проведённое — нет ---
+    transfer = await client.post(
+        "/api/inventory/transfers",
+        json={
+            "from_org_unit_id": org_unit_id,
+            "to_org_unit_id": other_org_unit_id,
+            "occurred_at": "2026-10-03T12:00:00+00:00",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "1"}],
+        },
+    )
+    assert transfer.status_code == 201, transfer.text
+    transfer_id = transfer.json()["transfer_id"]
+    assert (
+        await client.delete(f"/api/inventory/transfers/{transfer_id}")
+    ).status_code == 200
+
+    posted_transfer = await client.post(
+        "/api/inventory/transfers",
+        json={
+            "from_org_unit_id": org_unit_id,
+            "to_org_unit_id": other_org_unit_id,
+            "occurred_at": "2026-10-03T12:00:00+00:00",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "2"}],
+        },
+    )
+    posted_transfer_id = posted_transfer.json()["transfer_id"]
+    assert (
+        await client.post(f"/api/inventory/transfers/{posted_transfer_id}/post")
+    ).status_code == 200
+
+    rejected_transfer = await client.delete(
+        f"/api/inventory/transfers/{posted_transfer_id}"
+    )
+    assert rejected_transfer.status_code == 409
+    assert rejected_transfer.json()["error"] == "DocumentAlreadyPostedError"
+
+    # --- Черновик инвентаризации удаляется, проведённая — нет ---
+    inventory_count = await client.post(
+        "/api/inventory/inventory-counts",
+        json={
+            "org_unit_id": count_org_unit_id,
+            "occurred_at": "2026-10-04T12:00:00+00:00",
+            "lines": [
+                {"nomenclature_id": nomenclature_id, "counted_quantity": "1"}
+            ],
+        },
+    )
+    assert inventory_count.status_code == 201, inventory_count.text
+    inventory_count_id = inventory_count.json()["inventory_count_id"]
+    assert (
+        await client.delete(
+            f"/api/inventory/inventory-counts/{inventory_count_id}"
+        )
+    ).status_code == 200
+
+    posted_inventory_count = await client.post(
+        "/api/inventory/inventory-counts",
+        json={
+            "org_unit_id": count_org_unit_id,
+            "occurred_at": "2026-10-04T12:00:00+00:00",
+            "lines": [
+                {"nomenclature_id": nomenclature_id, "counted_quantity": "3"}
+            ],
+        },
+    )
+    posted_inventory_count_id = posted_inventory_count.json()["inventory_count_id"]
+    assert (
+        await client.post(
+            f"/api/inventory/inventory-counts/{posted_inventory_count_id}/post"
+        )
+    ).status_code == 200
+
+    rejected_count = await client.delete(
+        f"/api/inventory/inventory-counts/{posted_inventory_count_id}"
+    )
+    assert rejected_count.status_code == 409
+    assert rejected_count.json()["error"] == "DocumentAlreadyPostedError"

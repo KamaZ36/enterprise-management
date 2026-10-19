@@ -12,6 +12,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.balances.list i
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.create import (
     CreateInventoryCountInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.delete import (
+    DeleteInventoryCountInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.get import (
     GetInventoryCountInteractor,
 )
@@ -39,6 +42,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.production.post
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.delete import (
+    DeleteReceiptInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.get import (
     GetReceiptInteractor,
 )
@@ -57,6 +63,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.delete import (
+    DeleteTransferInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.get import (
     GetTransferInteractor,
 )
@@ -71,6 +80,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.updat
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
     CreateWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.delete import (
+    DeleteWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.get import (
     GetWriteOffInteractor,
@@ -314,6 +326,7 @@ class InventoryDepProvider(Provider):
 
 
     create_receipt_interactor = provide(CreateReceiptInteractor, scope=Scope.REQUEST)
+    delete_receipt_interactor = provide(DeleteReceiptInteractor, scope=Scope.REQUEST)
     post_receipt_interactor = provide(PostReceiptInteractor, scope=Scope.REQUEST)
     update_receipt_interactor = provide(UpdateReceiptInteractor, scope=Scope.REQUEST)
     post_production_interactor = provide(
@@ -321,12 +334,18 @@ class InventoryDepProvider(Provider):
     )
     post_sale_interactor = provide(PostSaleInteractor, scope=Scope.REQUEST)
     create_write_off_interactor = provide(CreateWriteOffInteractor, scope=Scope.REQUEST)
+    delete_write_off_interactor = provide(
+        DeleteWriteOffInteractor, scope=Scope.REQUEST
+    )
     post_write_off_interactor = provide(PostWriteOffInteractor, scope=Scope.REQUEST)
     update_write_off_interactor = provide(
         UpdateWriteOffInteractor, scope=Scope.REQUEST
     )
     create_inventory_count_interactor = provide(
         CreateInventoryCountInteractor, scope=Scope.REQUEST
+    )
+    delete_inventory_count_interactor = provide(
+        DeleteInventoryCountInteractor, scope=Scope.REQUEST
     )
     post_inventory_count_interactor = provide(
         PostInventoryCountInteractor, scope=Scope.REQUEST
@@ -352,6 +371,7 @@ class InventoryDepProvider(Provider):
     list_write_offs_interactor = provide(ListWriteOffsInteractor, scope=Scope.REQUEST)
     get_write_off_interactor = provide(GetWriteOffInteractor, scope=Scope.REQUEST)
     create_transfer_interactor = provide(CreateTransferInteractor, scope=Scope.REQUEST)
+    delete_transfer_interactor = provide(DeleteTransferInteractor, scope=Scope.REQUEST)
     post_transfer_interactor = provide(PostTransferInteractor, scope=Scope.REQUEST)
     list_transfers_interactor = provide(ListTransfersInteractor, scope=Scope.REQUEST)
     get_transfer_interactor = provide(GetTransferInteractor, scope=Scope.REQUEST)

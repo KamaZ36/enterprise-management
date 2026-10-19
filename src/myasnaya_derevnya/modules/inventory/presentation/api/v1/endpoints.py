@@ -19,6 +19,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.inventory_count
     CreateInventoryCountInteractor,
     InventoryCountLineCommand,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.delete import (
+    DeleteInventoryCountCommand,
+    DeleteInventoryCountInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.get import (
     GetInventoryCountInteractor,
     GetInventoryCountQuery,
@@ -52,6 +56,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create
     CreateReceiptInteractor,
     ReceiptLineCommand,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.delete import (
+    DeleteReceiptCommand,
+    DeleteReceiptInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.get import (
     GetReceiptInteractor,
     GetReceiptQuery,
@@ -74,6 +82,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.creat
     CreateTransferInteractor,
     TransferLineCommand,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.delete import (
+    DeleteTransferCommand,
+    DeleteTransferInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.get import (
     GetTransferInteractor,
     GetTransferQuery,
@@ -95,6 +107,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.crea
     CreateWriteOffCommand,
     CreateWriteOffInteractor,
     WriteOffLineCommand,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.delete import (
+    DeleteWriteOffCommand,
+    DeleteWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.get import (
     GetWriteOffInteractor,
@@ -305,6 +321,24 @@ async def update_write_off(
     async with container(context={Request: request}) as context:
         interactor = await context.get(UpdateWriteOffInteractor)
         await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.delete("/receipts/{receipt_id}", description="Удалить черновик поступления")
+async def delete_receipt(request: Request, receipt_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(DeleteReceiptInteractor)
+        await interactor(DeleteReceiptCommand(receipt_id=receipt_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.delete("/write-offs/{write_off_id}", description="Удалить черновик списания")
+async def delete_write_off(request: Request, write_off_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(DeleteWriteOffInteractor)
+        await interactor(DeleteWriteOffCommand(write_off_id=write_off_id))
 
     return JSONResponse(content={"message": "ok"})
 
@@ -620,6 +654,15 @@ async def update_transfer(
     return JSONResponse(content={"message": "ok"})
 
 
+@router.delete("/transfers/{transfer_id}", description="Удалить черновик перемещения")
+async def delete_transfer(request: Request, transfer_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(DeleteTransferInteractor)
+        await interactor(DeleteTransferCommand(transfer_id=transfer_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
 @router.get(
     "/transfers/{transfer_id}",
     response_model=TransferDetailSchema,
@@ -715,6 +758,22 @@ async def post_inventory_count(
         interactor = await context.get(PostInventoryCountInteractor)
         await interactor(
             PostInventoryCountCommand(inventory_count_id=inventory_count_id)
+        )
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.delete(
+    "/inventory-counts/{inventory_count_id}",
+    description="Удалить черновик инвентаризации",
+)
+async def delete_inventory_count(
+    request: Request, inventory_count_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(DeleteInventoryCountInteractor)
+        await interactor(
+            DeleteInventoryCountCommand(inventory_count_id=inventory_count_id)
         )
 
     return JSONResponse(content={"message": "ok"})

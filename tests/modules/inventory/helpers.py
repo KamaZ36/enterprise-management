@@ -32,6 +32,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.production.post
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.delete import (
+    DeleteReceiptInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
 )
@@ -43,6 +46,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
     CreateWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.delete import (
+    DeleteWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
@@ -132,9 +138,11 @@ class InventoryInteractors:
     create_receipt: CreateReceiptInteractor
     post_receipt: PostReceiptInteractor
     update_receipt: UpdateReceiptInteractor
+    delete_receipt: DeleteReceiptInteractor
     create_write_off: CreateWriteOffInteractor
     post_write_off: PostWriteOffInteractor
     update_write_off: UpdateWriteOffInteractor
+    delete_write_off: DeleteWriteOffInteractor
     staff_api: FakeStaffAPI
 
 
@@ -175,6 +183,13 @@ def build_interactors(
             staff_api=staff_api,
             transaction_manager=transaction_manager,
         ),
+        delete_receipt=DeleteReceiptInteractor(
+            identity_provider=identity,
+            business_api=api,
+            receipt_repository=receipts,
+            staff_api=staff_api,
+            transaction_manager=transaction_manager,
+        ),
         create_write_off=CreateWriteOffInteractor(
             identity_provider=identity,
             business_api=api,
@@ -192,6 +207,13 @@ def build_interactors(
             transaction_manager=transaction_manager,
         ),
         update_write_off=UpdateWriteOffInteractor(
+            identity_provider=identity,
+            business_api=api,
+            write_off_repository=write_offs,
+            staff_api=staff_api,
+            transaction_manager=transaction_manager,
+        ),
+        delete_write_off=DeleteWriteOffInteractor(
             identity_provider=identity,
             business_api=api,
             write_off_repository=write_offs,

@@ -81,6 +81,13 @@ class SQLAlchemyInventoryCountRepository(InventoryCountRepository):
 
         return self._to_entity(row, [self._to_line(line) for line in line_rows])
 
+    async def delete(self, inventory_count_id: UUID) -> None:
+        await self._session.execute(
+            delete(INVENTORY_COUNTS_TABLE).where(
+                INVENTORY_COUNTS_TABLE.c.id == inventory_count_id
+            )
+        )
+
     async def _insert_lines(self, inventory_count: InventoryCount) -> None:
         lines = inventory_count.lines
         if not lines:

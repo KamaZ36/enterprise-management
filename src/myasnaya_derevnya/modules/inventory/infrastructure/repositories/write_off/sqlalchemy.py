@@ -98,6 +98,11 @@ class SQLAlchemyWriteOffRepository(WriteOffRepository):
 
         return self._to_entity(row, [self._to_line(line) for line in line_rows])
 
+    async def delete(self, write_off_id: UUID) -> None:
+        await self._session.execute(
+            delete(WRITE_OFFS_TABLE).where(WRITE_OFFS_TABLE.c.id == write_off_id)
+        )
+
     def _to_entity(self, row: RowMapping, lines: list[WriteOffLine]) -> WriteOff:
         return WriteOff(
             id=row["id"],
