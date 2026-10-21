@@ -7,6 +7,8 @@ export const CAN = {
   nomenclaturesOpen: ["nomenclature.read", "category.read"],
   nomenclatureCreate: ["nomenclature.create", "category.read"],
   orgUnitsOpen: ["org_unit.read"],
+  cashRegistersOpen: ["cash_register.read"],
+  cashRegisterManage: ["cash_register.manage"],
   employeesOpen: ["staff.employee.read"],
   employeeEdit: ["staff.employee.manage"],
   employeeResetPassword: ["staff.employee.reset_password"],

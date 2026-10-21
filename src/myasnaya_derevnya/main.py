@@ -45,6 +45,9 @@ from myasnaya_derevnya.modules.customer.presentation.api.v1.customers import (
 from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
     login_router as customer_login_router,
 )
+from myasnaya_derevnya.modules.fiscal.presentation.api.v1 import (
+    router as fiscal_router,
+)
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
 )
@@ -130,6 +133,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(production_router)
     app.include_router(customer_login_router)
     app.include_router(customers_router)
+    app.include_router(fiscal_router)
 
 
 def include_media(app: FastAPI) -> None:

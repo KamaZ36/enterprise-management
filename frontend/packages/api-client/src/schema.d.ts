@@ -1420,6 +1420,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/fiscal/cash-registers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Cash Registers
+         * @description Список касс
+         */
+        get: operations["list_cash_registers_api_fiscal_cash_registers_get"];
+        put?: never;
+        /**
+         * Create Cash Register
+         * @description Добавить кассу
+         */
+        post: operations["create_cash_register_api_fiscal_cash_registers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/stock-locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Stock Locations
+         * @description Точки, к которым можно привязать кассу
+         */
+        get: operations["list_stock_locations_api_fiscal_stock_locations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/cash-registers/{cash_register_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cash Register
+         * @description Касса с историей привязок
+         */
+        get: operations["get_cash_register_api_fiscal_cash_registers__cash_register_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Cash Register
+         * @description Изменить кассу
+         */
+        patch: operations["update_cash_register_api_fiscal_cash_registers__cash_register_id__patch"];
+        trace?: never;
+    };
+    "/api/fiscal/cash-registers/{cash_register_id}/bind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bind Cash Register
+         * @description Привязать кассу к подразделению
+         */
+        post: operations["bind_cash_register_api_fiscal_cash_registers__cash_register_id__bind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/cash-registers/{cash_register_id}/unbind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unbind Cash Register
+         * @description Закрыть привязку кассы
+         */
+        post: operations["unbind_cash_register_api_fiscal_cash_registers__cash_register_id__unbind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1505,6 +1613,16 @@ export interface components {
              */
             total_value_kopecks?: number | null;
         };
+        /** BindCashRegisterSchema */
+        BindCashRegisterSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Effective From */
+            effective_from?: string | null;
+        };
         /** BindPriceListSchema */
         BindPriceListSchema: {
             /**
@@ -1571,6 +1689,98 @@ export interface components {
             /** Lines */
             lines: components["schemas"]["CartLineSchema"][];
         };
+        /** CashRegisterBindingSchema */
+        CashRegisterBindingSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /**
+             * Effective From
+             * Format: date-time
+             */
+            effective_from: string;
+            /** Effective To */
+            effective_to: string | null;
+        };
+        /** CashRegisterDetailSchema */
+        CashRegisterDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reg Number */
+            reg_number: string | null;
+            /** Serial Number */
+            serial_number: string | null;
+            /** Name */
+            name: string;
+            /** Fiscal Place */
+            fiscal_place: string | null;
+            /** Model */
+            model: string | null;
+            /** Fn Number */
+            fn_number: string | null;
+            /** Ffd Version */
+            ffd_version: string | null;
+            /** Company Id */
+            company_id: string | null;
+            /** Registered At */
+            registered_at: string | null;
+            /** Deregistered At */
+            deregistered_at: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Org Unit Id */
+            org_unit_id: string | null;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Bindings */
+            bindings: components["schemas"]["CashRegisterBindingSchema"][];
+        };
+        /** CashRegisterSchema */
+        CashRegisterSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reg Number */
+            reg_number: string | null;
+            /** Serial Number */
+            serial_number: string | null;
+            /** Name */
+            name: string;
+            /** Fiscal Place */
+            fiscal_place: string | null;
+            /** Model */
+            model: string | null;
+            /** Fn Number */
+            fn_number: string | null;
+            /** Ffd Version */
+            ffd_version: string | null;
+            /** Company Id */
+            company_id: string | null;
+            /** Registered At */
+            registered_at: string | null;
+            /** Deregistered At */
+            deregistered_at: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Org Unit Id */
+            org_unit_id: string | null;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+        };
         /** CategorySchema */
         CategorySchema: {
             /**
@@ -1594,6 +1804,31 @@ export interface components {
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** CreateCashRegisterSchema */
+        CreateCashRegisterSchema: {
+            /** Name */
+            name?: string | null;
+            /** Reg Number */
+            reg_number?: string | null;
+            /** Serial Number */
+            serial_number?: string | null;
+            /** Fiscal Place */
+            fiscal_place?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Fn Number */
+            fn_number?: string | null;
+            /** Ffd Version */
+            ffd_version?: string | null;
+            /** Company Id */
+            company_id?: string | null;
+            /** Registered At */
+            registered_at?: string | null;
+            /** Attributes */
+            attributes?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** CreateCategorySchema */
         CreateCategorySchema: {
@@ -2943,6 +3178,18 @@ export interface components {
          * @enum {string}
          */
         SpecLineRole: "component" | "output" | "loss";
+        /** StockLocationOptionSchema */
+        StockLocationOptionSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
         /** SubmitCartSchema */
         SubmitCartSchema: {
             /**
@@ -3150,6 +3397,11 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** UnbindCashRegisterSchema */
+        UnbindCashRegisterSchema: {
+            /** Effective To */
+            effective_to?: string | null;
+        };
         /**
          * UnitOfMeasurement
          * @enum {string}
@@ -3171,6 +3423,33 @@ export interface components {
              * @default []
              */
             lines: components["schemas"]["OrderLineCommandSchema"][];
+        };
+        /** UpdateCashRegisterSchema */
+        UpdateCashRegisterSchema: {
+            /** Name */
+            name?: string | null;
+            /** Reg Number */
+            reg_number?: string | null;
+            /** Serial Number */
+            serial_number?: string | null;
+            /** Fiscal Place */
+            fiscal_place?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Fn Number */
+            fn_number?: string | null;
+            /** Ffd Version */
+            ffd_version?: string | null;
+            /** Company Id */
+            company_id?: string | null;
+            /** Registered At */
+            registered_at?: string | null;
+            /** Attributes */
+            attributes?: {
+                [key: string]: unknown;
+            } | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /** UpdateCategorySchema */
         UpdateCategorySchema: {
@@ -6406,6 +6685,227 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cash_registers_api_fiscal_cash_registers_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+                at?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_cash_register_api_fiscal_cash_registers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCashRegisterSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_stock_locations_api_fiscal_stock_locations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockLocationOptionSchema"][];
+                };
+            };
+        };
+    };
+    get_cash_register_api_fiscal_cash_registers__cash_register_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cash_register_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_cash_register_api_fiscal_cash_registers__cash_register_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cash_register_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCashRegisterSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bind_cash_register_api_fiscal_cash_registers__cash_register_id__bind_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cash_register_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BindCashRegisterSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unbind_cash_register_api_fiscal_cash_registers__cash_register_id__unbind_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cash_register_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnbindCashRegisterSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

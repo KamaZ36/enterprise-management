@@ -43,6 +43,13 @@ _CLEANUP_STATEMENTS = (
     "delete from catalog.price_lists where name like :prefix",
     "delete from catalog.nomenclatures where sku like :prefix",
     "delete from catalog.categories where name like :prefix",
+    # кассы и их привязки создают только тесты
+    """
+    delete from fiscal.cash_register_bindings
+     where cash_register_id in
+           (select id from fiscal.cash_registers where name like :prefix)
+    """,
+    "delete from fiscal.cash_registers where name like :prefix",
     # клиентов и сотрудников создают только тесты
     "delete from customer.customers",
     "delete from staff.employees",

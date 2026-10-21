@@ -6,6 +6,7 @@ def all_permissions() -> tuple[Permission, ...]:
     from myasnaya_derevnya.modules.business.domain import permissions as business
     from myasnaya_derevnya.modules.catalog.domain import permissions as catalog
     from myasnaya_derevnya.modules.customer.domain import permissions as customer
+    from myasnaya_derevnya.modules.fiscal.domain import permissions as fiscal
     from myasnaya_derevnya.modules.inventory.domain import permissions as inventory
     from myasnaya_derevnya.modules.production.domain import permissions as production
     from myasnaya_derevnya.modules.sales.domain import permissions as sales
@@ -16,6 +17,7 @@ def all_permissions() -> tuple[Permission, ...]:
         business,
         catalog,
         customer,
+        fiscal,
         inventory,
         production,
         sales,

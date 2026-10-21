@@ -119,6 +119,12 @@ export const MODULES: ModuleDefinition[
         permissions: CAN.orgUnitsOpen,
       },
       {
+        path: "/catalog/cash-registers",
+        title: "Кассы",
+        icon: "Money",
+        permissions: CAN.cashRegistersOpen,
+      },
+      {
         path: "/catalog/prices",
         title: "Цены",
         icon: "Money",
