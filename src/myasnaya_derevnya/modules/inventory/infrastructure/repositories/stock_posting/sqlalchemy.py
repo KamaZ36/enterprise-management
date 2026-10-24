@@ -1,4 +1,6 @@
-from sqlalchemy import insert
+from uuid import UUID
+
+from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_posting import (
@@ -27,3 +29,12 @@ class SQLAlchemyStockPostingRepository(StockPostingRepository):
                 posted_by=posting.posted_by,
             )
         )
+
+    async def exists(self, *, document_type: str, document_id: UUID) -> bool:
+        result = await self._session.execute(
+            select(STOCK_POSTINGS_TABLE.c.id).where(
+                STOCK_POSTINGS_TABLE.c.document_type == document_type,
+                STOCK_POSTINGS_TABLE.c.document_id == document_id,
+            )
+        )
+        return result.scalar_one_or_none() is not None

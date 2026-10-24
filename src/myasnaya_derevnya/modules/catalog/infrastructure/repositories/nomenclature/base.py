@@ -25,3 +25,8 @@ class NomenclatureRepository(ABC):
     async def get_ids_by_search(self, search: str, *, limit: int) -> list[UUID]:
         """Идентификаторы номенклатур, найденных по названию или артикулу."""
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_id_by_gtin(self, gtin: str) -> UUID | None:
+        """Идентификатор активной номенклатуры с указанным GTIN."""
+        raise NotImplementedError

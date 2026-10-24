@@ -4,6 +4,13 @@ from myasnaya_derevnya.core.database.connection import async_session_maker
 
 TEST_PREFIX = "PYTEST-"
 
+OFD_TABLES = (
+    "fiscal.ofd_receipt_lines",
+    "fiscal.ofd_receipts",
+    "fiscal.ofd_product_aliases",
+    "fiscal.ofd_sync_runs",
+)
+
 INVENTORY_TABLES = (
     "inventory.stock_movements",
     "inventory.stock_postings",
@@ -78,7 +85,11 @@ _CLEANUP_STATEMENTS = (
 
 async def clean_database() -> None:
     async with async_session_maker() as session:
-        await session.execute(text(f"TRUNCATE {', '.join(INVENTORY_TABLES)} CASCADE"))
+        await session.execute(
+            text(
+                f"TRUNCATE {', '.join((*INVENTORY_TABLES, *OFD_TABLES))} CASCADE"
+            )
+        )
 
         for statement in _CLEANUP_STATEMENTS:
             await session.execute(text(statement), {"prefix": f"{TEST_PREFIX}%"})

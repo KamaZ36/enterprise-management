@@ -8,7 +8,22 @@ export default defineNuxtConfig({
       allowedHosts: [".tuna.am"],
     },
   },
-  css: ["~/assets/css/main.css"],
+  css: [
+    // Кириллица + латиница, только нужные начертания. Self-hosted, без внешних запросов.
+    "@fontsource/lora/cyrillic-400.css",
+    "@fontsource/lora/cyrillic-500.css",
+    "@fontsource/lora/cyrillic-600.css",
+    "@fontsource/lora/latin-400.css",
+    "@fontsource/lora/latin-500.css",
+    "@fontsource/lora/latin-600.css",
+    "@fontsource/golos-text/cyrillic-400.css",
+    "@fontsource/golos-text/cyrillic-500.css",
+    "@fontsource/golos-text/cyrillic-600.css",
+    "@fontsource/golos-text/latin-400.css",
+    "@fontsource/golos-text/latin-500.css",
+    "@fontsource/golos-text/latin-600.css",
+    "~/assets/css/main.css",
+  ],
 
 
   alias: {

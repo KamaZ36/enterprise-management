@@ -40,7 +40,14 @@
         </div>
 
         <div v-reveal="120" class="photo">
-          <img src="/photos/cafe-1.jpg" alt="Зал кафе «Мясная деревня»" loading="lazy" />
+          <img
+            src="/photos/cafe-1.jpg"
+            width="960"
+            height="1280"
+            alt="Зал кафе «Мясная деревня»"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </div>
     </section>
@@ -48,7 +55,14 @@
     <section class="section" id="shops">
       <div class="wrap split split--reverse">
         <div v-reveal="120" class="photo">
-          <img src="/photos/shop-1.jpg" alt="Магазин «Мясная деревня»" loading="lazy" />
+          <img
+            src="/photos/shop-1.jpg"
+            width="1050"
+            height="1400"
+            alt="Магазин «Мясная деревня»"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
 
         <div v-reveal class="split__text">
@@ -98,7 +112,14 @@
         </div>
 
         <div v-reveal="120" class="photo">
-          <img src="/photos/building.webp" alt="Здание «Мясная деревня»: магазин и кафе" loading="lazy" />
+          <img
+            src="/photos/building.webp"
+            width="1280"
+            height="960"
+            alt="Здание «Мясная деревня»: магазин и кафе"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </div>
     </section>
@@ -137,6 +158,12 @@
 </template>
 
 <script setup lang="ts">
+useHead({
+  link: [
+    { rel: "preload", as: "image", href: "/hero.jpg", fetchpriority: "high" },
+  ],
+});
+
 const config = useRuntimeConfig();
 const cafeAppUrl = String(config.public.cafeAppUrl);
 

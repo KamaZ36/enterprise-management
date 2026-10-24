@@ -26,11 +26,17 @@ from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale
     PostSaleInteractor,
     SaleLineCommand,
 )
+from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
+    DocumentType,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_balance.base import (
     StockBalanceRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movement.base import (
     StockMovementRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_posting.base import (
+    StockPostingRepository,
 )
 
 
@@ -83,6 +89,7 @@ class InventoryAPI:
         post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
         movement_repository: StockMovementRepository,
+        posting_repository: StockPostingRepository,
         business_api: BusinessAPI,
     ) -> None:
         self._create_receipt_interactor = create_receipt_interactor
@@ -91,6 +98,7 @@ class InventoryAPI:
         self._post_sale_interactor = post_sale_interactor
         self._balance_repository = balance_repository
         self._movement_repository = movement_repository
+        self._posting_repository = posting_repository
         self._business_api = business_api
 
     async def post_receipt(
@@ -146,6 +154,14 @@ class InventoryAPI:
         return await self._movement_repository.count_for_nomenclature(
             nomenclature_id
         ) > 0
+
+    async def sale_posting_exists(self, document_id: UUID) -> bool:
+        """Проведена ли продажа с таким идентификатором документа."""
+
+        return await self._posting_repository.exists(
+            document_type=DocumentType.SALE.value,
+            document_id=document_id,
+        )
 
     async def get_location(self, org_unit_id: UUID) -> LocationInfo | None:
         location = await self._business_api.stock_location(org_unit_id)

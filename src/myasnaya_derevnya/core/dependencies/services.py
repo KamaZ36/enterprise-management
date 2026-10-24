@@ -5,6 +5,7 @@ from myasnaya_derevnya.core.identity_provider import IdentityProvider, SessionId
 from myasnaya_derevnya.core.media.paths import media_root
 from myasnaya_derevnya.core.media.storage import LocalDiskStorage, MediaStorage
 from myasnaya_derevnya.core.settings.media import MediaSettings
+from myasnaya_derevnya.core.settings.ofd import OfdSettings
 from myasnaya_derevnya.modules.auth.infrastructure.identity_provider import (
     HTTPIdentityProvider,
     HTTPSessionIDGetter,
@@ -20,6 +21,10 @@ class ServicesDepProvider(Provider):
     @provide(scope=Scope.APP)
     def get_media_settings(self) -> MediaSettings:
         return MediaSettings()
+
+    @provide(scope=Scope.APP)
+    def get_ofd_settings(self) -> OfdSettings:
+        return OfdSettings()
 
     @provide(scope=Scope.APP)
     def get_media_storage(self, media_settings: MediaSettings) -> MediaStorage:

@@ -31,6 +31,10 @@ from myasnaya_derevnya.modules.customer.infrastructure.tables import (  # noqa: 
 from myasnaya_derevnya.modules.fiscal.infrastructure.tables import (  # noqa: F401
     CASH_REGISTER_BINDINGS_TABLE,
     CASH_REGISTERS_TABLE,
+    OFD_PRODUCT_ALIASES_TABLE,
+    OFD_RECEIPT_LINES_TABLE,
+    OFD_RECEIPTS_TABLE,
+    OFD_SYNC_RUNS_TABLE,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa: F401
     INVENTORY_COUNT_LINES_TABLE,

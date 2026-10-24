@@ -17,6 +17,10 @@
 остатки: поступления (с партиями и сроками годности), производственное
 задание и перемещения готовой продукции по точкам.
 
+Для витрины кафе дополнительно создаётся меню: категории разделов, блюда,
+прайс-лист «Меню кафе» с ценами и привязка этого прайс-листа к точке
+«Кафе» — без цены позиция на витрине не показывается.
+
 Также создаются роли (кассир, менеджер кафе, мастер колбасного цеха,
 директор) и сотрудники с назначенными ролями. Логины — латиницей
 (см. ``STAFF_EMPLOYEES``), пароль у всех ``demo12345``.
@@ -258,6 +262,357 @@ NOMENCLATURES: list[dict[str, str]] = [
         "name": "Бутылка ПЭТ 0,5 л",
         "unit": "pcs",
         "category": "packaging",
+    },
+]
+
+# Меню кафе: отдельные категории витрины и блюда-номенклатуры. Витрина кафе
+# показывает позиции, у которых есть цена в прайс-листе, привязанном к точке
+# (см. ``CAFE_PRICE_LIST_NAME``), поэтому для каждой позиции заводится цена.
+# ``sort_order`` задаёт порядок разделов в кабинете кафе.
+CAFE_CATEGORIES: list[dict[str, Any]] = [
+    {"key": "snacks", "name": "Закуски", "sort_order": 30},
+    {"key": "soups", "name": "Супы", "sort_order": 40},
+    {"key": "hot", "name": "Горячее", "sort_order": 50},
+    {"key": "deli", "name": "Мясные деликатесы", "sort_order": 60},
+    {"key": "bakery", "name": "Выпечка", "sort_order": 70},
+    {"key": "desserts", "name": "Десерты", "sort_order": 80},
+    {"key": "drinks", "name": "Напитки", "sort_order": 90},
+]
+
+CAFE_PRICE_LIST_NAME = "Меню кафе"
+
+# key, sku, name, unit, category key, price (руб. строкой), description
+CAFE_MENU: list[dict[str, Any]] = [
+    # Закуски
+    {
+        "key": "meat_platter",
+        "sku": "MENU-MEAT-PLATTER",
+        "name": "Мясное ассорти",
+        "unit": "pcs",
+        "category": "snacks",
+        "price": "490.00",
+        "description": "Домашние колбасы и деликатесы собственного производства",
+    },
+    {
+        "key": "lard",
+        "sku": "MENU-LARD",
+        "name": "Сало с чесноком",
+        "unit": "pcs",
+        "category": "snacks",
+        "price": "190.00",
+        "description": "Солёное сало с чесноком и чёрным перцем",
+    },
+    {
+        "key": "pickles",
+        "sku": "MENU-PICKLES",
+        "name": "Соленья домашние",
+        "unit": "pcs",
+        "category": "snacks",
+        "price": "150.00",
+        "description": "Огурцы и помидоры бочкового посола",
+    },
+    {
+        "key": "cheese_plate",
+        "sku": "MENU-CHEESE-PLATE",
+        "name": "Сырная тарелка",
+        "unit": "pcs",
+        "category": "snacks",
+        "price": "320.00",
+        "description": "Выдержанные сыры с мёдом и орехами",
+    },
+    # Супы
+    {
+        "key": "borsch",
+        "sku": "MENU-BORSCH",
+        "name": "Борщ с говядиной",
+        "unit": "pcs",
+        "category": "soups",
+        "price": "280.00",
+        "description": "Со сметаной и пампушками",
+    },
+    {
+        "key": "schi",
+        "sku": "MENU-SCHI",
+        "name": "Щи по-домашнему",
+        "unit": "pcs",
+        "category": "soups",
+        "price": "260.00",
+        "description": "Щи из свежей капусты на бульоне из свинины",
+    },
+    {
+        "key": "solyanka",
+        "sku": "MENU-SOLYANKA",
+        "name": "Солянка мясная",
+        "unit": "pcs",
+        "category": "soups",
+        "price": "320.00",
+        "description": "Сборная солянка с колбасными изделиями",
+    },
+    {
+        "key": "mushroom_soup",
+        "sku": "MENU-MUSHROOM-SOUP",
+        "name": "Крем-суп грибной",
+        "unit": "pcs",
+        "category": "soups",
+        "price": "290.00",
+        "description": "Бархатистый крем-суп из шампиньонов",
+    },
+    # Горячее
+    {
+        "key": "kotlet_puree",
+        "sku": "MENU-KOTLET-PUREE",
+        "name": "Котлета «Домашняя» с пюре",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "350.00",
+        "description": "Котлета собственного производства с картофельным пюре",
+    },
+    {
+        "key": "grill_sausage",
+        "sku": "MENU-GRILL-SAUSAGE",
+        "name": "Колбаски гриль",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "420.00",
+        "description": "Домашние колбаски на гриле с овощами",
+    },
+    {
+        "key": "pork_steak",
+        "sku": "MENU-PORK-STEAK",
+        "name": "Стейк из свинины",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "590.00",
+        "description": "Сочный стейк из свиной шеи на гриле",
+    },
+    {
+        "key": "zharkoe",
+        "sku": "MENU-ZHARKOE",
+        "name": "Жаркое по-домашнему",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "390.00",
+        "description": "Свинина с картофелем, тушённая в горшочке",
+    },
+    {
+        "key": "pelmeni",
+        "sku": "MENU-PELMENI",
+        "name": "Пельмени домашние",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "340.00",
+        "description": "Ручная лепка, со сметаной",
+    },
+    {
+        "key": "golubtsy",
+        "sku": "MENU-GOLUBTSY",
+        "name": "Голубцы",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "330.00",
+        "description": "Голубцы с мясом и рисом в томатном соусе",
+    },
+    {
+        "key": "shashlik",
+        "sku": "MENU-SHASHLIK",
+        "name": "Шашлык из свинины",
+        "unit": "pcs",
+        "category": "hot",
+        "price": "480.00",
+        "description": "Шашлык на углях с маринованным луком",
+    },
+    # Мясные деликатесы
+    {
+        "key": "doctor_100",
+        "sku": "MENU-DOCTOR-100",
+        "name": "Колбаса «Докторская», 100 г",
+        "unit": "pcs",
+        "category": "deli",
+        "price": "160.00",
+        "description": "Нарезка на тарелке, собственное производство",
+    },
+    {
+        "key": "krakow_100",
+        "sku": "MENU-KRAKOW-100",
+        "name": "Колбаса «Краковская», 100 г",
+        "unit": "pcs",
+        "category": "deli",
+        "price": "180.00",
+        "description": "Нарезка на тарелке, собственное производство",
+    },
+    {
+        "key": "buzhenina_100",
+        "sku": "MENU-BUZHENINA-100",
+        "name": "Буженина, 100 г",
+        "unit": "pcs",
+        "category": "deli",
+        "price": "220.00",
+        "description": "Запечённая свинина с пряностями",
+    },
+    {
+        "key": "rulka_100",
+        "sku": "MENU-RULKA-100",
+        "name": "Рулька копчёная, 100 г",
+        "unit": "pcs",
+        "category": "deli",
+        "price": "210.00",
+        "description": "Копчёная свиная рулька",
+    },
+    # Выпечка
+    {
+        "key": "pirozhok_meat",
+        "sku": "MENU-PIROZHOK-MEAT",
+        "name": "Пирожок с мясом",
+        "unit": "pcs",
+        "category": "bakery",
+        "price": "90.00",
+        "description": "Дрожжевой пирожок с мясной начинкой",
+    },
+    {
+        "key": "pirozhok_cabbage",
+        "sku": "MENU-PIROZHOK-CABBAGE",
+        "name": "Пирожок с капустой",
+        "unit": "pcs",
+        "category": "bakery",
+        "price": "80.00",
+        "description": "Дрожжевой пирожок с тушёной капустой",
+    },
+    {
+        "key": "kurnik",
+        "sku": "MENU-KURNIK",
+        "name": "Курник",
+        "unit": "pcs",
+        "category": "bakery",
+        "price": "140.00",
+        "description": "Пирог с курицей и картофелем",
+    },
+    {
+        "key": "belyash",
+        "sku": "MENU-BELYASH",
+        "name": "Беляш",
+        "unit": "pcs",
+        "category": "bakery",
+        "price": "100.00",
+        "description": "Жареный пирожок с мясом по-татарски",
+    },
+    {
+        "key": "bliny_meat",
+        "sku": "MENU-BLINY-MEAT",
+        "name": "Блины с мясом",
+        "unit": "pcs",
+        "category": "bakery",
+        "price": "210.00",
+        "description": "Тонкие блины с мясной начинкой, 2 шт.",
+    },
+    # Десерты
+    {
+        "key": "medovik",
+        "sku": "MENU-MEDOVIK",
+        "name": "Медовик",
+        "unit": "pcs",
+        "category": "desserts",
+        "price": "180.00",
+        "description": "Медовый торт со сметанным кремом",
+    },
+    {
+        "key": "napoleon",
+        "sku": "MENU-NAPOLEON",
+        "name": "Наполеон",
+        "unit": "pcs",
+        "category": "desserts",
+        "price": "180.00",
+        "description": "Слоёный торт с заварным кремом",
+    },
+    {
+        "key": "syrniki",
+        "sku": "MENU-SYRNIKI",
+        "name": "Сырники со сметаной",
+        "unit": "pcs",
+        "category": "desserts",
+        "price": "200.00",
+        "description": "Творожные сырники с домашней сметаной",
+    },
+    {
+        "key": "apple_pie",
+        "sku": "MENU-APPLE-PIE",
+        "name": "Пирог с яблоками",
+        "unit": "pcs",
+        "category": "desserts",
+        "price": "150.00",
+        "description": "Песочный пирог с корицей",
+    },
+    # Напитки
+    {
+        "key": "tea_black",
+        "sku": "MENU-TEA-BLACK",
+        "name": "Чай чёрный",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "90.00",
+        "description": "Чёрный чай в чайнике, 400 мл",
+    },
+    {
+        "key": "tea_green",
+        "sku": "MENU-TEA-GREEN",
+        "name": "Чай зелёный",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "90.00",
+        "description": "Зелёный чай в чайнике, 400 мл",
+    },
+    {
+        "key": "coffee",
+        "sku": "MENU-COFFEE",
+        "name": "Кофе чёрный",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "120.00",
+        "description": "Свежесваренный кофе, 200 мл",
+    },
+    {
+        "key": "cappuccino",
+        "sku": "MENU-CAPPUCCINO",
+        "name": "Капучино",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "180.00",
+        "description": "Кофе с молочной пенкой, 250 мл",
+    },
+    {
+        "key": "mors",
+        "sku": "MENU-MORS",
+        "name": "Морс клюквенный",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "110.00",
+        "description": "Домашний морс из клюквы, 300 мл",
+    },
+    {
+        "key": "kompot",
+        "sku": "MENU-KOMPOT",
+        "name": "Компот из ягод",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "100.00",
+        "description": "Компот из сезонных ягод, 300 мл",
+    },
+    {
+        "key": "lemonade",
+        "sku": "MENU-LEMONADE",
+        "name": "Лимонад домашний",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "140.00",
+        "description": "Лимонад с лимоном и мятой, 400 мл",
+    },
+    {
+        "key": "water",
+        "sku": "MENU-WATER",
+        "name": "Вода минеральная, 0,5 л",
+        "unit": "pcs",
+        "category": "drinks",
+        "price": "80.00",
+        "description": "Негазированная минеральная вода",
     },
 ]
 
@@ -624,6 +979,11 @@ class Api:
 
     async def post(self, path: str, json: Any | None = None) -> Any:
         response = await self._client.post(path, json=json)
+
+        return self._json(response)
+
+    async def put(self, path: str, json: Any | None = None) -> Any:
+        response = await self._client.put(path, json=json)
 
         return self._json(response)
 
@@ -1003,6 +1363,98 @@ async def ensure_catalog(api: Api) -> dict[str, str]:
     return nomenclature_ids
 
 
+async def ensure_cafe_menu(api: Api, unit_ids_by_code: dict[str, str]) -> None:
+    """Заводит меню кафе: категории, блюда, прайс-лист и цены.
+
+    Витрина кафе строится из цены в прайс-листе, привязанном к точке, поэтому
+    одного каталога мало: нужен прайс-лист «Меню кафе», привязка к кафе и
+    цена на каждое блюдо. Функция идемпотентна — позиции переиспользуются по
+    артикулу, а цены перезаписываются.
+    """
+    categories = await api.get("/api/catalog/categories")
+    categories_by_name = {item["name"]: item["id"] for item in categories}
+
+    for category in CAFE_CATEGORIES:
+        if category["name"] in categories_by_name:
+            continue
+        created = await api.post(
+            "/api/catalog/categories",
+            json={
+                "name": category["name"],
+                "parent_id": None,
+                "sort_order": category["sort_order"],
+            },
+        )
+        categories_by_name[category["name"]] = created["category_id"]
+        print(f"  + категория меню «{category['name']}»")
+
+    category_ids = {
+        category["key"]: categories_by_name[category["name"]]
+        for category in CAFE_CATEGORIES
+    }
+
+    nomenclature_ids: dict[str, str] = {}
+    for spec in CAFE_MENU:
+        found = await api.get(
+            "/api/catalog/nomenclatures", search=spec["sku"], limit=100
+        )
+        existing = next(
+            (item for item in found["items"] if item["sku"] == spec["sku"]), None
+        )
+        if existing is None:
+            created = await api.post(
+                "/api/catalog/nomenclatures",
+                json={
+                    "sku": spec["sku"],
+                    "name": spec["name"],
+                    "unit": spec["unit"],
+                    "category_id": category_ids[spec["category"]],
+                    "description": spec["description"],
+                },
+            )
+            nomenclature_ids[spec["key"]] = created["nomenclature_id"]
+            print(f"  + блюдо «{spec['name']}»")
+        else:
+            nomenclature_ids[spec["key"]] = existing["id"]
+
+    price_lists = await api.get("/api/catalog/price-lists")
+    price_list = next(
+        (
+            item
+            for item in price_lists["items"]
+            if item["name"] == CAFE_PRICE_LIST_NAME
+        ),
+        None,
+    )
+    if price_list is None:
+        created = await api.post(
+            "/api/catalog/price-lists", json={"name": CAFE_PRICE_LIST_NAME}
+        )
+        price_list_id = created["price_list_id"]
+        print(f"  + прайс-лист «{CAFE_PRICE_LIST_NAME}»")
+    else:
+        price_list_id = price_list["id"]
+
+    await api.put(
+        f"/api/catalog/org-units/{unit_ids_by_code['CAFE']}/price-list",
+        json={"price_list_id": price_list_id},
+    )
+
+    for spec in CAFE_MENU:
+        await api.post(
+            f"/api/catalog/price-lists/{price_list_id}/prices",
+            json={
+                "nomenclature_id": nomenclature_ids[spec["key"]],
+                "price": spec["price"],
+            },
+        )
+
+    print(
+        f"  · прайс-лист «{CAFE_PRICE_LIST_NAME}» привязан к кафе, "
+        f"цен выставлено: {len(CAFE_MENU)}"
+    )
+
+
 async def ensure_tech_cards(api: Api, nomenclature_ids: dict[str, str]) -> dict[str, str]:
     cards = await api.get("/api/production/tech-cards", limit=100)
     by_code = {card["code"]: card["id"] for card in cards["items"]}
@@ -1155,6 +1607,9 @@ async def run(args: argparse.Namespace) -> None:
 
         print("Каталог…")
         nomenclature_ids = await ensure_catalog(api)
+
+        print("Меню кафе…")
+        await ensure_cafe_menu(api, unit_ids_by_code)
 
         print("Техкарты…")
         tech_card_ids = await ensure_tech_cards(api, nomenclature_ids)

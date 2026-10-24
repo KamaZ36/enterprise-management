@@ -125,6 +125,12 @@ export const MODULES: ModuleDefinition[
         permissions: CAN.cashRegistersOpen,
       },
       {
+        path: "/catalog/ofd-receipts",
+        title: "Чеки ОФД",
+        icon: "Document",
+        permissions: CAN.ofdReceiptsOpen,
+      },
+      {
         path: "/catalog/prices",
         title: "Цены",
         icon: "Money",

@@ -35,6 +35,11 @@ class CatalogAPI:
             search, limit=self.SEARCH_MATCH_LIMIT
         )
 
+    async def nomenclature_id_by_gtin(self, gtin: str) -> UUID | None:
+        """Активная номенклатура с таким GTIN, если она есть."""
+
+        return await self._nomenclature_repository.get_id_by_gtin(gtin)
+
     async def prices_for_point(
         self, org_unit_id: UUID, nomenclature_ids: list[UUID]
     ) -> dict[UUID, int]:

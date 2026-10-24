@@ -1,16 +1,20 @@
 :root {
-  --bg: #241a14;
+  /* Один блок токенов. Раньше их было два, и второй молча переопределял первый. */
+  --bg: #0f0b09;
   --bg-soft: #2c2019;
-  --surface: #3a2a21;
-  --surface-2: #463024;
+  --surface: #241a14;
+  --surface-2: #2e211a;
   --line: #5a4131;
   --line-soft: #6f5139;
-  --text: #f8f1ea;
-  --muted: #cfb9a8;
-  --muted-soft: #a08c7d;
+  --text: #faf5f0;
+  --muted: #b8a390;
+  --muted-soft: #93806f;
   --accent: #e08a43;
   --accent-soft: #f7b978;
   --accent-deep: #8c4a26;
+  /* Кнопка: градиент затемнён, чтобы белый текст давал контраст >= 4.5:1. */
+  --accent-cta: #ad5a1e;
+  --accent-cta-deep: #6d3417;
   --green: #7da368;
   --green-soft: #b3d29c;
   --green-deep: #40563a;
@@ -18,8 +22,10 @@
   --cream-text: #2a201a;
   --cream-muted: #6d5b4d;
   --shadow: 0 22px 46px rgb(0 0 0 / 42%);
-  --edge: rgb(255 218 178 / 22%);
-  --edge-strong: rgb(255 218 178 / 38%);
+  --edge: rgb(201 168 107 / 20%);
+  --edge-strong: rgb(201 168 107 / 42%);
+  --gold: #c9a86b;
+  --gold-soft: #e6cd9c;
 }
 
 * {
@@ -36,8 +42,8 @@ body {
   background: var(--bg);
   color-scheme: dark;
   font-family:
-    "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial,
-    sans-serif;
+    "Golos Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
   line-height: 1.6;
 }
 
@@ -48,7 +54,7 @@ h3,
 .hero__card-title,
 .cafe__badge-big,
 .tile__value {
-  font-family: Georgia, "Times New Roman", "Iowan Old Style", serif;
+  font-family: "Lora", Georgia, "Times New Roman", "Iowan Old Style", serif;
   letter-spacing: 0.2px;
 }
 
@@ -135,7 +141,11 @@ a {
   padding: 13px 24px;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: linear-gradient(145deg, var(--accent), var(--accent-deep));
+  background: linear-gradient(
+    145deg,
+    var(--accent-cta),
+    var(--accent-cta-deep)
+  );
   box-shadow: 0 10px 26px rgb(200 117 60 / 26%);
   color: #fff6ef;
   font-weight: 500;
@@ -166,6 +176,17 @@ a {
   border-color: var(--accent);
   box-shadow: none;
   color: var(--accent-soft);
+}
+
+/* Клавиатурный фокус — раньше его не было ни в одном правиле. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 3px;
+}
+
+/* Якоря не уезжают под залипающую шапку. */
+[id] {
+  scroll-margin-top: 90px;
 }
 
 .hero {
@@ -599,7 +620,7 @@ a {
 }
 
 .number__value {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Lora", Georgia, "Times New Roman", serif;
   font-size: 38px;
   line-height: 1.1;
   color: var(--accent-soft);
@@ -734,19 +755,6 @@ a {
   background: linear-gradient(180deg, rgb(224 138 67 / 18%) 0%, transparent 100%);
 }
 
-
-:root {
-  --bg: #0f0b09;
-  --surface: #241a14;
-  --surface-2: #2e211a;
-  --edge: rgb(201 168 107 / 20%);
-  --edge-strong: rgb(201 168 107 / 42%);
-  --gold: #c9a86b;
-  --gold-soft: #e6cd9c;
-  --text: #faf5f0;
-  --muted: #b8a390;
-  --muted-soft: #93806f;
-}
 
 body {
   background: var(--bg);

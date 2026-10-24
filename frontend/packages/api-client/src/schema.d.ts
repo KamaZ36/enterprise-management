@@ -1528,6 +1528,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/fiscal/ofd/receipts/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync Receipts
+         * @description Загрузить чеки из ОФД за период
+         */
+        post: operations["sync_receipts_api_fiscal_ofd_receipts_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/ofd/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Receipts
+         * @description Список сохранённых чеков ОФД
+         */
+        get: operations["list_receipts_api_fiscal_ofd_receipts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/ofd/receipts/post-ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Ready Receipts
+         * @description Провести все готовые чеки ОФД
+         */
+        post: operations["post_ready_receipts_api_fiscal_ofd_receipts_post_ready_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/ofd/receipts/{receipt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Receipt
+         * @description Чек ОФД с товарными строками
+         */
+        get: operations["get_receipt_api_fiscal_ofd_receipts__receipt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/ofd/receipts/{receipt_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Receipt
+         * @description Провести чек ОФД по складу
+         */
+        post: operations["post_receipt_api_fiscal_ofd_receipts__receipt_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fiscal/ofd/lines/{line_id}/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Map Line
+         * @description Сопоставить строку чека с номенклатурой
+         */
+        post: operations["map_line_api_fiscal_ofd_lines__line_id__map_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2467,6 +2587,39 @@ export interface components {
              */
             total_value_kopecks?: number | null;
         };
+        /** MapOfdReceiptLineResultSchema */
+        MapOfdReceiptLineResultSchema: {
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /**
+             * Line Id
+             * Format: uuid
+             */
+            line_id: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Receipt Status */
+            receipt_status: string;
+        };
+        /** MapOfdReceiptLineSchema */
+        MapOfdReceiptLineSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /**
+             * Remember Barcode
+             * @default true
+             */
+            remember_barcode: boolean;
+        };
         /** MovementItemSchema */
         MovementItemSchema: {
             /**
@@ -2661,6 +2814,160 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /** OfdBatchPostResultSchema */
+        OfdBatchPostResultSchema: {
+            /** Posted */
+            posted: number;
+            /** Failed */
+            failed: number;
+            /** Results */
+            results: components["schemas"]["OfdPostResultSchema"][];
+        };
+        /** OfdPostResultSchema */
+        OfdPostResultSchema: {
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /** Status */
+            status: string;
+            /** Error */
+            error: string | null;
+        };
+        /** OfdReceiptDetailSchema */
+        OfdReceiptDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reg Number */
+            reg_number: string;
+            /** Doc Number */
+            doc_number: number;
+            /** Fiscal Sign */
+            fiscal_sign: string;
+            /**
+             * Doc Datetime
+             * Format: date-time
+             */
+            doc_datetime: string;
+            /** Operation Type */
+            operation_type: string;
+            /** Status */
+            status: string;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Line Count */
+            line_count: number;
+            /** Unmapped Count */
+            unmapped_count: number;
+            /** Org Unit Id */
+            org_unit_id: string | null;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Error */
+            error: string | null;
+            /** Posted At */
+            posted_at: string | null;
+            /** Inn */
+            inn: string;
+            /** Fn Number */
+            fn_number: string;
+            /** Cash Kopecks */
+            cash_kopecks: number;
+            /** Ecash Kopecks */
+            ecash_kopecks: number;
+            /** Is Correction */
+            is_correction: boolean;
+            /** Is Bso */
+            is_bso: boolean;
+            /** Raw */
+            raw: {
+                [key: string]: unknown;
+            };
+            /** Lines */
+            lines: components["schemas"]["OfdReceiptLineSchema"][];
+        };
+        /** OfdReceiptLineSchema */
+        OfdReceiptLineSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Line Number */
+            line_number: number;
+            /** Name */
+            name: string;
+            /** Barcode */
+            barcode: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Unit */
+            unit: string | null;
+            /** Price Kopecks */
+            price_kopecks: number;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Mapping Status */
+            mapping_status: string;
+            /** Nomenclature Id */
+            nomenclature_id: string | null;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Mapping Error */
+            mapping_error: string | null;
+        };
+        /** OfdReceiptListSchema */
+        OfdReceiptListSchema: {
+            /** Items */
+            items: components["schemas"]["OfdReceiptSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** OfdReceiptSchema */
+        OfdReceiptSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reg Number */
+            reg_number: string;
+            /** Doc Number */
+            doc_number: number;
+            /** Fiscal Sign */
+            fiscal_sign: string;
+            /**
+             * Doc Datetime
+             * Format: date-time
+             */
+            doc_datetime: string;
+            /** Operation Type */
+            operation_type: string;
+            /** Status */
+            status: string;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Line Count */
+            line_count: number;
+            /** Unmapped Count */
+            unmapped_count: number;
+            /** Org Unit Id */
+            org_unit_id: string | null;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Error */
+            error: string | null;
+            /** Posted At */
+            posted_at: string | null;
+        };
         /**
          * OrderChannel
          * @enum {string}
@@ -2850,6 +3157,14 @@ export interface components {
             code: string;
             /** Description */
             description: string;
+        };
+        /** PostReadyOfdReceiptsSchema */
+        PostReadyOfdReceiptsSchema: {
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
         };
         /** PriceListBindingSchema */
         PriceListBindingSchema: {
@@ -3197,6 +3512,37 @@ export interface components {
              * Format: uuid
              */
             org_unit_id: string;
+        };
+        /** SyncOfdReceiptsResultSchema */
+        SyncOfdReceiptsResultSchema: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Status */
+            status: string;
+            /** Receipts Found */
+            receipts_found: number;
+            /** Receipts Created */
+            receipts_created: number;
+            /** Error */
+            error: string | null;
+        };
+        /** SyncOfdReceiptsSchema */
+        SyncOfdReceiptsSchema: {
+            /** Reg Number */
+            reg_number: string;
+            /**
+             * Date From
+             * Format: date-time
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date-time
+             */
+            date_to: string;
         };
         /**
          * TechCardBasis
@@ -6906,6 +7252,205 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_receipts_api_fiscal_ofd_receipts_sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncOfdReceiptsSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncOfdReceiptsResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_receipts_api_fiscal_ofd_receipts_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                reg_number?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfdReceiptListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_ready_receipts_api_fiscal_ofd_receipts_post_ready_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostReadyOfdReceiptsSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfdBatchPostResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_receipt_api_fiscal_ofd_receipts__receipt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfdReceiptDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_receipt_api_fiscal_ofd_receipts__receipt_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfdPostResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    map_line_api_fiscal_ofd_lines__line_id__map_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MapOfdReceiptLineSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapOfdReceiptLineResultSchema"];
                 };
             };
             /** @description Validation Error */

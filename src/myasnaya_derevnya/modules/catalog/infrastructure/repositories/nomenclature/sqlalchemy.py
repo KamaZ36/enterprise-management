@@ -97,6 +97,23 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
 
         return list((await self._session.execute(stmt)).scalars().all())
 
+    async def get_id_by_gtin(self, gtin: str) -> UUID | None:
+        normalized = gtin.strip()
+        if not normalized:
+            return None
+
+        stmt = (
+            select(NOMENCLATURES_TABLE.c.id)
+            .where(
+                NOMENCLATURES_TABLE.c.gtin == normalized,
+                NOMENCLATURES_TABLE.c.is_active.is_(True),
+            )
+            .order_by(NOMENCLATURES_TABLE.c.name.asc())
+            .limit(1)
+        )
+
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
     def _to_entity(self, row: RowMapping) -> Nomenclature:
         return Nomenclature(
             id=row["id"],

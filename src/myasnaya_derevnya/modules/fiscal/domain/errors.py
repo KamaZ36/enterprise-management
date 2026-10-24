@@ -93,3 +93,26 @@ class BindingTargetInactiveError(FiscalDomainError):
 
     def __str__(self) -> str:
         return f"Подразделение {self.org_unit_id} закрыто."
+
+
+@dataclass(slots=True, eq=False)
+class OfdReceiptNotPostableError(FiscalDomainError):
+    receipt_id: UUID
+    reason: str
+
+    def __str__(self) -> str:
+        return f"Чек {self.receipt_id} нельзя провести: {self.reason}"
+
+
+@dataclass(slots=True, eq=False)
+class OfdReceiptLineNotFoundError(FiscalDomainError):
+    receipt_id: UUID
+    line_id: UUID
+
+    def __str__(self) -> str:
+        return f"В чеке {self.receipt_id} нет строки {self.line_id}."
+
+
+class InvalidOfdQuantityError(FiscalDomainError):
+    def __str__(self) -> str:
+        return "Количество в чеке ОФД должно быть больше нуля."

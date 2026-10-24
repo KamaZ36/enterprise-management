@@ -402,6 +402,7 @@ class InventoryDepProvider(Provider):
         post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
         movement_repository: StockMovementRepository,
+        posting_repository: StockPostingRepository,
         business_api: BusinessAPI,
     ) -> InventoryAPI:
         return InventoryAPI(
@@ -411,5 +412,6 @@ class InventoryDepProvider(Provider):
             post_sale_interactor=post_sale_interactor,
             balance_repository=balance_repository,
             movement_repository=movement_repository,
+            posting_repository=posting_repository,
             business_api=business_api,
         )

@@ -34,7 +34,7 @@ class DatabaseProvider(Provider):
     ) -> TransactionManager:
         return SQLAlchemyTransactionManager(session)
 
-
-    @provide(scope=Scope.APP)
-    def get_http_client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient()
+    @provide(scope=Scope.REQUEST)
+    async def get_http_client(self) -> AsyncGenerator[httpx.AsyncClient]:
+        async with httpx.AsyncClient() as client:
+            yield client
