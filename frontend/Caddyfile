@@ -1,0 +1,96 @@
+# Один контейнер Caddy обслуживает три статических приложения и проксирует API.
+# Имена хостов приходят из окружения (.env.prod).
+
+# --- Лендинг ---
+{$LANDING_HOST} {
+	encode zstd gzip
+
+	@assets path /_nuxt/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	handle {
+		root * /srv/landing
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# --- Админка ---
+{$ADMIN_HOST} {
+	encode zstd gzip
+
+	@assets path /_nuxt/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	@media path /media/*
+	header @media Cache-Control "public, max-age=2592000"
+
+	@backend path /api/* /media/*
+	handle @backend {
+		request_body {
+			max_size 12MB
+		}
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# --- Кафе ---
+{$CAFE_HOST} {
+	encode zstd gzip
+
+	@assets path /_nuxt/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	@media path /media/*
+	header @media Cache-Control "public, max-age=2592000"
+
+	@backend path /api/* /media/*
+	handle @backend {
+		request_body {
+			max_size 12MB
+		}
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv/cafe
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# --- API для агента DoKa и внешних клиентов ---
+{$API_HOST} {
+	encode zstd gzip
+
+	request_body {
+		max_size 12MB
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+	}
+
+	reverse_proxy backend:8000
+}

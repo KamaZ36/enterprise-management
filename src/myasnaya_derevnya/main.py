@@ -18,10 +18,12 @@ from myasnaya_derevnya.core.errors import (
     UnauthorizedError,
     ValidationError,
 )
+from myasnaya_derevnya.core.health import router as health_router
 from myasnaya_derevnya.core.logging import RequestContextMiddleware, setup_logging
 from myasnaya_derevnya.core.logging.context import reset_request_id, set_request_id
 from myasnaya_derevnya.core.media.paths import media_root
 from myasnaya_derevnya.core.seed import bootstrap_system
+from myasnaya_derevnya.core.settings import settings
 from myasnaya_derevnya.core.settings.cors import CorsSettings
 from myasnaya_derevnya.core.settings.logging import LoggingSettings
 from myasnaya_derevnya.core.settings.media import MediaSettings
@@ -123,6 +125,7 @@ async def lifespan(app: FastAPI):
 
 
 def include_routers(app: FastAPI) -> None:
+    app.include_router(health_router)
     app.include_router(login_router)
     app.include_router(orders_router)
     app.include_router(logout_router)
@@ -141,11 +144,11 @@ def include_routers(app: FastAPI) -> None:
 
 
 def include_media(app: FastAPI) -> None:
-    settings = MediaSettings()
-    root = media_root(settings)
+    media_settings = MediaSettings()
+    root = media_root(media_settings)
     root.mkdir(parents=True, exist_ok=True)
 
-    app.mount(settings.media_url_prefix, StaticFiles(directory=root), name="media")
+    app.mount(media_settings.media_url_prefix, StaticFiles(directory=root), name="media")
 
 
 def create_app() -> FastAPI:
@@ -153,7 +156,13 @@ def create_app() -> FastAPI:
     setup_logging(logging_settings)
 
     api_key_scheme = APIKeyHeader(name="Authorization", auto_error=False)
-    app = FastAPI(lifespan=lifespan, dependencies=[Depends(api_key_scheme)])
+    app = FastAPI(
+        lifespan=lifespan,
+        dependencies=[Depends(api_key_scheme)],
+        docs_url="/docs" if settings.debug else None,
+        redoc_url="/redoc" if settings.debug else None,
+        openapi_url="/openapi.json" if settings.debug else None,
+    )
 
     app.add_exception_handler(ProjectError, api_exception_handler)
     app.add_exception_handler(Exception, unhandled_error_handler)

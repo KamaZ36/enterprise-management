@@ -51,6 +51,17 @@ async def bootstrap_system() -> None:
     role_code = settings.admin_role_code
     role_name = settings.admin_role_name
 
+    if not settings.debug and password in {
+        "admin",
+        "password",
+        "12345678",
+        "qwerty123",
+    }:
+        logger.warning(
+            "Начальный администратор создаётся со стандартным паролем. "
+            "Смените пароль после первого входа."
+        )
+
     async with container() as context:
         user_repository = await context.get(UserRepository)
         user_credential_repository = await context.get(CredentialRepository)
