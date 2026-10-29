@@ -54,6 +54,9 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
 from myasnaya_derevnya.modules.orders.presentation.api.v1 import (
     router as orders_router,
 )
+from myasnaya_derevnya.modules.pos.presentation.api.v1 import (
+    router as pos_router,
+)
 from myasnaya_derevnya.modules.production.presentation.api.v1 import (
     router as production_router,
 )
@@ -134,6 +137,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(customer_login_router)
     app.include_router(customers_router)
     app.include_router(fiscal_router)
+    app.include_router(pos_router)
 
 
 def include_media(app: FastAPI) -> None:

@@ -52,6 +52,9 @@ from myasnaya_derevnya.modules.production.infrastructure.repositories.tech_card.
 from myasnaya_derevnya.modules.production.infrastructure.repositories.tech_card.sqlalchemy import (
     SQLAlchemyTechCardRepository,
 )
+from myasnaya_derevnya.modules.production.presentation.production_api import (
+    ProductionAPI,
+)
 
 
 class ProductionDepProvider(Provider):
@@ -75,6 +78,10 @@ class ProductionDepProvider(Provider):
         self, session: AsyncSession
     ) -> ProductionOrderReader:
         return SQLAlchemyProductionOrderReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_production_api(self, tech_card_repository: TechCardRepository) -> ProductionAPI:
+        return ProductionAPI(tech_card_repository=tech_card_repository)
 
 
     create_tech_card_interactor = provide(CreateTechCardInteractor, scope=Scope.REQUEST)

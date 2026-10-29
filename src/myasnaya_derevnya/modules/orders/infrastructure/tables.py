@@ -6,7 +6,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    MetaData,
     Numeric,
     String,
     Table,
@@ -16,9 +15,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 
-DATABASE_SCHEMA = "orders"
+from myasnaya_derevnya.core.database import metadata
 
-metadata = MetaData(schema=DATABASE_SCHEMA)
+DATABASE_SCHEMA = "orders"
 
 ORDERS_TABLE = Table(
     "orders",

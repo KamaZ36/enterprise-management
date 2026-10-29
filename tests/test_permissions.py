@@ -20,6 +20,7 @@ EXPECTED_NAMESPACES = {
     "nomenclature",
     "order",
     "org_unit",
+    "pos",
     "price",
     "price_list",
     "production",
@@ -46,6 +47,7 @@ def test_registry_matches_permissions_declared_in_modules() -> None:
     from myasnaya_derevnya.modules.fiscal.domain import permissions as fiscal
     from myasnaya_derevnya.modules.inventory.domain import permissions as inventory
     from myasnaya_derevnya.modules.orders.domain import permissions as orders
+    from myasnaya_derevnya.modules.pos.domain import permissions as pos
     from myasnaya_derevnya.modules.production.domain import permissions as production
     from myasnaya_derevnya.modules.staff.domain import permissions as staff
 
@@ -59,6 +61,7 @@ def test_registry_matches_permissions_declared_in_modules() -> None:
             inventory,
             production,
             orders,
+            pos,
             staff,
         )
         for value in vars(module).values()

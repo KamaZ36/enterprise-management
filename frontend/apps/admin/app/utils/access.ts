@@ -26,6 +26,12 @@ export const CAN = {
   ],
   productionOrdersOpen: ["production.order.read"],
   productionOrderCreate: ["production.order.manage"],
+  posSourcesOpen: ["pos.source_read"],
+  posSourceManage: ["pos.source_manage"],
+  posReceiptsOpen: ["pos.receipt_read"],
+  posReceiptsManage: ["pos.receipt_manage"],
+  posProductMapOpen: ["pos.source_read", "pos.receipt_read", "nomenclature.read"],
+  posReceiptsMap: ["pos.receipt_manage", "nomenclature.read"],
 } as const;
 
 export const SECTIONS = [
@@ -36,6 +42,7 @@ export const SECTIONS = [
   { module: "staff", title: "Персонал", icon: "User" },
   { module: "orders", title: "Заказы", icon: "Document" },
   { module: "customers", title: "Клиенты", icon: "User" },
+  { module: "pos", title: "Продажи DoKa", icon: "Money" },
 ] as const;
 
 export type Section = (typeof SECTIONS)[number];

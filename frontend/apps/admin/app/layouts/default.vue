@@ -169,8 +169,7 @@ const sections = SECTIONS;
 
 
 const visibleSections = computed(() => {
-  const items: { path: string; title: string; icon: string }[] = [];
-
+  const items: { path: string; title: string; icon: string; root: string }[] = [];
 
   if (!user.value) {
     return items;
@@ -182,6 +181,7 @@ const visibleSections = computed(() => {
         path: section.path,
         title: section.title,
         icon: section.icon,
+        root: "/",
       });
       continue;
     }
@@ -202,6 +202,7 @@ const visibleSections = computed(() => {
       path: firstAvailable.path,
       title: section.title,
       icon: section.icon,
+      root: `/${module.code}`,
     });
   }
 
@@ -209,7 +210,12 @@ const visibleSections = computed(() => {
 });
 
 const current = computed(() =>
-  visibleSections.value.find((section) => route.path.startsWith(section.path)),
+  visibleSections.value.find((section) =>
+    section.root === "/"
+      ? route.path === "/"
+      : route.path === section.root ||
+        route.path.startsWith(`${section.root}/`),
+  ),
 );
 const activeMenu = computed(() => current.value?.path ?? route.path);
 const sectionTitle = computed(() => current.value?.title ?? "");

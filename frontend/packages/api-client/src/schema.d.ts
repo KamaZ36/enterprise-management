@@ -1648,10 +1648,413 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/pos/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sources
+         * @description Источники продаж DoKa
+         */
+        get: operations["list_sources_api_pos_sources_get"];
+        put?: never;
+        /**
+         * Create Source
+         * @description Зарегистрировать кассу DoKa
+         */
+        post: operations["create_source_api_pos_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Locations
+         * @description Складские локации для привязки кассы DoKa
+         */
+        get: operations["list_locations_api_pos_locations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/sources/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Source
+         * @description Изменить источник DoKa
+         */
+        patch: operations["update_source_api_pos_sources__source_id__patch"];
+        trace?: never;
+    };
+    "/api/pos/sources/{source_id}/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Agents
+         * @description Агенты источника DoKa
+         */
+        get: operations["list_agents_api_pos_sources__source_id__agents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/sources/{source_id}/agents/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue Agent Key
+         * @description Выдать ключ агенту кассы
+         */
+        post: operations["issue_agent_key_api_pos_sources__source_id__agents_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/agents/{agent_id}/keys/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Agent Key
+         * @description Перевыпустить ключ агента
+         */
+        post: operations["rotate_agent_key_api_pos_agents__agent_id__keys_rotate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/agents/{agent_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Set Agent Active
+         * @description Включить или отключить агента
+         */
+        patch: operations["set_agent_active_api_pos_agents__agent_id__active_patch"];
+        trace?: never;
+    };
+    "/api/pos/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Receipts
+         * @description Чеки DoKa
+         */
+        get: operations["list_receipts_api_pos_receipts_get"];
+        put?: never;
+        /**
+         * Import Receipts
+         * @description Принять пакет чеков из журнала продаж DoKa
+         */
+        post: operations["import_receipts_api_pos_receipts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/receipts/post-pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Pending Receipts
+         * @description Провести все непринятые складом чеки DoKa
+         */
+        post: operations["post_pending_receipts_api_pos_receipts_post_pending_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/receipts/{receipt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Receipt
+         * @description Чек DoKa с товарными строками
+         */
+        get: operations["get_receipt_api_pos_receipts__receipt_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/receipts/{receipt_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Receipt
+         * @description Провести чек DoKa по складу
+         */
+        post: operations["post_receipt_api_pos_receipts__receipt_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/sources/{source_id}/product-map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Product Mappings
+         * @description Сопоставления товаров DoKa
+         */
+        get: operations["list_product_mappings_api_pos_sources__source_id__product_map_get"];
+        /**
+         * Upsert Product Mapping
+         * @description Сопоставить товар DoKa с номенклатурой
+         */
+        put: operations["upsert_product_mapping_api_pos_sources__source_id__product_map_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/sources/{source_id}/unmapped-products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Unmapped Products
+         * @description Товары DoKa из чеков, ещё не сопоставленные с номенклатурой
+         */
+        get: operations["list_unmapped_products_api_pos_sources__source_id__unmapped_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/product-map/{mapping_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Product Mapping
+         * @description Удалить сопоставление товара DoKa
+         */
+        delete: operations["delete_product_mapping_api_pos_product_map__mapping_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Heartbeat
+         * @description Отметка агента: жив, столько чеков в очереди
+         */
+        post: operations["heartbeat_api_pos_heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentFileSchema */
+        AgentFileSchema: {
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256?: string | null;
+            /** Exported At */
+            exported_at?: string | null;
+        };
+        /** AgentInfoSchema */
+        AgentInfoSchema: {
+            /** Install Id */
+            install_id: string;
+            /** Version */
+            version?: string | null;
+            /** Hostname */
+            hostname?: string | null;
+            /** Clock Utc */
+            clock_utc?: string | null;
+        };
+        /** AgentReceiptLineSchema */
+        AgentReceiptLineSchema: {
+            /** Guid */
+            guid?: string | null;
+            /** Product Guid */
+            product_guid: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Unit */
+            unit?: string | null;
+            /** Quantity */
+            quantity: number | string;
+            /** Price Kopecks */
+            price_kopecks: number;
+            /** Amount Kopecks */
+            amount_kopecks: number;
+            /**
+             * Discount Kopecks
+             * @default 0
+             */
+            discount_kopecks: number;
+            /** Barcode */
+            barcode?: string | null;
+            /** Mark Code */
+            mark_code?: string | null;
+        };
+        /** AgentReceiptSchema */
+        AgentReceiptSchema: {
+            /** Guid */
+            guid: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /**
+             * Kind
+             * @default sale
+             * @enum {string}
+             */
+            kind: "sale" | "return";
+            /** Payment Kind */
+            payment_kind: string;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Subdivision Code */
+            subdivision_code?: string | null;
+            /** Subdivision Name */
+            subdivision_name?: string | null;
+            /** Cashier */
+            cashier?: string | null;
+            /** Shift */
+            shift?: string | null;
+            /** Number */
+            number?: string | null;
+            /** Fd Number */
+            fd_number?: string | null;
+            /** Fp Number */
+            fp_number?: string | null;
+            /** Fn Number */
+            fn_number?: string | null;
+            /** Warnings */
+            warnings?: string[];
+            /** Lines */
+            lines?: components["schemas"]["AgentReceiptLineSchema"][];
+        };
+        /** AgentSourceSchema */
+        AgentSourceSchema: {
+            /** Doka Org Id */
+            doka_org_id: string;
+        };
         /** AssignRoleCommandSchema */
         AssignRoleCommandSchema: {
             /**
@@ -2066,6 +2469,18 @@ export interface components {
             /** Phone Number */
             phone_number: string | null;
         };
+        /** CreatePosSourceSchema */
+        CreatePosSourceSchema: {
+            /** Doka Org Id */
+            doka_org_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+        };
         /** CreatePriceListSchema */
         CreatePriceListSchema: {
             /** Name */
@@ -2411,6 +2826,72 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HeartbeatResultSchema */
+        HeartbeatResultSchema: {
+            /**
+             * Server Time
+             * Format: date-time
+             */
+            server_time: string;
+        };
+        /** HeartbeatSchema */
+        HeartbeatSchema: {
+            /** Install Id */
+            install_id: string;
+            /** Version */
+            version?: string | null;
+            /** Hostname */
+            hostname?: string | null;
+            source: components["schemas"]["AgentSourceSchema"];
+            /**
+             * Status
+             * @default ok
+             */
+            status: string;
+            /**
+             * Pending Receipts
+             * @default 0
+             */
+            pending_receipts: number;
+            /** Last Success At */
+            last_success_at?: string | null;
+            /** Last Error */
+            last_error?: string | null;
+            /** Clock Utc */
+            clock_utc?: string | null;
+        };
+        /** ImportPosReceiptResultSchema */
+        ImportPosReceiptResultSchema: {
+            /** Guid */
+            guid: string;
+            /** Status */
+            status: string;
+            /** Message */
+            message?: string | null;
+        };
+        /** ImportPosReceiptsResultSchema */
+        ImportPosReceiptsResultSchema: {
+            /**
+             * Server Time
+             * Format: date-time
+             */
+            server_time: string;
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Results */
+            results: components["schemas"]["ImportPosReceiptResultSchema"][];
+        };
+        /** ImportPosReceiptsSchema */
+        ImportPosReceiptsSchema: {
+            source: components["schemas"]["AgentSourceSchema"];
+            agent: components["schemas"]["AgentInfoSchema"];
+            file: components["schemas"]["AgentFileSchema"];
+            /** Receipts */
+            receipts: components["schemas"]["AgentReceiptSchema"][];
+        };
         /** InventoryCountDetailSchema */
         InventoryCountDetailSchema: {
             /**
@@ -2504,6 +2985,15 @@ export interface components {
             limit: number;
             /** Offset */
             offset: number;
+        };
+        /** IssuePosAgentKeySchema */
+        IssuePosAgentKeySchema: {
+            /** Install Id */
+            install_id?: string | null;
+            /** Hostname */
+            hostname?: string | null;
+            /** Version */
+            version?: string | null;
         };
         /** LocationSchema */
         LocationSchema: {
@@ -3158,6 +3648,344 @@ export interface components {
             /** Description */
             description: string;
         };
+        /** PosAgentKeySchema */
+        PosAgentKeySchema: {
+            agent: components["schemas"]["PosAgentSchema"];
+            /** Api Key */
+            api_key: string;
+        };
+        /** PosAgentSchema */
+        PosAgentSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Install Id */
+            install_id: string | null;
+            /** Api Key Prefix */
+            api_key_prefix: string;
+            /** Hostname */
+            hostname: string | null;
+            /** Version */
+            version: string | null;
+            /** Status */
+            status: string;
+            /** Pending Receipts */
+            pending_receipts: number;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Last Error */
+            last_error: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PosBatchPostResultSchema */
+        PosBatchPostResultSchema: {
+            /** Posted */
+            posted: number;
+            /** Pending */
+            pending: number;
+            /** Failed */
+            failed: number;
+            /** Results */
+            results: components["schemas"]["PosPostResultSchema"][];
+        };
+        /** PosLocationSchema */
+        PosLocationSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** PosPostResultSchema */
+        PosPostResultSchema: {
+            /**
+             * Receipt Id
+             * Format: uuid
+             */
+            receipt_id: string;
+            /** Status */
+            status: string;
+            /** Message */
+            message: string | null;
+        };
+        /** PosProductMappingSchema */
+        PosProductMappingSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Doka Product Guid */
+            doka_product_guid: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Unit Factor */
+            unit_factor: string;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PosReceiptDetailSchema */
+        PosReceiptDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Source Name */
+            source_name: string | null;
+            /** External Guid */
+            external_guid: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Kind */
+            kind: string;
+            /** Payment Kind */
+            payment_kind: string;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Subdivision Name */
+            subdivision_name: string | null;
+            /** Status */
+            status: string;
+            /** Error */
+            error: string | null;
+            /** Line Count */
+            line_count: number;
+            /** Unmapped Count */
+            unmapped_count: number;
+            /** Posted At */
+            posted_at: string | null;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Subdivision Code */
+            subdivision_code: string | null;
+            /** Cashier */
+            cashier: string | null;
+            /** Shift */
+            shift: string | null;
+            /** Number */
+            number: string | null;
+            /** Fd Number */
+            fd_number: string | null;
+            /** Fp Number */
+            fp_number: string | null;
+            /** Fn Number */
+            fn_number: string | null;
+            /** Raw */
+            raw: {
+                [key: string]: unknown;
+            };
+            /** Lines */
+            lines: components["schemas"]["PosReceiptLineSchema"][];
+        };
+        /** PosReceiptLineSchema */
+        PosReceiptLineSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Line Number */
+            line_number: number;
+            /** Product Guid */
+            product_guid: string;
+            /** Product Name */
+            product_name: string | null;
+            /** Unit */
+            unit: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Unit Factor */
+            unit_factor: string;
+            /** Price Kopecks */
+            price_kopecks: number;
+            /** Amount Kopecks */
+            amount_kopecks: number;
+            /** Discount Kopecks */
+            discount_kopecks: number;
+            /** Barcode */
+            barcode: string | null;
+            /** Mark Code */
+            mark_code: string | null;
+            /** Nomenclature Id */
+            nomenclature_id: string | null;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Mapping Status */
+            mapping_status: string;
+            /** Mapping Error */
+            mapping_error: string | null;
+        };
+        /** PosReceiptListSchema */
+        PosReceiptListSchema: {
+            /** Items */
+            items: components["schemas"]["PosReceiptSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** PosReceiptSchema */
+        PosReceiptSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Source Name */
+            source_name: string | null;
+            /** External Guid */
+            external_guid: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Kind */
+            kind: string;
+            /** Payment Kind */
+            payment_kind: string;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Subdivision Name */
+            subdivision_name: string | null;
+            /** Status */
+            status: string;
+            /** Error */
+            error: string | null;
+            /** Line Count */
+            line_count: number;
+            /** Unmapped Count */
+            unmapped_count: number;
+            /** Posted At */
+            posted_at: string | null;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+        };
+        /** PosSourceSchema */
+        PosSourceSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Doka Org Id */
+            doka_org_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PosUnmappedProductSchema */
+        PosUnmappedProductSchema: {
+            /** Product Guid */
+            product_guid: string;
+            /** Product Name */
+            product_name: string | null;
+            /** Unit */
+            unit: string | null;
+            /** Receipts Count */
+            receipts_count: number;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+        };
+        /** PostPendingPosReceiptsSchema */
+        PostPendingPosReceiptsSchema: {
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+        };
         /** PostReadyOfdReceiptsSchema */
         PostReadyOfdReceiptsSchema: {
             /**
@@ -3487,6 +4315,11 @@ export interface components {
             is_wildcard: boolean;
             /** Permission Codes */
             permission_codes: string[];
+        };
+        /** SetPosAgentActiveSchema */
+        SetPosAgentActiveSchema: {
+            /** Is Active */
+            is_active: boolean;
         };
         /**
          * SpecLineRole
@@ -3870,6 +4703,15 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** UpdatePosSourceSchema */
+        UpdatePosSourceSchema: {
+            /** Name */
+            name?: string | null;
+            /** Org Unit Id */
+            org_unit_id?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** UpdateProductionOrderSchema */
         UpdateProductionOrderSchema: {
             /** Actuals */
@@ -3938,6 +4780,21 @@ export interface components {
             height: number;
             /** Size Bytes */
             size_bytes: number;
+        };
+        /** UpsertPosProductMappingSchema */
+        UpsertPosProductMappingSchema: {
+            /** Doka Product Guid */
+            doka_product_guid: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /**
+             * Unit Factor
+             * @default 1
+             */
+            unit_factor: number | string;
         };
         /** ValidationError */
         ValidationError: {
@@ -7451,6 +8308,574 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MapOfdReceiptLineResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sources_api_pos_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosSourceSchema"][];
+                };
+            };
+        };
+    };
+    create_source_api_pos_sources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePosSourceSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosSourceSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_locations_api_pos_locations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosLocationSchema"][];
+                };
+            };
+        };
+    };
+    update_source_api_pos_sources__source_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePosSourceSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosSourceSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_agents_api_pos_sources__source_id__agents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosAgentSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_agent_key_api_pos_sources__source_id__agents_keys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssuePosAgentKeySchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosAgentKeySchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rotate_agent_key_api_pos_agents__agent_id__keys_rotate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosAgentKeySchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_agent_active_api_pos_agents__agent_id__active_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPosAgentActiveSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosAgentSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_receipts_api_pos_receipts_get: {
+        parameters: {
+            query?: {
+                source_id?: string | null;
+                status?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                org_unit_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosReceiptListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_receipts_api_pos_receipts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportPosReceiptsSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPosReceiptsResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_pending_receipts_api_pos_receipts_post_pending_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostPendingPosReceiptsSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosBatchPostResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_receipt_api_pos_receipts__receipt_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosReceiptDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_receipt_api_pos_receipts__receipt_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosPostResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_product_mappings_api_pos_sources__source_id__product_map_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosProductMappingSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_product_mapping_api_pos_sources__source_id__product_map_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertPosProductMappingSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosProductMappingSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_unmapped_products_api_pos_sources__source_id__unmapped_products_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosUnmappedProductSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_product_mapping_api_pos_product_map__mapping_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mapping_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    heartbeat_api_pos_heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HeartbeatSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeartbeatResultSchema"];
                 };
             };
             /** @description Validation Error */

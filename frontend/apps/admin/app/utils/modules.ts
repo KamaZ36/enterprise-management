@@ -183,4 +183,29 @@ export const MODULES: ModuleDefinition[
       },
     ],
   },
+  {
+    code: "pos",
+    title: "Продажи DoKa",
+    icon: "Money",
+    tabs: [
+      {
+        path: "/pos/receipts",
+        title: "Чеки",
+        icon: "Document",
+        permissions: CAN.posReceiptsOpen,
+      },
+      {
+        path: "/pos/sources",
+        title: "Кассы",
+        icon: "Money",
+        permissions: CAN.posSourcesOpen,
+      },
+      {
+        path: "/pos/product-map",
+        title: "Разметка",
+        icon: "Grid",
+        permissions: CAN.posProductMapOpen,
+      },
+    ],
+  },
 ];

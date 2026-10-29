@@ -56,6 +56,14 @@ from myasnaya_derevnya.modules.orders.infrastructure.tables import (  # noqa: F4
     ORDER_NUMBER_COUNTERS_TABLE,
     ORDERS_TABLE,
 )
+from myasnaya_derevnya.modules.pos.infrastructure.tables import (  # noqa: F401
+    POS_AGENTS_TABLE,
+    POS_IMPORT_BATCHES_TABLE,
+    POS_PRODUCT_MAP_TABLE,
+    POS_RECEIPT_LINES_TABLE,
+    POS_RECEIPTS_TABLE,
+    POS_SOURCES_TABLE,
+)
 from myasnaya_derevnya.modules.production.infrastructure.tables import (  # noqa: F401
     PRODUCTION_ORDER_LINES_TABLE,
     PRODUCTION_ORDERS_TABLE,

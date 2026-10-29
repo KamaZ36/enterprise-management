@@ -11,6 +11,15 @@ OFD_TABLES = (
     "fiscal.ofd_sync_runs",
 )
 
+POS_TABLES = (
+    "pos.receipt_lines",
+    "pos.receipts",
+    "pos.import_batches",
+    "pos.agents",
+    "pos.product_map",
+    "pos.sources",
+)
+
 INVENTORY_TABLES = (
     "inventory.stock_movements",
     "inventory.stock_postings",
@@ -87,7 +96,7 @@ async def clean_database() -> None:
     async with async_session_maker() as session:
         await session.execute(
             text(
-                f"TRUNCATE {', '.join((*INVENTORY_TABLES, *OFD_TABLES))} CASCADE"
+                f"TRUNCATE {', '.join((*INVENTORY_TABLES, *OFD_TABLES, *POS_TABLES))} CASCADE"
             )
         )
 

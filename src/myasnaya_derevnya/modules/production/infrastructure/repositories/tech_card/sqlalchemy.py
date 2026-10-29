@@ -1,6 +1,7 @@
+from datetime import date
 from uuid import UUID
 
-from sqlalchemy import func, insert, select
+from sqlalchemy import func, insert, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.production.domain.entities.tech_card import (
@@ -74,6 +75,36 @@ class SQLAlchemyTechCardRepository(TechCardRepository):
         )
 
         return self._to_entity(row, lines)
+
+    async def get_effective_by_output_nomenclature(
+        self, nomenclature_id: UUID, on_date: date
+    ) -> TechCard | None:
+        tech_card_id = await self._session.scalar(
+            select(TECH_CARDS_TABLE.c.id)
+            .join(
+                TECH_CARD_LINES_TABLE,
+                TECH_CARD_LINES_TABLE.c.tech_card_id == TECH_CARDS_TABLE.c.id,
+            )
+            .where(
+                TECH_CARD_LINES_TABLE.c.role == SpecLineRole.OUTPUT.value,
+                TECH_CARD_LINES_TABLE.c.output_kind == OutputKind.MAIN.value,
+                TECH_CARD_LINES_TABLE.c.nomenclature_id == nomenclature_id,
+                or_(
+                    TECH_CARDS_TABLE.c.valid_from.is_(None),
+                    TECH_CARDS_TABLE.c.valid_from <= on_date,
+                ),
+            )
+            .order_by(
+                TECH_CARDS_TABLE.c.valid_from.desc().nulls_last(),
+                TECH_CARDS_TABLE.c.version.desc(),
+            )
+            .limit(1)
+        )
+
+        if tech_card_id is None:
+            return None
+
+        return await self.get_by_id(tech_card_id)
 
     async def next_version(self, code: str) -> int:
         current = await self._session.scalar(
