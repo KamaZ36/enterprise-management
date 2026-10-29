@@ -75,7 +75,7 @@ async function loadOrders(): Promise<void> {
   error.value = "";
 
   try {
-    const { data, response } = await api.GET("/api/sales/me/orders", {
+    const { data, response } = await api.GET("/api/me/orders", {
       params: { query: { limit: 50 } },
     });
 

@@ -20,7 +20,7 @@ Frontend (run from `frontend/`):
 
 ## Backend architecture
 
-Each module is `modules/<name>/{domain,application,infrastructure,presentation}` (auth, business, catalog, customer, inventory, production, sales, staff):
+Each module is `modules/<name>/{domain,application,infrastructure,presentation}` (auth, business, catalog, customer, inventory, production, orders, staff):
 - `domain`: entities, value objects, `permissions.py`, `errors.py`.
 - `application`: one file per use case in `interactors/`, plus `dto.py` and module errors.
 - `infrastructure`: `tables.py` (SQLAlchemy **Core** tables, not ORM models), `repositories/<x>/{base,sqlalchemy}.py` for writes, `readers/<x>/{base,sqlalchemy}.py` for reads, `dependencies.py` (dishka providers).

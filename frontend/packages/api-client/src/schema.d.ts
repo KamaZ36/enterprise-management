@@ -24,7 +24,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales/orders": {
+    "/api/orders": {
         parameters: {
             query?: never;
             header?: never;
@@ -35,20 +35,20 @@ export interface paths {
          * List Orders
          * @description Заказы
          */
-        get: operations["list_orders_api_sales_orders_get"];
+        get: operations["list_orders_api_orders_get"];
         put?: never;
         /**
          * Create Order
          * @description Создать заказ
          */
-        post: operations["create_order_api_sales_orders_post"];
+        post: operations["create_order_api_orders_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/orders/{order_id}": {
+    "/api/orders/{order_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -59,7 +59,7 @@ export interface paths {
          * Get Order
          * @description Карточка заказа
          */
-        get: operations["get_order_api_sales_orders__order_id__get"];
+        get: operations["get_order_api_orders__order_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -69,10 +69,10 @@ export interface paths {
          * Update Order
          * @description Изменить черновик заказа
          */
-        patch: operations["update_order_api_sales_orders__order_id__patch"];
+        patch: operations["update_order_api_orders__order_id__patch"];
         trace?: never;
     };
-    "/api/sales/orders/{order_id}/confirm": {
+    "/api/orders/{order_id}/confirm": {
         parameters: {
             query?: never;
             header?: never;
@@ -85,14 +85,14 @@ export interface paths {
          * Confirm Order
          * @description Подтвердить заказ
          */
-        post: operations["confirm_order_api_sales_orders__order_id__confirm_post"];
+        post: operations["confirm_order_api_orders__order_id__confirm_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/orders/{order_id}/preparing": {
+    "/api/orders/{order_id}/preparing": {
         parameters: {
             query?: never;
             header?: never;
@@ -105,14 +105,14 @@ export interface paths {
          * Start Preparing Order
          * @description Заказ готовится
          */
-        post: operations["start_preparing_order_api_sales_orders__order_id__preparing_post"];
+        post: operations["start_preparing_order_api_orders__order_id__preparing_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/orders/{order_id}/ready": {
+    "/api/orders/{order_id}/ready": {
         parameters: {
             query?: never;
             header?: never;
@@ -125,14 +125,14 @@ export interface paths {
          * Mark Order Ready
          * @description Заказ готов
          */
-        post: operations["mark_order_ready_api_sales_orders__order_id__ready_post"];
+        post: operations["mark_order_ready_api_orders__order_id__ready_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/orders/{order_id}/completed": {
+    "/api/orders/{order_id}/completed": {
         parameters: {
             query?: never;
             header?: never;
@@ -145,14 +145,14 @@ export interface paths {
          * Complete Order
          * @description Выдать заказ
          */
-        post: operations["complete_order_api_sales_orders__order_id__completed_post"];
+        post: operations["complete_order_api_orders__order_id__completed_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/orders/{order_id}/cancel": {
+    "/api/orders/{order_id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -165,14 +165,14 @@ export interface paths {
          * Cancel Order
          * @description Отменить заказ
          */
-        post: operations["cancel_order_api_sales_orders__order_id__cancel_post"];
+        post: operations["cancel_order_api_orders__order_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/me/orders": {
+    "/api/me/orders": {
         parameters: {
             query?: never;
             header?: never;
@@ -183,7 +183,7 @@ export interface paths {
          * List My Orders
          * @description Мои заказы
          */
-        get: operations["list_my_orders_api_sales_me_orders_get"];
+        get: operations["list_my_orders_api_me_orders_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -192,7 +192,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales/me/orders/{order_id}": {
+    "/api/me/orders/{order_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -203,7 +203,7 @@ export interface paths {
          * Get My Order
          * @description Моя карточка заказа
          */
-        get: operations["get_my_order_api_sales_me_orders__order_id__get"];
+        get: operations["get_my_order_api_me_orders__order_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,7 +212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales/me/cart": {
+    "/api/me/cart": {
         parameters: {
             query?: never;
             header?: never;
@@ -223,12 +223,12 @@ export interface paths {
          * Get Cart
          * @description Моя корзина
          */
-        get: operations["get_cart_api_sales_me_cart_get"];
+        get: operations["get_cart_api_me_cart_get"];
         /**
          * Update Cart
          * @description Сохранить корзину
          */
-        put: operations["update_cart_api_sales_me_cart_put"];
+        put: operations["update_cart_api_me_cart_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -236,7 +236,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales/me/cart/submit": {
+    "/api/me/cart/submit": {
         parameters: {
             query?: never;
             header?: never;
@@ -249,14 +249,14 @@ export interface paths {
          * Submit Cart
          * @description Оформить заказ из корзины
          */
-        post: operations["submit_cart_api_sales_me_cart_submit_post"];
+        post: operations["submit_cart_api_me_cart_submit_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales/me/orders/{order_id}/cancel": {
+    "/api/me/orders/{order_id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -269,7 +269,7 @@ export interface paths {
          * Cancel My Order
          * @description Отменить свой заказ
          */
-        post: operations["cancel_my_order_api_sales_me_orders__order_id__cancel_post"];
+        post: operations["cancel_my_order_api_me_orders__order_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4090,7 +4090,7 @@ export interface operations {
             };
         };
     };
-    list_orders_api_sales_orders_get: {
+    list_orders_api_orders_get: {
         parameters: {
             query?: {
                 org_unit_id?: string | null;
@@ -4127,7 +4127,7 @@ export interface operations {
             };
         };
     };
-    create_order_api_sales_orders_post: {
+    create_order_api_orders_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4160,7 +4160,7 @@ export interface operations {
             };
         };
     };
-    get_order_api_sales_orders__order_id__get: {
+    get_order_api_orders__order_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4191,7 +4191,7 @@ export interface operations {
             };
         };
     };
-    update_order_api_sales_orders__order_id__patch: {
+    update_order_api_orders__order_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -4226,7 +4226,7 @@ export interface operations {
             };
         };
     };
-    confirm_order_api_sales_orders__order_id__confirm_post: {
+    confirm_order_api_orders__order_id__confirm_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4257,7 +4257,7 @@ export interface operations {
             };
         };
     };
-    start_preparing_order_api_sales_orders__order_id__preparing_post: {
+    start_preparing_order_api_orders__order_id__preparing_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4288,7 +4288,7 @@ export interface operations {
             };
         };
     };
-    mark_order_ready_api_sales_orders__order_id__ready_post: {
+    mark_order_ready_api_orders__order_id__ready_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4319,7 +4319,7 @@ export interface operations {
             };
         };
     };
-    complete_order_api_sales_orders__order_id__completed_post: {
+    complete_order_api_orders__order_id__completed_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4350,7 +4350,7 @@ export interface operations {
             };
         };
     };
-    cancel_order_api_sales_orders__order_id__cancel_post: {
+    cancel_order_api_orders__order_id__cancel_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4381,7 +4381,7 @@ export interface operations {
             };
         };
     };
-    list_my_orders_api_sales_me_orders_get: {
+    list_my_orders_api_me_orders_get: {
         parameters: {
             query?: {
                 statuses?: string | null;
@@ -4415,7 +4415,7 @@ export interface operations {
             };
         };
     };
-    get_my_order_api_sales_me_orders__order_id__get: {
+    get_my_order_api_me_orders__order_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4446,7 +4446,7 @@ export interface operations {
             };
         };
     };
-    get_cart_api_sales_me_cart_get: {
+    get_cart_api_me_cart_get: {
         parameters: {
             query: {
                 org_unit_id: string;
@@ -4477,7 +4477,7 @@ export interface operations {
             };
         };
     };
-    update_cart_api_sales_me_cart_put: {
+    update_cart_api_me_cart_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -4510,7 +4510,7 @@ export interface operations {
             };
         };
     };
-    submit_cart_api_sales_me_cart_submit_post: {
+    submit_cart_api_me_cart_submit_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -4543,7 +4543,7 @@ export interface operations {
             };
         };
     };
-    cancel_my_order_api_sales_me_orders__order_id__cancel_post: {
+    cancel_my_order_api_me_orders__order_id__cancel_post: {
         parameters: {
             query?: never;
             header?: never;

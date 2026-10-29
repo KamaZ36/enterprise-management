@@ -150,7 +150,7 @@ async function loadOrders(): Promise<void> {
   ordersPending.value = true;
 
   try {
-    const { data } = await api.GET("/api/sales/orders", {
+    const { data } = await api.GET("/api/orders", {
       params: {
         query: { customer_id: customerId, limit: 20, offset: 0 },
       },

@@ -34,7 +34,7 @@ export const SECTIONS = [
   { module: "production", title: "Производство", icon: "Box" },
   { module: "catalog", title: "Справочники", icon: "Goods" },
   { module: "staff", title: "Персонал", icon: "User" },
-  { module: "sales", title: "Заказы", icon: "Document" },
+  { module: "orders", title: "Заказы", icon: "Document" },
   { module: "customers", title: "Клиенты", icon: "User" },
 ] as const;
 

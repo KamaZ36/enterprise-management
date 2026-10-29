@@ -51,16 +51,16 @@ from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa:
     WRITE_OFF_LINES_TABLE,
     WRITE_OFFS_TABLE,
 )
+from myasnaya_derevnya.modules.orders.infrastructure.tables import (  # noqa: F401
+    ORDER_LINES_TABLE,
+    ORDER_NUMBER_COUNTERS_TABLE,
+    ORDERS_TABLE,
+)
 from myasnaya_derevnya.modules.production.infrastructure.tables import (  # noqa: F401
     PRODUCTION_ORDER_LINES_TABLE,
     PRODUCTION_ORDERS_TABLE,
     TECH_CARD_LINES_TABLE,
     TECH_CARDS_TABLE,
-)
-from myasnaya_derevnya.modules.sales.infrastructure.tables import (  # noqa: F401
-    ORDER_LINES_TABLE,
-    ORDER_NUMBER_COUNTERS_TABLE,
-    ORDERS_TABLE,
 )
 from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F401
     EMPLOYEES_TABLE,

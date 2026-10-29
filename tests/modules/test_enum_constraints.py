@@ -29,6 +29,19 @@ from myasnaya_derevnya.modules.inventory.domain.value_objects.document_status im
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
     DocumentType,
 )
+from myasnaya_derevnya.modules.orders.domain.value_objects.fulfillment import (
+    FulfillmentType,
+)
+from myasnaya_derevnya.modules.orders.domain.value_objects.order_channel import (
+    OrderChannel,
+)
+from myasnaya_derevnya.modules.orders.domain.value_objects.order_status import (
+    OrderStatus,
+)
+from myasnaya_derevnya.modules.orders.domain.value_objects.payment import (
+    PaymentMethod,
+    PaymentStatus,
+)
 from myasnaya_derevnya.modules.production.domain.value_objects.loss_kind import (
     LossKind,
 )
@@ -41,19 +54,6 @@ from myasnaya_derevnya.modules.production.domain.value_objects.spec_line_role im
 )
 from myasnaya_derevnya.modules.production.domain.value_objects.tech_card_basis import (
     TechCardBasis,
-)
-from myasnaya_derevnya.modules.sales.domain.value_objects.fulfillment import (
-    FulfillmentType,
-)
-from myasnaya_derevnya.modules.sales.domain.value_objects.order_channel import (
-    OrderChannel,
-)
-from myasnaya_derevnya.modules.sales.domain.value_objects.order_status import (
-    OrderStatus,
-)
-from myasnaya_derevnya.modules.sales.domain.value_objects.payment import (
-    PaymentMethod,
-    PaymentStatus,
 )
 from myasnaya_derevnya.modules.staff.domain.entities.role_assignment import (
     RoleAssignmentStatus,
@@ -82,11 +82,11 @@ EXPECTED = {
     ("production", "production_order_lines", "role"): SpecLineRole,
     ("production", "production_order_lines", "loss_kind"): LossKind,
     ("production", "production_order_lines", "output_kind"): OutputKind,
-    ("sales", "orders", "status"): OrderStatus,
-    ("sales", "orders", "channel"): OrderChannel,
-    ("sales", "orders", "fulfillment_type"): FulfillmentType,
-    ("sales", "orders", "payment_method"): PaymentMethod,
-    ("sales", "orders", "payment_status"): PaymentStatus,
+    ("orders", "orders", "status"): OrderStatus,
+    ("orders", "orders", "channel"): OrderChannel,
+    ("orders", "orders", "fulfillment_type"): FulfillmentType,
+    ("orders", "orders", "payment_method"): PaymentMethod,
+    ("orders", "orders", "payment_status"): PaymentStatus,
     ("staff", "role_assignments", "status"): RoleAssignmentStatus,
 }
 

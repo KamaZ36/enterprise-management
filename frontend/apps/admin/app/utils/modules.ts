@@ -158,12 +158,12 @@ export const MODULES: ModuleDefinition[
     ],
   },
   {
-    code: "sales",
+    code: "orders",
     title: "Заказы",
     icon: "Document",
     tabs: [
       {
-        path: "/sales/orders",
+        path: "/orders",
         title: "Заказы",
         icon: "Document",
         permissions: CAN.ordersOpen,

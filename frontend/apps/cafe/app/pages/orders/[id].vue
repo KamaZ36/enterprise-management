@@ -102,7 +102,7 @@ async function loadOrder(): Promise<void> {
 
   try {
     const { data, response } = await api.GET(
-      "/api/sales/me/orders/{order_id}",
+      "/api/me/orders/{order_id}",
       { params: { path: { order_id: orderId } } },
     );
 
@@ -123,7 +123,7 @@ async function cancelOrder(): Promise<void> {
 
   try {
     const { response } = await api.POST(
-      "/api/sales/me/orders/{order_id}/cancel",
+      "/api/me/orders/{order_id}/cancel",
       { params: { path: { order_id: orderId } } },
     );
 

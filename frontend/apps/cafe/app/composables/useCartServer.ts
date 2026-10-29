@@ -48,7 +48,7 @@ export function useCartServer() {
 
   /** Забирает корзину с сервера, если локальная пуста. */
   async function pull(orgUnitId: string): Promise<void> {
-    const { data, response } = await api.GET("/api/sales/me/cart", {
+    const { data, response } = await api.GET("/api/me/cart", {
       params: { query: { org_unit_id: orgUnitId } },
     });
 
@@ -69,7 +69,7 @@ export function useCartServer() {
 
   /** Сохраняет локальную корзину на сервере (локальная побеждает). */
   async function push(orgUnitId: string, comment: string | null = null): Promise<boolean> {
-    const { response } = await api.PUT("/api/sales/me/cart", {
+    const { response } = await api.PUT("/api/me/cart", {
       body: {
         org_unit_id: orgUnitId,
         fulfillment_type: fulfillment.value,

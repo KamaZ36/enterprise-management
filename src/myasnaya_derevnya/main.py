@@ -51,11 +51,11 @@ from myasnaya_derevnya.modules.fiscal.presentation.api.v1 import (
 from myasnaya_derevnya.modules.inventory.presentation.api.v1 import (
     router as inventory_router,
 )
+from myasnaya_derevnya.modules.orders.presentation.api.v1 import (
+    router as orders_router,
+)
 from myasnaya_derevnya.modules.production.presentation.api.v1 import (
     router as production_router,
-)
-from myasnaya_derevnya.modules.sales.presentation.api.v1 import (
-    router as sales_router,
 )
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
     access_router,
@@ -121,7 +121,7 @@ async def lifespan(app: FastAPI):
 
 def include_routers(app: FastAPI) -> None:
     app.include_router(login_router)
-    app.include_router(sales_router)
+    app.include_router(orders_router)
     app.include_router(logout_router)
     app.include_router(password_router)
     app.include_router(access_router)

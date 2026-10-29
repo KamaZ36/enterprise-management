@@ -43,7 +43,7 @@ export function useCheckout() {
       }
 
       const { data, response, error: failure } = await api.POST(
-        "/api/sales/me/cart/submit",
+        "/api/me/cart/submit",
         { body: { org_unit_id: cafe.id } },
       );
 

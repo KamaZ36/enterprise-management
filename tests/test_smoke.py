@@ -153,7 +153,7 @@ async def test_every_endpoint_interactor_is_registered() -> None:
 
 def test_my_orders_list_uses_customer_schema() -> None:
     schema = create_app().openapi()
-    response = schema["paths"]["/api/sales/me/orders"]["get"]["responses"]["200"]
+    response = schema["paths"]["/api/me/orders"]["get"]["responses"]["200"]
     ref = response["content"]["application/json"]["schema"]["$ref"]
 
     assert ref.endswith("/MyOrderListSchema")
