@@ -56,7 +56,7 @@
 |---|---|
 | Бэкенд | Python 3.14, FastAPI, SQLAlchemy Core 2.1, Alembic, PostgreSQL 17 |
 | DI и транзакции | Dishka, собственный `TransactionManager` |
-| Авторизация | пароль + сессия (Bearer UUID), роли и права, Argon2 |
+| Авторизация | пароль + непрозрачный токен сессии (Bearer), роли и права, Argon2 |
 | Фронтенд | Nuxt 4, Vue 3, TypeScript, Element Plus, pnpm |
 | API-типы | OpenAPI → `openapi-typescript` (`@md/api-client`) |
 | Инфраструктура | Docker Compose, Caddy, `uv` |
@@ -307,7 +307,11 @@ modules/<name>/
 
 ### Авторизация и права
 
-- Сотрудник: `Authorization: Bearer <session-uuid>` — сырой UUID сессии, не JWT.
+- Сотрудник: `Authorization: Bearer <token>` — непрозрачный случайный токен
+  сессии, не JWT. В БД хранится только его SHA-256-хэш; старые UUID-токены
+  продолжают работать до истечения сессии.
+- Вход по паролю ограничен: после `LOGIN_MAX_ATTEMPTS` неудач за окно —
+  блокировка на `LOGIN_LOCKOUT_SECONDS` и ответ `429` с `Retry-After`.
 - Клиент кафе: отдельная сессия, вход по одноразовому коду.
 - Целевое подразделение всегда передаётся явно (`org_unit_id` в body/path или
   query при чтении); проверка — `can(permission, org_unit_id)`.

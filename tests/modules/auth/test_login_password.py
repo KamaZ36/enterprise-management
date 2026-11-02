@@ -20,6 +20,9 @@ from myasnaya_derevnya.modules.auth.application.services.password_login_policy i
 from myasnaya_derevnya.modules.auth.application.services.password_service import (
     PasswordService,
 )
+from myasnaya_derevnya.modules.auth.application.services.session_token import (
+    hash_session_token,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.credential import (
     UserCredential,
     UserCredentialType,
@@ -163,11 +166,15 @@ def build(user: User | None = None) -> Harness:
 async def test_active_user_gets_session() -> None:
     harness = build()
 
-    session_id = await harness.interactor(
+    token = await harness.interactor(
         LoginByPasswordCommand(username=USERNAME, password=PASSWORD)
     )
 
-    assert session_id == harness.sessions.added[0].id
+    session = harness.sessions.added[0]
+    assert isinstance(token, str)
+    assert token != str(session.id)
+    assert session.token_hash == hash_session_token(token)
+    assert session.user_id == harness.user_id
     assert len(harness.sessions.added) == 1
     assert harness.transactions.commits == 1
 

@@ -10,7 +10,7 @@ class UserSessionRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, user_session_id: UUID) -> UserSession | None:
+    async def get_by_token_hash(self, token_hash: str) -> UserSession | None:
         raise NotImplementedError
 
     @abstractmethod

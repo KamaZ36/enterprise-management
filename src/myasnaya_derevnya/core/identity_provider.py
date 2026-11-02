@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 
 
-class SessionIdGetter(ABC):
+class SessionTokenGetter(ABC):
     @abstractmethod
-    async def get(self) -> UUID | None:
+    async def get(self) -> str | None:
         raise NotImplementedError()
 
 

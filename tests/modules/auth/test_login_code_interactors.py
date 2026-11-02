@@ -28,6 +28,9 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.verify_login_
 from myasnaya_derevnya.modules.auth.application.services.login_code_service import (
     LoginCodeService,
 )
+from myasnaya_derevnya.modules.auth.application.services.session_token import (
+    hash_session_token,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.identity import (
     UserIdentity,
     UserIdentityType,
@@ -325,10 +328,10 @@ async def test_start_session_creates_session_with_future_expiry() -> None:
         session_repository=sessions, user_repository=users
     )
 
-    session_id = await interactor(user.id)
+    token = await interactor(user.id)
 
     assert len(sessions.added) == 1
-    assert sessions.added[0].id == session_id
+    assert sessions.added[0].token_hash == hash_session_token(token)
     assert sessions.added[0].user_id == user.id
     assert sessions.added[0].expires_at > get_datetime_utc()
 

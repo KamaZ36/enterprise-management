@@ -3,6 +3,10 @@ from datetime import timedelta
 from uuid import UUID
 
 from myasnaya_derevnya.core.errors import UnauthorizedError
+from myasnaya_derevnya.modules.auth.application.services.session_token import (
+    generate_session_token,
+    hash_session_token,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
@@ -24,17 +28,19 @@ class StartSessionInteractor:
         self._session_repository = session_repository
         self._user_repository = user_repository
 
-    async def __call__(self, user_id: UUID) -> UUID:
+    async def __call__(self, user_id: UUID) -> str:
         user = await self._user_repository.get_by_id(user_id)
         if user is None or not user.is_active:
             raise UnauthorizedError()
 
+        token = generate_session_token()
         session = UserSession.create(
             user_id=user_id,
+            token_hash=hash_session_token(token),
             expires_at=get_datetime_utc() + timedelta(days=30),
         )
         await self._session_repository.add(session)
 
         logger.info("Открыта сессия", extra={"user_id": str(user_id)})
 
-        return session.id
+        return token

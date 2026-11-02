@@ -9,19 +9,22 @@ class UserSession:
         self,
         id: UUID,
         user_id: UUID,
+        token_hash: str,
         expires_at: datetime,
         created_at: datetime,
     ) -> None:
         self._id = id
         self._user_id = user_id
+        self._token_hash = token_hash
         self._expires_at = expires_at
         self._created_at = created_at
 
     @classmethod
-    def create(cls, user_id: UUID, expires_at: datetime) -> UserSession:
+    def create(cls, user_id: UUID, token_hash: str, expires_at: datetime) -> UserSession:
         return cls(
             id=uuid4(),
             user_id=user_id,
+            token_hash=token_hash,
             expires_at=expires_at,
             created_at=get_datetime_utc(),
         )
@@ -33,6 +36,10 @@ class UserSession:
     @property
     def user_id(self) -> UUID:
         return self._user_id
+
+    @property
+    def token_hash(self) -> str:
+        return self._token_hash
 
     @property
     def expires_at(self) -> datetime:

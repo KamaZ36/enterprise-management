@@ -11,6 +11,10 @@ from myasnaya_derevnya.core.database.connection import async_session_maker, engi
 from myasnaya_derevnya.core.seed import bootstrap_system
 from myasnaya_derevnya.core.settings import settings
 from myasnaya_derevnya.main import create_app
+from myasnaya_derevnya.modules.auth.application.services.session_token import (
+    generate_session_token,
+    hash_session_token,
+)
 from myasnaya_derevnya.modules.catalog.domain.entities.category import Category
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     Nomenclature,
@@ -87,8 +91,8 @@ async def make_nomenclature(db_session: AsyncSession) -> Callable[..., Coroutine
 
 
 @pytest.fixture
-async def admin_session_id(db_session: AsyncSession) -> UUID:
-    """Готовая сессия администратора для запросов через ASGI-клиент."""
+async def admin_session_token(db_session: AsyncSession) -> str:
+    """Готовый токен сессии администратора для запросов через ASGI-клиент."""
 
     await bootstrap_system()
 
@@ -100,32 +104,34 @@ async def admin_session_id(db_session: AsyncSession) -> UUID:
         {"identifier": settings.initial_admin_username},
     )
 
-    session_id = uuid4()
+    token = generate_session_token()
     await db_session.execute(
         text(
-            "insert into auth.user_sessions (id, user_id, expires_at, created_at)"
-            " values (:id, :user_id, :expires_at, now())"
+            "insert into auth.user_sessions"
+            " (id, user_id, token_hash, expires_at, created_at)"
+            " values (:id, :user_id, :token_hash, :expires_at, now())"
         ),
         {
-            "id": session_id,
+            "id": uuid4(),
             "user_id": user_id,
+            "token_hash": hash_session_token(token),
             "expires_at": datetime.now(UTC) + timedelta(days=1),
         },
     )
     await db_session.commit()
 
-    return session_id
+    return token
 
 
 @pytest.fixture
 async def client(
-    db_session: AsyncSession, admin_session_id: UUID
+    db_session: AsyncSession, admin_session_token: str
 ) -> AsyncIterator[AsyncClient]:
     transport = ASGITransport(app=create_app())
 
     async with AsyncClient(
         transport=transport,
         base_url="http://test",
-        headers={"Authorization": f"Bearer {admin_session_id}"},
+        headers={"Authorization": f"Bearer {admin_session_token}"},
     ) as api_client:
         yield api_client

@@ -84,10 +84,12 @@ USER_SESSIONS_TABLE = Table(
         ForeignKey("auth.users.id", ondelete="CASCADE"),
         nullable=False,
     ),
+    Column("token_hash", String(64), nullable=False),
     Column("expires_at", DateTime(timezone=True), nullable=False),
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
+    UniqueConstraint("token_hash", name="uq_user_sessions_token_hash"),
     Index("ix_user_sessions_user_id", "user_id"),
     Index("ix_user_sessions_expires_at", "expires_at"),
     schema=DATABASE_SCHEMA,

@@ -28,9 +28,9 @@ Each module is `modules/<name>/{domain,application,infrastructure,presentation}`
 
 Endpoint pattern: build a Command/Query, then `async with container(context={Request: request}) as context: interactor = await context.get(X); await interactor(cmd)`. Every `context.get(X)` type must be registered in that module's `infrastructure/dependencies.py`, or `tests/test_smoke.py::test_every_endpoint_interactor_is_registered` fails. App wiring is in `src/myasnaya_derevnya/main.py` (`create_app` factory, `include_routers`).
 
-Errors: raise subclasses of `ProjectError` (`core/errors.py`). `main.py` maps `DomainError`→400, `AppError` subclasses→422/401/403/404/409, everything else→500 with a generic message (details are not leaked). A new error category needs an entry in `STATUS_BY_CATEGORY`.
+Errors: raise subclasses of `ProjectError` (`core/errors.py`). `main.py` maps `DomainError`→400, `AppError` subclasses→422/401/403/404/409/429, everything else→500 with a generic message (details are not leaked). A new error category needs an entry in `STATUS_BY_CATEGORY`.
 
-Auth: `Authorization: Bearer <session-uuid>` — a raw session UUID, not a JWT. There is no ambient request scope: the target org unit is always explicit — in the body/path on writes (e.g. `org_unit_id`, `warehouse_id`) and as an optional `org_unit_id` query filter on lists — and every check is `can(permission, org_unit_id)`.
+Auth: `Authorization: Bearer <token>` — an opaque random session token, not a JWT. The DB stores only its SHA-256 hash (`auth.user_sessions.token_hash`); legacy UUID tokens are still accepted until they expire. There is no ambient request scope: the target org unit is always explicit — in the body/path on writes (e.g. `org_unit_id`, `warehouse_id`) and as an optional `org_unit_id` query filter on lists — and every check is `can(permission, org_unit_id)`.
 
 Permissions: declared per module in `domain/permissions.py`, aggregated (sorted, unique) by `core/permissions.all_permissions()`. Tests enforce no duplicates, coverage of every module, and that the aggregate exactly equals the declared set. Interactors authorize via `StaffAPI.can_anywhere(...)`. Frontend permission codes in `frontend/apps/admin/app/utils/access.ts` must all exist in the registry (`tests/test_access_map.py`) — update it when adding a permission.
 

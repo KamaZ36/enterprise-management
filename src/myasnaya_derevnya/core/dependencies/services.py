@@ -1,14 +1,17 @@
 from dishka import Provider, Scope, from_context, provide
 from fastapi import Request
 
-from myasnaya_derevnya.core.identity_provider import IdentityProvider, SessionIdGetter
+from myasnaya_derevnya.core.identity_provider import (
+    IdentityProvider,
+    SessionTokenGetter,
+)
 from myasnaya_derevnya.core.media.paths import media_root
 from myasnaya_derevnya.core.media.storage import LocalDiskStorage, MediaStorage
 from myasnaya_derevnya.core.settings.media import MediaSettings
 from myasnaya_derevnya.core.settings.ofd import OfdSettings
 from myasnaya_derevnya.modules.auth.infrastructure.identity_provider import (
+    HTTPBearerTokenGetter,
     HTTPIdentityProvider,
-    HTTPSessionIDGetter,
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
@@ -37,18 +40,18 @@ class ServicesDepProvider(Provider):
         )
 
     @provide(scope=Scope.REQUEST)
-    def get_session_id_getter(self, request: Request) -> SessionIdGetter:
-        return HTTPSessionIDGetter(request)
+    def get_session_token_getter(self, request: Request) -> SessionTokenGetter:
+        return HTTPBearerTokenGetter(request)
 
     @provide(scope=Scope.REQUEST)
     def get_identity_provider(
         self,
-        session_id_getter: SessionIdGetter,
+        session_token_getter: SessionTokenGetter,
         session_repository: UserSessionRepository,
         user_repository: UserRepository,
     ) -> IdentityProvider:
         return HTTPIdentityProvider(
-            session_id_getter=session_id_getter,
+            session_token_getter=session_token_getter,
             session_repository=session_repository,
             user_repository=user_repository,
         )

@@ -78,7 +78,7 @@ class AuthAPI:
     async def verify_login_code(self, phone: str, code: str) -> None:
         await self._verify_login_code_interactor(phone, code)
 
-    async def start_session(self, user_id: UUID) -> UUID:
+    async def start_session(self, user_id: UUID) -> str:
         return await self._start_session_interactor(user_id)
 
     async def set_user_active(self, user_id: UUID, is_active: bool) -> None:

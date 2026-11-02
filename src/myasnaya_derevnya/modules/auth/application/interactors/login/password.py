@@ -1,7 +1,6 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from uuid import UUID
 
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.modules.auth.application.errors import (
@@ -13,6 +12,10 @@ from myasnaya_derevnya.modules.auth.application.services.password_login_policy i
 )
 from myasnaya_derevnya.modules.auth.application.services.password_service import (
     PasswordService,
+)
+from myasnaya_derevnya.modules.auth.application.services.session_token import (
+    generate_session_token,
+    hash_session_token,
 )
 from myasnaya_derevnya.modules.auth.domain.entities.credential import UserCredentialType
 from myasnaya_derevnya.modules.auth.domain.entities.identity import UserIdentityType
@@ -67,7 +70,7 @@ class LoginByPasswordInteractor:
         self._password_service = password_service
         self._password_login_policy = password_login_policy
 
-    async def __call__(self, command: LoginByPasswordCommand) -> UUID:
+    async def __call__(self, command: LoginByPasswordCommand) -> str:
         identifier = command.username.strip().lower()
         now = get_datetime_utc()
         attempt = await self._login_attempt_repository.get_by_identifier(identifier)
@@ -127,8 +130,10 @@ class LoginByPasswordInteractor:
             now - self._password_login_policy.retention
         )
 
+        token = generate_session_token()
         session = UserSession.create(
             user_id=user_credential.user_id,
+            token_hash=hash_session_token(token),
             expires_at=now + SESSION_TTL,
         )
 
@@ -137,7 +142,7 @@ class LoginByPasswordInteractor:
 
         logger.info("Вход по паролю", extra={"user_id": str(session.user_id)})
 
-        return session.id
+        return token
 
     async def _register_failure(
         self,

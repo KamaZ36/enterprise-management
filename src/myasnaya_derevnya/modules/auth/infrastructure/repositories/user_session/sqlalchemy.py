@@ -18,14 +18,15 @@ class SQLAlchemyUserSessionRepository(UserSessionRepository):
         stmt = insert(USER_SESSIONS_TABLE).values(
             id=user_session.id,
             user_id=user_session.user_id,
+            token_hash=user_session.token_hash,
             expires_at=user_session.expires_at,
             created_at=user_session.created_at,
         )
         await self._session.execute(stmt)
 
-    async def get_by_id(self, user_session_id: UUID) -> UserSession | None:
+    async def get_by_token_hash(self, token_hash: str) -> UserSession | None:
         query = select(USER_SESSIONS_TABLE).where(
-            USER_SESSIONS_TABLE.c.id == user_session_id
+            USER_SESSIONS_TABLE.c.token_hash == token_hash
         )
         result = await self._session.execute(query)
 
@@ -46,6 +47,7 @@ class SQLAlchemyUserSessionRepository(UserSessionRepository):
         return UserSession(
             id=row["id"],
             user_id=row["user_id"],
+            token_hash=row["token_hash"],
             expires_at=row["expires_at"],
             created_at=row["created_at"],
         )

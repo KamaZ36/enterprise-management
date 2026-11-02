@@ -5,9 +5,13 @@ from fastapi import Request
 from myasnaya_derevnya.core.errors import UnauthorizedError
 from myasnaya_derevnya.core.identity_provider import (
     IdentityProvider,
-    SessionIdGetter,
+    SessionTokenGetter,
 )
 from myasnaya_derevnya.core.logging.context import set_user_id
+from myasnaya_derevnya.modules.auth.application.services.session_token import (
+    TOKEN_MAX_LENGTH,
+    hash_session_token,
+)
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
     UserRepository,
@@ -18,11 +22,11 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.bas
 from myasnaya_derevnya.utils import get_datetime_utc
 
 
-class HTTPSessionIDGetter(SessionIdGetter):
+class HTTPBearerTokenGetter(SessionTokenGetter):
     def __init__(self, request: Request) -> None:
         self._request = request
 
-    async def get(self) -> UUID | None:
+    async def get(self) -> str | None:
         authorization = self._request.headers.get("Authorization")
 
         if authorization is None:
@@ -30,23 +34,24 @@ class HTTPSessionIDGetter(SessionIdGetter):
 
         scheme, _, value = authorization.partition(" ")
 
-        if scheme.lower() != "bearer" or not value:
+        if scheme.lower() != "bearer":
             return None
 
-        try:
-            return UUID(value)
-        except ValueError:
+        token = value.strip()
+        if not token or len(token) > TOKEN_MAX_LENGTH:
             return None
+
+        return token
 
 
 class HTTPIdentityProvider(IdentityProvider):
     def __init__(
         self,
-        session_id_getter: SessionIdGetter,
+        session_token_getter: SessionTokenGetter,
         session_repository: UserSessionRepository,
         user_repository: UserRepository,
     ) -> None:
-        self._session_id_getter = session_id_getter
+        self._session_token_getter = session_token_getter
         self._session_repository = session_repository
         self._user_repository = user_repository
         self._active_session: UserSession | None = None
@@ -55,12 +60,14 @@ class HTTPIdentityProvider(IdentityProvider):
         if self._active_session is not None:
             return self._active_session
 
-        session_id = await self._session_id_getter.get()
+        token = await self._session_token_getter.get()
 
-        if session_id is None:
+        if token is None:
             raise UnauthorizedError()
 
-        session = await self._session_repository.get_by_id(session_id)
+        session = await self._session_repository.get_by_token_hash(
+            hash_session_token(token)
+        )
 
         if session is None:
             raise UnauthorizedError()
