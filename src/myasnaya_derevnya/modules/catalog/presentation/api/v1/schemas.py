@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -7,6 +8,7 @@ from myasnaya_derevnya.modules.catalog.application.dto import (
     AssortmentItem,
     CategoryListItem,
     NomenclatureListItem,
+    StopListItem,
 )
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
     UnitOfMeasurement,
@@ -192,3 +194,29 @@ class AssortmentItemSchema(BaseModel):
 
 class AssortmentListSchema(BaseModel):
     items: list[AssortmentItemSchema]
+
+
+class AddStopListItemSchema(BaseModel):
+    nomenclature_id: UUID
+
+
+class StopListItemSchema(BaseModel):
+    nomenclature_id: UUID
+    nomenclature_name: str
+    sku: str
+    created_by: UUID | None = None
+    created_at: datetime
+
+    @classmethod
+    def from_dto(cls, item: StopListItem) -> StopListItemSchema:
+        return cls(
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            sku=item.sku,
+            created_by=item.created_by,
+            created_at=item.created_at,
+        )
+
+
+class StopListSchema(BaseModel):
+    items: list[StopListItemSchema]

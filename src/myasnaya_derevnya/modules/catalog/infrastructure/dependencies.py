@@ -1,6 +1,9 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.modules.catalog.application.interactors.add_stop_list_item import (
+    AddStopListItemInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.bind_price_list import (
     BindPriceListInteractor,
 )
@@ -40,6 +43,12 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_price_list_p
 from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
     ListPriceListsInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.list_stop_list import (
+    ListStopListInteractor,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.remove_stop_list_item import (
+    RemoveStopListItemInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
     UpdateCategoryInteractor,
 )
@@ -73,6 +82,12 @@ from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature_price
 from myasnaya_derevnya.modules.catalog.infrastructure.readers.nomenclature_prices.sqlalchemy import (
     SQLAlchemyNomenclaturePricesReader,
 )
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.stop_list.base import (
+    StopListReader,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.stop_list.sqlalchemy import (
+    SQLAlchemyStopListReader,
+)
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.category.base import (
     CategoryRepository,
 )
@@ -102,6 +117,12 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_bi
 )
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_binding.sqlalchemy import (
     SQLAlchemyPriceListBindingRepository,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.stop_list.base import (
+    StopListEntryRepository,
+)
+from myasnaya_derevnya.modules.catalog.infrastructure.repositories.stop_list.sqlalchemy import (
+    SQLAlchemyStopListEntryRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
 
@@ -138,6 +159,24 @@ class CatalogDepProvider(Provider):
         self, session: AsyncSession
     ) -> PriceListBindingRepository:
         return SQLAlchemyPriceListBindingRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_stop_list_repository(
+        self, session: AsyncSession
+    ) -> StopListEntryRepository:
+        return SQLAlchemyStopListEntryRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_stop_list_reader(self, session: AsyncSession) -> StopListReader:
+        return SQLAlchemyStopListReader(session)
+
+    add_stop_list_item_interactor = provide(
+        AddStopListItemInteractor, scope=Scope.REQUEST
+    )
+    remove_stop_list_item_interactor = provide(
+        RemoveStopListItemInteractor, scope=Scope.REQUEST
+    )
+    list_stop_list_interactor = provide(ListStopListInteractor, scope=Scope.REQUEST)
 
     bind_price_list_interactor = provide(BindPriceListInteractor, scope=Scope.REQUEST)
     get_price_list_binding_interactor = provide(

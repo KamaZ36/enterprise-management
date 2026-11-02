@@ -37,3 +37,12 @@ READ_PRICE = Permission(code="price.read", description="Просмотр цен"
 
 
 UPLOAD_IMAGE = Permission(code="image.upload", description="Загрузка изображений")
+
+
+READ_STOP_LIST = Permission(
+    code="stop_list.read", description="Просмотр стоп-листа точки"
+)
+
+MANAGE_STOP_LIST = Permission(
+    code="stop_list.manage", description="Управление стоп-листом точки"
+)

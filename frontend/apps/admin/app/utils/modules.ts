@@ -148,6 +148,12 @@ export const MODULES: ModuleDefinition[
         icon: "Money",
         permissions: ["price_list.read", "price.read"],
       },
+      {
+        path: "/catalog/stop-list",
+        title: "Стоп-лист",
+        icon: "Switch",
+        permissions: CAN.stopListOpen,
+      },
     ],
   },
   {

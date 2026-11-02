@@ -11,6 +11,7 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
 from myasnaya_derevnya.modules.catalog.domain.entities.price_list_binding import (
     PriceListBinding,
 )
+from tests.modules.fakes import FakeStopListReader
 
 
 class FakeBindingRepository:
@@ -48,6 +49,7 @@ async def test_point_without_price_list_sells_nothing() -> None:
     interactor = GetPointAssortmentInteractor(
         binding_repository=FakeBindingRepository(None),  # type: ignore[arg-type]
         reader=reader,  # type: ignore[arg-type]
+        stop_list_reader=FakeStopListReader(),  # type: ignore[arg-type]
     )
 
     items = await interactor(GetPointAssortmentQuery(org_unit_id=uuid4()))
@@ -65,6 +67,7 @@ async def test_point_assortment_comes_from_bound_price_list() -> None:
     interactor = GetPointAssortmentInteractor(
         binding_repository=bindings,  # type: ignore[arg-type]
         reader=reader,  # type: ignore[arg-type]
+        stop_list_reader=FakeStopListReader(),  # type: ignore[arg-type]
     )
 
     items = await interactor(
@@ -74,3 +77,21 @@ async def test_point_assortment_comes_from_bound_price_list() -> None:
     assert items == [item]
     assert reader.calls == [price_list_id]
     assert bindings.calls == [binding.org_unit_id]
+
+
+async def test_stopped_items_are_hidden_from_assortment() -> None:
+    price_list_id = uuid4()
+    binding = PriceListBinding.create(org_unit_id=uuid4(), price_list_id=price_list_id)
+    first = make_item()
+    second = make_item()
+    interactor = GetPointAssortmentInteractor(
+        binding_repository=FakeBindingRepository(binding),  # type: ignore[arg-type]
+        reader=FakeReader([first, second]),  # type: ignore[arg-type]
+        stop_list_reader=FakeStopListReader({second.nomenclature_id}),  # type: ignore[arg-type]
+    )
+
+    items = await interactor(
+        GetPointAssortmentQuery(org_unit_id=binding.org_unit_id)
+    )
+
+    assert items == [first]

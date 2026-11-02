@@ -9,6 +9,8 @@ export const CAN = {
   edoDocumentsManage: ["edo.document.manage"],
   nomenclaturesOpen: ["nomenclature.read", "category.read"],
   nomenclatureCreate: ["nomenclature.create", "category.read"],
+  stopListOpen: ["stop_list.read"],
+  stopListManage: ["stop_list.manage"],
   orgUnitsOpen: ["org_unit.read"],
   cashRegistersOpen: ["cash_register.read"],
   cashRegisterManage: ["cash_register.manage"],

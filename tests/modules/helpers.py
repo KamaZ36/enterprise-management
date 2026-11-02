@@ -57,6 +57,13 @@ _CLEANUP_STATEMENTS = (
            (select id from catalog.price_lists where name like :prefix)
     """,
     "delete from catalog.price_lists where name like :prefix",
+    """
+    delete from catalog.stop_list_entries
+     where nomenclature_id in
+           (select id from catalog.nomenclatures where sku like :prefix)
+        or org_unit_id in
+           (select id from business.org_units where code like :prefix)
+    """,
     "delete from catalog.nomenclatures where sku like :prefix",
     "delete from catalog.categories where name like :prefix",
     # кассы и их привязки создают только тесты

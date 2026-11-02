@@ -26,6 +26,7 @@ EXPECTED_NAMESPACES = {
     "price_list",
     "production",
     "staff",
+    "stop_list",
     "veterinary",
 }
 

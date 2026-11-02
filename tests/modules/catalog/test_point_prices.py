@@ -8,6 +8,7 @@ from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices 
 from myasnaya_derevnya.modules.catalog.domain.entities.price_list_binding import (
     PriceListBinding,
 )
+from tests.modules.fakes import FakeStopListReader
 
 
 class FakeBindingRepository:
@@ -41,6 +42,7 @@ async def test_point_prices_are_fetched_in_one_batch() -> None:
     interactor = GetPointPricesInteractor(
         binding_repository=FakeBindingRepository(binding),  # type: ignore[arg-type]
         price_repository=price_repository,  # type: ignore[arg-type]
+        stop_list_reader=FakeStopListReader(),  # type: ignore[arg-type]
     )
 
     prices = await interactor(
@@ -51,12 +53,32 @@ async def test_point_prices_are_fetched_in_one_batch() -> None:
     assert price_repository.calls == [([first, second], price_list_id)]
 
 
+async def test_stopped_items_are_not_sellable() -> None:
+    price_list_id = uuid4()
+    first, second = uuid4(), uuid4()
+    price_repository = FakePriceRepository({first: 1000, second: 2500})
+    binding = PriceListBinding.create(org_unit_id=uuid4(), price_list_id=price_list_id)
+
+    interactor = GetPointPricesInteractor(
+        binding_repository=FakeBindingRepository(binding),  # type: ignore[arg-type]
+        price_repository=price_repository,  # type: ignore[arg-type]
+        stop_list_reader=FakeStopListReader({second}),  # type: ignore[arg-type]
+    )
+
+    prices = await interactor(
+        GetPointPricesQuery(org_unit_id=uuid4(), nomenclature_ids=[first, second])
+    )
+
+    assert prices == {first: 1000}
+
+
 async def test_point_without_binding_has_no_prices() -> None:
     price_repository = FakePriceRepository({})
 
     interactor = GetPointPricesInteractor(
         binding_repository=FakeBindingRepository(None),  # type: ignore[arg-type]
         price_repository=price_repository,  # type: ignore[arg-type]
+        stop_list_reader=FakeStopListReader(),  # type: ignore[arg-type]
     )
 
     prices = await interactor(

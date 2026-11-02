@@ -5,6 +5,10 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
 
 from myasnaya_derevnya.core.dependencies import container
+from myasnaya_derevnya.modules.catalog.application.interactors.add_stop_list_item import (
+    AddStopListItemCommand,
+    AddStopListItemInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.bind_price_list import (
     BindPriceListCommand,
     BindPriceListInteractor,
@@ -52,6 +56,14 @@ from myasnaya_derevnya.modules.catalog.application.interactors.list_price_list_p
 from myasnaya_derevnya.modules.catalog.application.interactors.list_price_lists import (
     ListPriceListsInteractor,
 )
+from myasnaya_derevnya.modules.catalog.application.interactors.list_stop_list import (
+    ListStopListInteractor,
+    ListStopListQuery,
+)
+from myasnaya_derevnya.modules.catalog.application.interactors.remove_stop_list_item import (
+    RemoveStopListItemCommand,
+    RemoveStopListItemInteractor,
+)
 from myasnaya_derevnya.modules.catalog.application.interactors.update_category import (
     UpdateCategoryCommand,
     UpdateCategoryInteractor,
@@ -61,6 +73,7 @@ from myasnaya_derevnya.modules.catalog.application.interactors.update_nomenclatu
     UpdateNomenclatureInteractor,
 )
 from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
+    AddStopListItemSchema,
     AssortmentItemSchema,
     AssortmentListSchema,
     BindPriceListSchema,
@@ -78,6 +91,8 @@ from myasnaya_derevnya.modules.catalog.presentation.api.v1.schemas import (
     PriceListEntrySchema,
     PriceListPriceListSchema,
     PriceListPriceSchema,
+    StopListItemSchema,
+    StopListSchema,
     UpdateCategorySchema,
     UpdateNomenclatureSchema,
 )
@@ -303,6 +318,62 @@ async def get_point_assortment(
     return AssortmentListSchema(
         items=[AssortmentItemSchema.from_dto(item) for item in items]
     )
+
+
+@router.get(
+    "/org-units/{org_unit_id}/stop-list",
+    response_model=StopListSchema,
+    description="Товары, временно недоступные к продаже в точке",
+)
+async def list_stop_list(
+    request: Request, org_unit_id: UUID
+) -> StopListSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListStopListInteractor)
+        items = await interactor(ListStopListQuery(org_unit_id=org_unit_id))
+
+    return StopListSchema(
+        items=[StopListItemSchema.from_dto(item) for item in items]
+    )
+
+
+@router.post(
+    "/org-units/{org_unit_id}/stop-list",
+    status_code=201,
+    description="Добавить товар в стоп-лист точки",
+)
+async def add_stop_list_item(
+    request: Request, org_unit_id: UUID, data: AddStopListItemSchema
+) -> JSONResponse:
+    command = AddStopListItemCommand(
+        org_unit_id=org_unit_id,
+        nomenclature_id=data.nomenclature_id,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(AddStopListItemInteractor)
+        await interactor(command)
+
+    return JSONResponse(status_code=201, content={"message": "ok"})
+
+
+@router.delete(
+    "/org-units/{org_unit_id}/stop-list/{nomenclature_id}",
+    description="Убрать товар из стоп-листа точки",
+)
+async def remove_stop_list_item(
+    request: Request, org_unit_id: UUID, nomenclature_id: UUID
+) -> JSONResponse:
+    command = RemoveStopListItemCommand(
+        org_unit_id=org_unit_id,
+        nomenclature_id=nomenclature_id,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(RemoveStopListItemInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
 
 
 @router.get(

@@ -6,9 +6,14 @@
 `READ` на `UPDATE` (или наоборот) не останется незамеченной.
 """
 
+from collections.abc import Iterable
 from uuid import UUID
 
 from myasnaya_derevnya.core.types.permission import Permission
+from myasnaya_derevnya.modules.catalog.application.dto import StopListItem
+from myasnaya_derevnya.modules.catalog.domain.entities.stop_list_entry import (
+    StopListEntry,
+)
 from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
     AccessScope,
 )
@@ -31,6 +36,48 @@ class FakeTransactionManager:
 
     async def commit(self) -> None:
         self.commits += 1
+
+
+class FakeStopListReader:
+    def __init__(
+        self,
+        stopped: Iterable[UUID] = (),
+        items: list[StopListItem] | None = None,
+    ) -> None:
+        self.stopped = set(stopped)
+        self.items = items or []
+        self.calls: list[tuple[UUID, list[UUID]]] = []
+
+    async def list_by_org_unit(self, org_unit_id: UUID) -> list[StopListItem]:
+        self.calls.append((org_unit_id, []))
+        return self.items
+
+    async def stopped_nomenclature_ids(
+        self, org_unit_id: UUID, nomenclature_ids: Iterable[UUID]
+    ) -> set[UUID]:
+        ids = list(nomenclature_ids)
+        self.calls.append((org_unit_id, ids))
+        return {
+            nomenclature_id
+            for nomenclature_id in ids
+            if nomenclature_id in self.stopped
+        }
+
+
+class FakeStopListRepository:
+    def __init__(self, *, added: bool = True, removed: bool = True) -> None:
+        self.added = added
+        self.removed = removed
+        self.entries: list[StopListEntry] = []
+        self.deleted: list[tuple[UUID, UUID]] = []
+
+    async def add(self, entry: StopListEntry) -> bool:
+        self.entries.append(entry)
+        return self.added
+
+    async def delete(self, org_unit_id: UUID, nomenclature_id: UUID) -> bool:
+        self.deleted.append((org_unit_id, nomenclature_id))
+        return self.removed
 
 
 class FakeStaffAPI:

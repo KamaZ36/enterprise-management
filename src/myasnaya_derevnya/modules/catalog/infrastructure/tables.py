@@ -138,6 +138,31 @@ PRICES_TABLE = Table(
 )
 
 
+STOP_LIST_ENTRIES_TABLE = Table(
+    "stop_list_entries",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("org_unit_id", UUID, nullable=False),
+    Column(
+        "nomenclature_id",
+        UUID,
+        ForeignKey("catalog.nomenclatures.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("created_by", UUID, nullable=True),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    UniqueConstraint(
+        "org_unit_id",
+        "nomenclature_id",
+        name="uq_stop_list_entries_org_unit_nomenclature",
+    ),
+    Index("ix_stop_list_entries_nomenclature_id", "nomenclature_id"),
+    schema=DATABASE_SCHEMA,
+)
+
+
 PRICE_LIST_BINDINGS_TABLE = Table(
     "price_list_bindings",
     metadata,

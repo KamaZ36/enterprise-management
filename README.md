@@ -73,7 +73,7 @@
 │   │   ├── auth/             вход сотрудников и клиентов, сессии
 │   │   ├── business/         организационная структура
 │   │   ├── staff/            сотрудники, роли, права
-│   │   ├── catalog/          категории, номенклатура, цены
+│   │   ├── catalog/          категории, номенклатура, цены, стоп-лист
 │   │   ├── inventory/        склад и документы
 │   │   ├── production/       техкарты и производственные задания
 │   │   ├── orders/           заказы и корзина
@@ -285,7 +285,8 @@ modules/<name>/
 - DI — Dishka; все interactor'ы регистрируются в
   `modules/<name>/infrastructure/dependencies.py`.
 - Ошибки: `DomainError` → 400, `ValidationError` → 422, `Unauthorized` → 401,
-  `Forbidden` → 403, `NotFound` → 404, `Conflict` → 409, остальное → 500.
+  `Forbidden` → 403, `NotFound` → 404, `Conflict` → 409, `RateLimit` → 429,
+  остальное → 500.
 
 ### Модули и API
 
@@ -294,7 +295,7 @@ modules/<name>/
 | `auth` | `/api/auth` | вход сотрудников, сессии, смена пароля |
 | `staff` | `/api/staff` | сотрудники, роли, права, области доступа |
 | `business` | `/api/business` | организационная структура и складские локации |
-| `catalog` | `/api/catalog` | категории, номенклатура, цены, фото, витрина |
+| `catalog` | `/api/catalog` | категории, номенклатура, цены, фото, стоп-лист, витрина |
 | `inventory` | `/api/inventory` | склад, документы, остатки, движения |
 | `production` | `/api/production` | техкарты и производственные задания |
 | `orders` | `/api/orders`, `/api/me` | заказы, корзина, статусы |

@@ -13,6 +13,9 @@ from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.modules.catalog.application.interactors.get_point_prices import (
     GetPointPricesInteractor,
 )
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.stop_list.sqlalchemy import (
+    SQLAlchemyStopListReader,
+)
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.nomenclature.sqlalchemy import (
     SQLAlchemyNomenclatureRepository,
 )
@@ -97,6 +100,7 @@ def build_catalog_api(session: AsyncSession) -> CatalogAPI:
         get_point_prices_interactor=GetPointPricesInteractor(
             binding_repository=SQLAlchemyPriceListBindingRepository(session),
             price_repository=SQLAlchemyPriceRepository(session),
+            stop_list_reader=SQLAlchemyStopListReader(session),
         ),
         nomenclature_repository=SQLAlchemyNomenclatureRepository(session),
     )

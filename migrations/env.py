@@ -25,6 +25,7 @@ from myasnaya_derevnya.modules.catalog.infrastructure.tables import (  # noqa: F
     NOMENCLATURES_TABLE,
     PRICE_LISTS_TABLE,
     PRICES_TABLE,
+    STOP_LIST_ENTRIES_TABLE,
 )
 from myasnaya_derevnya.modules.customer.infrastructure.tables import (  # noqa: F401
     CUSTOMERS_TABLE,

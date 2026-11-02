@@ -7,6 +7,7 @@
     Магазины                           (группа)
         Магазин Грибановский на Советской  (shop)
         Магазин Рынок Борисоглебск         (shop)
+        Магазин Терновский                 (shop)
     Кафе                               (группа)
         Кафе                           (cafe)
     Производство                       (группа)
@@ -19,11 +20,15 @@
 
 Для витрины кафе дополнительно создаётся меню: категории разделов, блюда,
 прайс-лист «Меню кафе» с ценами и привязка этого прайс-листа к точке
-«Кафе» — без цены позиция на витрине не показывается.
+«Кафе» — без цены позиция на витрине не показывается. Несколько позиций
+меню сразу отправляются в стоп-лист кафе. Для магазинов создаётся общий
+прайс-лист «Розничные цены» (один на три точки), чтобы было видно, что
+стоп-лист при этом остаётся отдельным у каждой точки.
 
-Также создаются роли (кассир, менеджер кафе, мастер колбасного цеха,
-директор) и сотрудники с назначенными ролями. Логины — латиницей
-(см. ``STAFF_EMPLOYEES``), пароль у всех ``demo12345``.
+Также создаются роли (кассир, менеджер кафе, управляющий магазинами,
+кладовщик, мастер колбасного цеха, бухгалтер, директор) и сотрудники
+с назначенными ролями. Логины — латиницей (см. ``STAFF_EMPLOYEES``),
+пароль у всех ``demo12345``. В конце скрипт печатает список доступов.
 
 Скрипт идемпотентен: справочники, роли и сотрудники переиспользуются, а
 складские движения выполняются один раз — только если в подразделении
@@ -121,6 +126,7 @@ truncate table
     orders.order_lines,
     orders.orders,
     orders.order_number_counters,
+    catalog.stop_list_entries,
     catalog.prices,
     catalog.price_list_bindings,
     catalog.price_lists,
@@ -154,6 +160,13 @@ ORG_STRUCTURE: list[dict[str, Any]] = [
                 "type": "shop",
                 "name": "Магазин Рынок Борисоглебск",
                 "address": "г. Борисоглебск, рынок",
+                "phone_number": None,
+            },
+            {
+                "code": "SHOP_TERNOVKA",
+                "type": "shop",
+                "name": "Магазин Терновский",
+                "address": "с. Терновка, ул. Ленинская",
                 "phone_number": None,
             },
         ],
@@ -280,6 +293,19 @@ CAFE_CATEGORIES: list[dict[str, Any]] = [
 ]
 
 CAFE_PRICE_LIST_NAME = "Меню кафе"
+
+SHOP_PRICE_LIST_NAME = "Розничные цены"
+
+# Цены магазинов задаются в рублях. Один прайс-лист привязан ко всем трём
+# магазинам — это показывает, что стоп-лист при этом остаётся поточечным.
+SHOP_PRICES: dict[str, str] = {
+    "doctor": "620.00",
+    "krakow": "680.00",
+    "kotlet": "480.00",
+}
+
+# Позиции меню кафе, которые демонстрационно уходят в стоп-лист.
+CAFE_STOP_LIST: tuple[str, ...] = ("solyanka", "mushroom_soup", "napoleon")
 
 # key, sku, name, unit, category key, price (руб. строкой), description
 CAFE_MENU: list[dict[str, Any]] = [
@@ -666,6 +692,7 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "customer.read",
             "customer.update",
             "inventory.balance.read",
+            "stop_list.read",
         ),
     },
     {
@@ -691,6 +718,8 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "inventory.document.post",
             "production.order.read",
             "production.tech_card.read",
+            "stop_list.read",
+            "stop_list.manage",
         ),
     },
     {
@@ -734,6 +763,81 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "production.tech_card.read",
             "staff.employee.read",
             "staff.role.read",
+            "cash_register.read",
+            "cash_register.receipt_read",
+            "pos.receipt_read",
+            "stop_list.read",
+        ),
+    },
+    {
+        "code": "SHOP_MANAGER",
+        "name": "Управляющий магазинами",
+        "level": 70,
+        "description": "Управляющий магазинами: заказы, склад и стоп-лист точек",
+        "permissions": (
+            "order.create",
+            "order.read",
+            "order.update",
+            "order.cancel",
+            "nomenclature.read",
+            "category.read",
+            "price.read",
+            "price_list.read",
+            "customer.read",
+            "customer.update",
+            "inventory.balance.read",
+            "inventory.cost.read",
+            "inventory.document.read",
+            "inventory.document.create",
+            "inventory.document.post",
+            "production.order.read",
+            "production.tech_card.read",
+            "staff.employee.read",
+            "stop_list.read",
+            "stop_list.manage",
+        ),
+    },
+    {
+        "code": "STOREKEEPER",
+        "name": "Кладовщик",
+        "level": 50,
+        "description": "Кладовщик: приёмки, перемещения, списания и остатки",
+        "permissions": (
+            "nomenclature.read",
+            "category.read",
+            "price.read",
+            "inventory.balance.read",
+            "inventory.cost.read",
+            "inventory.document.read",
+            "inventory.document.create",
+            "inventory.document.post",
+            "production.order.read",
+            "production.tech_card.read",
+        ),
+    },
+    {
+        "code": "ACCOUNTANT",
+        "name": "Бухгалтер",
+        "level": 80,
+        "description": "Бухгалтер: просмотр заказов, склада, касс и себестоимости",
+        "permissions": (
+            "category.read",
+            "customer.read",
+            "inventory.balance.read",
+            "inventory.cost.read",
+            "inventory.document.read",
+            "nomenclature.read",
+            "order.read",
+            "org_unit.read",
+            "price.read",
+            "price_list.read",
+            "production.order.read",
+            "production.tech_card.read",
+            "staff.employee.read",
+            "cash_register.read",
+            "cash_register.receipt_read",
+            "pos.receipt_read",
+            "stop_list.read",
         ),
     },
 ]
@@ -757,6 +861,22 @@ STAFF_EMPLOYEES: list[dict[str, Any]] = [
         "role": "CASHIER",
     },
     {
+        "username": "petrova",
+        "first_name": "Анна",
+        "last_name": "Петрова",
+        "position": "Кассир",
+        "unit": "SHOP_TERNOVKA",
+        "role": "CASHIER",
+    },
+    {
+        "username": "smirnov",
+        "first_name": "Алексей",
+        "last_name": "Смирнов",
+        "position": "Управляющий магазинами",
+        "unit": "GROUP_SHOPS",
+        "role": "SHOP_MANAGER",
+    },
+    {
         "username": "volkov",
         "first_name": "Сергей",
         "last_name": "Волков",
@@ -771,6 +891,22 @@ STAFF_EMPLOYEES: list[dict[str, Any]] = [
         "position": "Директор",
         "unit": "ROOT",
         "role": "DIRECTOR",
+    },
+    {
+        "username": "vasileva",
+        "first_name": "Марина",
+        "last_name": "Васильева",
+        "position": "Бухгалтер",
+        "unit": "ROOT",
+        "role": "ACCOUNTANT",
+    },
+    {
+        "username": "kuzmin",
+        "first_name": "Олег",
+        "last_name": "Кузьмин",
+        "position": "Кладовщик",
+        "unit": "PRODUCTION",
+        "role": "STOREKEEPER",
     },
     {
         "username": "ivanov",
@@ -937,6 +1073,15 @@ TRANSFERS: list[dict[str, Any]] = [
         "to_unit": "SHOP_BORISOGLEBSK",
         "comment": "Поставка на рынок",
         "lines": [{"nomenclature": "doctor", "quantity": "15"}],
+    },
+    {
+        "from_unit": "PRODUCTION",
+        "to_unit": "SHOP_TERNOVKA",
+        "comment": "Поставка в Терновку",
+        "lines": [
+            {"nomenclature": "doctor", "quantity": "12"},
+            {"nomenclature": "kotlet", "quantity": "10"},
+        ],
     },
 ]
 
@@ -1207,6 +1352,7 @@ async def ensure_demo_staff(unit_ids_by_code: dict[str, str]) -> None:
         role_ids: dict[str, UUID] = {}
         for spec in STAFF_ROLES:
             role = await role_repository.get_by_code(spec["code"])
+            expected_permissions = frozenset(spec["permissions"])
             if role is None:
                 role = Role.create(
                     code=spec["code"],
@@ -1216,13 +1362,27 @@ async def ensure_demo_staff(unit_ids_by_code: dict[str, str]) -> None:
                     is_system=False,
                     is_assignable=True,
                     is_wildcard=False,
-                    permission_codes=frozenset(spec["permissions"]),
+                    permission_codes=expected_permissions,
                     grantable_role_ids=frozenset(),
                 )
                 await role_repository.add(role)
                 print(f"  + роль «{spec['name']}»")
             else:
-                print(f"  · роль «{spec['name']}» уже есть")
+                changed = (
+                    role.permission_codes != expected_permissions
+                    or role.level != spec["level"]
+                    or role.name != spec["name"]
+                    or role.description != spec["description"]
+                )
+                if changed:
+                    role.rename(spec["name"])
+                    role.change_description(spec["description"])
+                    role.change_level(spec["level"])
+                    role.change_permissions(expected_permissions)
+                    await role_repository.save(role)
+                    print(f"  ~ роль «{spec['name']}» обновлена")
+                else:
+                    print(f"  · роль «{spec['name']}» уже есть")
 
             role_ids[spec["code"]] = role.id
 
@@ -1363,7 +1523,9 @@ async def ensure_catalog(api: Api) -> dict[str, str]:
     return nomenclature_ids
 
 
-async def ensure_cafe_menu(api: Api, unit_ids_by_code: dict[str, str]) -> None:
+async def ensure_cafe_menu(
+    api: Api, unit_ids_by_code: dict[str, str]
+) -> dict[str, str]:
     """Заводит меню кафе: категории, блюда, прайс-лист и цены.
 
     Витрина кафе строится из цены в прайс-листе, привязанном к точке, поэтому
@@ -1453,6 +1615,74 @@ async def ensure_cafe_menu(api: Api, unit_ids_by_code: dict[str, str]) -> None:
         f"  · прайс-лист «{CAFE_PRICE_LIST_NAME}» привязан к кафе, "
         f"цен выставлено: {len(CAFE_MENU)}"
     )
+
+    return nomenclature_ids
+
+
+async def ensure_shop_prices(
+    api: Api,
+    unit_ids_by_code: dict[str, str],
+    nomenclature_ids: dict[str, str],
+) -> None:
+    """Розничный прайс-лист, общий для трёх магазинов.
+
+    Важно для демонстрации: прайс один, а стоп-лист всё равно отдельный
+    у каждой точки.
+    """
+    price_lists = await api.get("/api/catalog/price-lists")
+    price_list = next(
+        (
+            item
+            for item in price_lists["items"]
+            if item["name"] == SHOP_PRICE_LIST_NAME
+        ),
+        None,
+    )
+    if price_list is None:
+        created = await api.post(
+            "/api/catalog/price-lists", json={"name": SHOP_PRICE_LIST_NAME}
+        )
+        price_list_id = created["price_list_id"]
+        print(f"  + прайс-лист «{SHOP_PRICE_LIST_NAME}»")
+    else:
+        price_list_id = price_list["id"]
+
+    for unit_code in ("SHOP_GRBANOVSKY", "SHOP_BORISOGLEBSK", "SHOP_TERNOVKA"):
+        await api.put(
+            f"/api/catalog/org-units/{unit_ids_by_code[unit_code]}/price-list",
+            json={"price_list_id": price_list_id},
+        )
+
+    for key, price in SHOP_PRICES.items():
+        await api.post(
+            f"/api/catalog/price-lists/{price_list_id}/prices",
+            json={"nomenclature_id": nomenclature_ids[key], "price": price},
+        )
+
+    print(
+        f"  · прайс-лист «{SHOP_PRICE_LIST_NAME}» привязан к трём магазинам, "
+        f"цен выставлено: {len(SHOP_PRICES)}"
+    )
+
+
+async def ensure_cafe_stop_list(
+    api: Api,
+    unit_ids_by_code: dict[str, str],
+    menu_nomenclature_ids: dict[str, str],
+) -> None:
+    """Демонстрационный стоп-лист кафе: пара позиций недоступна к продаже."""
+    path = f"/api/catalog/org-units/{unit_ids_by_code['CAFE']}/stop-list"
+    existing = await api.get(path)
+    stopped = {item["nomenclature_id"] for item in existing["items"]}
+
+    for key in CAFE_STOP_LIST:
+        nomenclature_id = menu_nomenclature_ids[key]
+        if nomenclature_id in stopped:
+            print(f"  · позиция «{key}» уже в стоп-листе")
+            continue
+
+        await api.post(path, json={"nomenclature_id": nomenclature_id})
+        print(f"  + в стоп-лист кафе: {key}")
 
 
 async def ensure_tech_cards(api: Api, nomenclature_ids: dict[str, str]) -> dict[str, str]:
@@ -1609,7 +1839,13 @@ async def run(args: argparse.Namespace) -> None:
         nomenclature_ids = await ensure_catalog(api)
 
         print("Меню кафе…")
-        await ensure_cafe_menu(api, unit_ids_by_code)
+        menu_nomenclature_ids = await ensure_cafe_menu(api, unit_ids_by_code)
+
+        print("Цены магазинов…")
+        await ensure_shop_prices(api, unit_ids_by_code, nomenclature_ids)
+
+        print("Стоп-лист кафе…")
+        await ensure_cafe_stop_list(api, unit_ids_by_code, menu_nomenclature_ids)
 
         print("Техкарты…")
         tech_card_ids = await ensure_tech_cards(api, nomenclature_ids)
@@ -1623,6 +1859,16 @@ async def run(args: argparse.Namespace) -> None:
             await post_production(api, unit_ids_by_code, tech_card_ids)
             print("Перемещения…")
             await post_transfers(api, unit_ids_by_code, nomenclature_ids)
+
+        print("\nДемо-доступы (пароль у сотрудников: "
+              f"{DEMO_STAFF_PASSWORD}):")
+        print(f"  {settings.initial_admin_username} — супер-админ "
+              f"(пароль {settings.initial_admin_password})")
+        for spec in STAFF_EMPLOYEES:
+            print(
+                f"  {spec['username']} — {spec['position']} "
+                f"(роль {spec['role']})"
+            )
 
         print("\nГотово.")
     finally:

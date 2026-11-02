@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
@@ -55,6 +56,15 @@ class PriceListPriceItem:
     nomenclature_name: str
     sku: str
     value: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class StopListItem:
+    nomenclature_id: UUID
+    nomenclature_name: str
+    sku: str
+    created_by: UUID | None
+    created_at: datetime
 
 
 @dataclass(frozen=True, slots=True)

@@ -13,6 +13,9 @@ from myasnaya_derevnya.modules.catalog.domain.entities.price_list import PriceLi
 from myasnaya_derevnya.modules.catalog.domain.entities.price_list_binding import (
     PriceListBinding,
 )
+from myasnaya_derevnya.modules.catalog.infrastructure.readers.stop_list.sqlalchemy import (
+    SQLAlchemyStopListReader,
+)
 from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price.sqlalchemy import (
     SQLAlchemyPriceRepository,
 )
@@ -69,6 +72,7 @@ async def test_point_prices_take_only_the_bound_list(
     interactor = GetPointPricesInteractor(
         binding_repository=bindings,
         price_repository=price_repository,
+        stop_list_reader=SQLAlchemyStopListReader(db_session),
     )
 
     prices = await interactor(
@@ -87,6 +91,7 @@ async def test_point_without_binding_has_no_prices(
     interactor = GetPointPricesInteractor(
         binding_repository=SQLAlchemyPriceListBindingRepository(db_session),
         price_repository=SQLAlchemyPriceRepository(db_session),
+        stop_list_reader=SQLAlchemyStopListReader(db_session),
     )
 
     prices = await interactor(

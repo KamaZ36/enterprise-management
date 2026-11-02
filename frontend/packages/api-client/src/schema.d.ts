@@ -820,6 +820,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/org-units/{org_unit_id}/stop-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Stop List
+         * @description Товары, временно недоступные к продаже в точке
+         */
+        get: operations["list_stop_list_api_catalog_org_units__org_unit_id__stop_list_get"];
+        put?: never;
+        /**
+         * Add Stop List Item
+         * @description Добавить товар в стоп-лист точки
+         */
+        post: operations["add_stop_list_item_api_catalog_org_units__org_unit_id__stop_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/org-units/{org_unit_id}/stop-list/{nomenclature_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Stop List Item
+         * @description Убрать товар из стоп-листа точки
+         */
+        delete: operations["remove_stop_list_item_api_catalog_org_units__org_unit_id__stop_list__nomenclature_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/catalog/nomenclatures/{nomenclature_id}/prices": {
         parameters: {
             query?: never;
@@ -2068,6 +2112,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddStopListItemSchema */
+        AddStopListItemSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+        };
         /** AgentFileSchema */
         AgentFileSchema: {
             /** Name */
@@ -4622,6 +4674,30 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** StopListItemSchema */
+        StopListItemSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string;
+            /** Sku */
+            sku: string;
+            /** Created By */
+            created_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** StopListSchema */
+        StopListSchema: {
+            /** Items */
+            items: components["schemas"]["StopListItemSchema"][];
+        };
         /** SubmitCartSchema */
         SubmitCartSchema: {
             /**
@@ -6833,6 +6909,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssortmentListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_stop_list_api_catalog_org_units__org_unit_id__stop_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StopListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_stop_list_item_api_catalog_org_units__org_unit_id__stop_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddStopListItemSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_stop_list_item_api_catalog_org_units__org_unit_id__stop_list__nomenclature_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                org_unit_id: string;
+                nomenclature_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
