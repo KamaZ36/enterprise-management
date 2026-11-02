@@ -51,6 +51,18 @@
         </template>
       </el-table-column>
       <el-table-column prop="category_name" label="Категория" min-width="200" />
+      <el-table-column label="ВетИС" width="130">
+        <template #default="{ row }">
+          <el-tag
+            v-if="row.requires_vetis"
+            type="warning"
+            effect="light"
+          >
+            нужен
+          </el-tag>
+          <el-tag v-else type="info" effect="light">не нужен</el-tag>
+        </template>
+      </el-table-column>
 
       <el-table-column v-if="can('price.read')" width="120" align="right">
 
@@ -168,6 +180,14 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="ВетИС">
+          <el-select v-model="form.requires_vetis" style="width: 100%">
+            <el-option label="Не требуется" :value="false" />
+            <el-option label="Требуется ВСД" :value="true" />
+          </el-select>
+          <span class="hint">по умолчанию «не требуется»; включайте для мяса, молочки, рыбы</span>
+        </el-form-item>
+
         <el-form-item label="Фото для меню">
           <div class="photo">
             <div class="photo__preview">
@@ -259,6 +279,13 @@
           <span class="hint">закрытая позиция остаётся в документах, но её нельзя выбрать в новых</span>
         </el-form-item>
 
+        <el-form-item label="ВетИС">
+          <el-select v-model="editForm.requires_vetis" style="width: 100%">
+            <el-option label="Не требуется" :value="false" />
+            <el-option label="Требуется ВСД" :value="true" />
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="Фото для меню">
           <div class="photo">
             <div class="photo__preview">
@@ -348,6 +375,7 @@ const editForm = reactive({
   category_id: "",
   unit: "kg" as Nomenclature["unit"],
   is_active: true,
+  requires_vetis: false,
   image_url: "",
   description: "",
 });
@@ -360,6 +388,7 @@ const form = reactive({
   name: "",
   unit: "kg",
   category_id: "",
+  requires_vetis: false,
   image_url: "",
   description: "",
 });
@@ -432,6 +461,7 @@ function openCreate(): void {
   form.name = "";
   form.unit = "kg";
   form.category_id = categories.value[0]?.id ?? "";
+  form.requires_vetis = false;
   form.image_url = "";
   form.description = "";
   createOpen.value = true;
@@ -448,6 +478,7 @@ async function createNomenclature(): Promise<void> {
         name: form.name.trim(),
         unit: form.unit as Nomenclature["unit"],
         category_id: form.category_id,
+        requires_vetis: form.requires_vetis,
         image_url: form.image_url.trim() || null,
         description: form.description.trim() || null,
       },
@@ -518,6 +549,7 @@ function openEdit(row: Nomenclature): void {
   editForm.category_id = row.category_id;
   editForm.unit = row.unit;
   editForm.is_active = row.is_active;
+  editForm.requires_vetis = row.requires_vetis;
   editForm.image_url = row.image_url ?? "";
   editForm.description = row.description ?? "";
   editOpen.value = true;
@@ -542,6 +574,9 @@ async function saveEdit(): Promise<void> {
   }
   if (editForm.is_active !== row.is_active) {
     body.is_active = editForm.is_active;
+  }
+  if (editForm.requires_vetis !== row.requires_vetis) {
+    body.requires_vetis = editForm.requires_vetis;
   }
 
 

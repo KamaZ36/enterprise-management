@@ -17,6 +17,9 @@ from myasnaya_derevnya.modules.production.domain.value_objects.spec_line_role im
     OutputKind,
     SpecLineRole,
 )
+from myasnaya_derevnya.modules.production.domain.value_objects.vetis_status import (
+    VetisStatus,
+)
 from myasnaya_derevnya.modules.production.infrastructure.repositories.production_order.base import (
     ProductionOrderRepository,
 )
@@ -111,6 +114,11 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
             "created_by": order.created_by,
             "created_at": order.created_at,
             "posted_at": order.posted_at,
+            "vetis_status": order.vetis_status.value,
+            "vetis_operation_id": order.vetis_operation_id,
+            "vetis_no_vsd_reason": order.vetis_no_vsd_reason,
+            "vetis_entered_by": order.vetis_entered_by,
+            "vetis_entered_at": order.vetis_entered_at,
         }
 
     def _line_values(
@@ -121,11 +129,16 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
             "order_id": order_id,
             "role": line.role.value,
             "nomenclature_id": line.nomenclature_id,
+            "lot_id": line.lot_id,
             "loss_kind": line.loss_kind.value if line.loss_kind else None,
             "output_kind": line.output_kind.value if line.output_kind else None,
             "cost_coefficient": line.cost_coefficient,
             "planned_quantity": line.planned_quantity,
             "actual_quantity": line.actual_quantity,
+            "expires_at": line.expires_at,
+            "vetis_production_vsd_number": line.vetis_production_vsd_number,
+            "vetis_production_vsd_guid": line.vetis_production_vsd_guid,
+            "vetis_batch_id": line.vetis_batch_id,
             "cost": line.cost_kopecks,
         }
 
@@ -147,6 +160,7 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
                     planned_quantity=line["planned_quantity"],
                     actual_quantity=line["actual_quantity"],
                     nomenclature_id=line["nomenclature_id"],
+                    lot_id=line["lot_id"],
                     loss_kind=LossKind(line["loss_kind"])
                     if line["loss_kind"]
                     else None,
@@ -154,6 +168,10 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
                     if line["output_kind"]
                     else None,
                     cost_coefficient=line["cost_coefficient"],
+                    expires_at=line["expires_at"],
+                    vetis_production_vsd_number=line["vetis_production_vsd_number"],
+                    vetis_production_vsd_guid=line["vetis_production_vsd_guid"],
+                    vetis_batch_id=line["vetis_batch_id"],
                     cost_kopecks=line["cost"],
                 )
                 for line in lines
@@ -161,4 +179,9 @@ class SQLAlchemyProductionOrderRepository(ProductionOrderRepository):
             created_by=row["created_by"],
             comment=row["comment"],
             posted_at=row["posted_at"],
+            vetis_status=VetisStatus(row["vetis_status"]),
+            vetis_operation_id=row["vetis_operation_id"],
+            vetis_no_vsd_reason=row["vetis_no_vsd_reason"],
+            vetis_entered_by=row["vetis_entered_by"],
+            vetis_entered_at=row["vetis_entered_at"],
         )

@@ -31,3 +31,13 @@ class User:
     @property
     def status(self) -> UserStatus:
         return self._status
+
+    @property
+    def is_active(self) -> bool:
+        return self._status is UserStatus.ACTIVE
+
+    def block(self) -> None:
+        self._status = UserStatus.BLOCKED
+
+    def unblock(self) -> None:
+        self._status = UserStatus.ACTIVE

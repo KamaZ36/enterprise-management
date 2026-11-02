@@ -28,6 +28,9 @@ from myasnaya_derevnya.modules.catalog.infrastructure.tables import (  # noqa: F
 from myasnaya_derevnya.modules.customer.infrastructure.tables import (  # noqa: F401
     CUSTOMERS_TABLE,
 )
+from myasnaya_derevnya.modules.edo.infrastructure.tables import (  # noqa: F401
+    EDO_DOCUMENTS_TABLE,
+)
 from myasnaya_derevnya.modules.fiscal.infrastructure.tables import (  # noqa: F401
     CASH_REGISTER_BINDINGS_TABLE,
     CASH_REGISTERS_TABLE,
@@ -76,6 +79,9 @@ from myasnaya_derevnya.modules.staff.infrastructure.tables import (  # noqa: F40
     ROLE_GRANT_RULES_TABLE,
     ROLE_PERMISSIONS_TABLE,
     ROLES_TABLE,
+)
+from myasnaya_derevnya.modules.veterinary.infrastructure.tables import (  # noqa: F401
+    VETERINARY_DOCUMENTS_TABLE,
 )
 
 config = context.config

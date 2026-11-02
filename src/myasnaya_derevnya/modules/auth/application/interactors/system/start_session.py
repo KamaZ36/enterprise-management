@@ -2,7 +2,11 @@ import logging
 from datetime import timedelta
 from uuid import UUID
 
+from myasnaya_derevnya.core.errors import UnauthorizedError
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
+    UserRepository,
+)
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
@@ -12,10 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 class StartSessionInteractor:
-    def __init__(self, session_repository: UserSessionRepository) -> None:
+    def __init__(
+        self,
+        session_repository: UserSessionRepository,
+        user_repository: UserRepository,
+    ) -> None:
         self._session_repository = session_repository
+        self._user_repository = user_repository
 
     async def __call__(self, user_id: UUID) -> UUID:
+        user = await self._user_repository.get_by_id(user_id)
+        if user is None or not user.is_active:
+            raise UnauthorizedError()
+
         session = UserSession.create(
             user_id=user_id,
             expires_at=get_datetime_utc() + timedelta(days=30),

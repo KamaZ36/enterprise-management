@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -8,7 +9,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.production.post
     PostedProduction,
     PostedProductionReceipt,
 )
-from myasnaya_derevnya.modules.inventory.presentation.inventory_api import LocationInfo
+from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
+    LocationInfo,
+    LotOption,
+)
 from myasnaya_derevnya.modules.production.application.dto import (
     ProductionOrderListItem,
     ProductionOrderPage,
@@ -29,6 +33,11 @@ from myasnaya_derevnya.modules.production.application.interactors.list_productio
 )
 from myasnaya_derevnya.modules.production.application.interactors.post_production_order import (
     PostProductionOrderInteractor,
+)
+from myasnaya_derevnya.modules.production.application.interactors.set_production_order_vetis import (
+    ProductionOutputVetisCommand,
+    SetProductionOrderVetisCommand,
+    SetProductionOrderVetisInteractor,
 )
 from myasnaya_derevnya.modules.production.application.interactors.update_production_order import (
     ProductionOrderActualCommand,
@@ -62,6 +71,9 @@ from myasnaya_derevnya.modules.production.domain.value_objects.spec_line_role im
 from myasnaya_derevnya.modules.production.domain.value_objects.tech_card_basis import (
     TechCardBasis,
 )
+from myasnaya_derevnya.modules.production.domain.value_objects.vetis_status import (
+    VetisStatus,
+)
 from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
     AccessScope,
 )
@@ -82,6 +94,9 @@ class FakeInventoryAPI:
         self.locations_list: list[LocationInfo] = []
         self.posted: PostedProduction | None = None
         self.post_calls: list[dict] = []
+        self.available: tuple[LotOption, ...] = ()
+        self.lot_codes_map: dict[UUID, str] = {}
+        self.lot_vetis_calls: list[dict] = []
 
     async def get_location(self, org_unit_id: UUID) -> LocationInfo | None:
         return self.locations.get(org_unit_id)
@@ -93,6 +108,19 @@ class FakeInventoryAPI:
         self.post_calls.append(kwargs)
         assert self.posted is not None
         return self.posted
+
+    async def available_lots(self, **kwargs) -> tuple[LotOption, ...]:
+        return self.available
+
+    async def lot_codes(self, lot_ids) -> dict:
+        return {
+            lot_id: code
+            for lot_id, code in self.lot_codes_map.items()
+            if lot_id in set(lot_ids)
+        }
+
+    async def set_lot_vetis(self, **kwargs) -> None:
+        self.lot_vetis_calls.append(kwargs)
 
 
 class FakeCatalogAPI:
@@ -352,6 +380,44 @@ async def test_update_applies_actuals_and_commits() -> None:
     assert transactions.commits == 1
 
 
+async def test_update_applies_lot_and_expiry() -> None:
+    point = location()
+    order = make_order(org_unit_id=point.id)
+    inventory, repository, staff_api, transactions = build_on_order(
+        order=order, loc=point
+    )
+    lot_id = uuid4()
+    expires_at = date(2026, 12, 31)
+    interactor = UpdateProductionOrderInteractor(
+        identity_provider=FakeIdentityProvider(uuid4()),
+        staff_api=staff_api,
+        inventory_api=inventory,
+        order_repository=repository,
+        transaction_manager=transactions,
+    )
+
+    await interactor(
+        UpdateProductionOrderCommand(
+            order_id=order.id,
+            actuals=(
+                ProductionOrderActualCommand(
+                    line_id=order.components[0].id,
+                    quantity=order.components[0].actual_quantity,
+                    lot_id=lot_id,
+                ),
+                ProductionOrderActualCommand(
+                    line_id=order.outputs[0].id,
+                    quantity=order.outputs[0].actual_quantity,
+                    expires_at=expires_at,
+                ),
+            ),
+        )
+    )
+
+    assert order.components[0].lot_id == lot_id
+    assert order.outputs[0].expires_at == expires_at
+
+
 def build_cancel(*, order: ProductionOrder | None, allowed: bool = True, loc=None):
     inventory, repository, staff_api, transactions = build_on_order(
         order=order, allowed=allowed, loc=loc
@@ -382,6 +448,44 @@ async def test_cancel_marks_order_and_commits() -> None:
     await interactor(order.id)
 
     assert order.status is ProductionOrderStatus.CANCELLED
+    assert repository.saved == [order]
+    assert transactions.commits == 1
+
+
+async def test_set_vetis_works_for_posted_order() -> None:
+    point = location()
+    order = make_order(org_unit_id=point.id)
+    order.post()
+    inventory, repository, staff_api, transactions = build_on_order(
+        order=order, loc=point
+    )
+    interactor = SetProductionOrderVetisInteractor(
+        identity_provider=FakeIdentityProvider(uuid4()),
+        staff_api=staff_api,
+        inventory_api=inventory,
+        order_repository=repository,
+        transaction_manager=transactions,
+    )
+    vsd_guid = uuid4()
+
+    await interactor(
+        SetProductionOrderVetisCommand(
+            order_id=order.id,
+            status=VetisStatus.MANUAL,
+            operation_id="OP-42",
+            outputs=(
+                ProductionOutputVetisCommand(
+                    line_id=order.outputs[0].id,
+                    production_vsd_guid=vsd_guid,
+                    batch_id="BATCH-1",
+                ),
+            ),
+        )
+    )
+
+    assert order.vetis_status is VetisStatus.MANUAL
+    assert order.vetis_operation_id == "OP-42"
+    assert order.outputs[0].vetis_production_vsd_guid == vsd_guid
     assert repository.saved == [order]
     assert transactions.commits == 1
 
@@ -420,7 +524,18 @@ async def test_post_posts_to_inventory_and_applies_costs() -> None:
     point = location()
     order = make_order(org_unit_id=point.id)
     output_line = order.outputs[0]
+    lot_id = uuid4()
+    expires_at = date(2026, 12, 31)
+    production_vsd_guid = uuid4()
     order.set_actual(output_line.id, Decimal(30))
+    order.set_lot(order.components[0].id, lot_id)
+    order.set_expires_at(output_line.id, expires_at)
+    order.set_output_vetis(
+        line_id=output_line.id,
+        production_vsd_number="ВСД-42",
+        production_vsd_guid=production_vsd_guid,
+        batch_id="BATCH-42",
+    )
     interactor, repository, inventory, _, transactions = build_post(
         order=order, loc=point
     )
@@ -443,8 +558,14 @@ async def test_post_posts_to_inventory_and_applies_costs() -> None:
     assert call["document_id"] == order.id
     assert call["org_unit_id"] == point.id
     assert [issue.nomenclature_id for issue in call["issues"]] == [COMPONENT_ID]
+    assert call["issues"][0].lot_id == lot_id
     assert [receipt.nomenclature_id for receipt in call["receipts"]] == [OUTPUT_ID]
+    assert call["receipts"][0].expires_at == expires_at
+    assert call["receipts"][0].vetis_vsd_number == "ВСД-42"
+    assert call["receipts"][0].vetis_vsd_guid == production_vsd_guid
+    assert call["receipts"][0].vetis_batch_id == "BATCH-42"
     assert call["receipts"][0].lot_code.startswith("PYTEST-CARD-")
+    assert call["receipts"][0].lot_code.endswith("-01")
     assert order.outputs[0].cost_kopecks == 12345
     assert order.status is ProductionOrderStatus.POSTED
     assert repository.saved == [order]
@@ -507,6 +628,36 @@ async def test_get_returns_detail_with_location_and_names() -> None:
     assert detail.location_name == "Коптильня"
     names = {line.nomenclature_name for line in detail.lines}
     assert names == {"Говядина", "Лопатка"}
+
+
+async def test_get_adds_component_lot_and_available_lots() -> None:
+    point = location()
+    order = make_order(org_unit_id=point.id)
+    inventory, repository, staff_api, _ = build_on_order(order=order, loc=point)
+    lot = LotOption(
+        id=uuid4(),
+        nomenclature_id=COMPONENT_ID,
+        code="LOT-1",
+        quantity=Decimal(10),
+        expires_at=date(2026, 12, 31),
+    )
+    inventory.available = (lot,)
+    inventory.lot_codes_map = {lot.id: lot.code}
+    order.set_lot(order.components[0].id, lot.id)
+    interactor = GetProductionOrderInteractor(
+        identity_provider=FakeIdentityProvider(uuid4()),
+        staff_api=staff_api,
+        inventory_api=inventory,
+        order_repository=repository,
+        catalog_api=FakeCatalogAPI(),
+    )
+
+    detail = await interactor(order.id)
+
+    component = detail.lines[0]
+    assert component.lot_id == lot.id
+    assert component.lot_code == "LOT-1"
+    assert [item.id for item in component.available_lots] == [lot.id]
 
 
 def build_list(*, scope: AccessScope, locs: list[LocationInfo]):

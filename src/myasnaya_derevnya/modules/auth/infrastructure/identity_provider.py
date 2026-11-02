@@ -9,6 +9,9 @@ from myasnaya_derevnya.core.identity_provider import (
 )
 from myasnaya_derevnya.core.logging.context import set_user_id
 from myasnaya_derevnya.modules.auth.domain.entities.user_session import UserSession
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
+    UserRepository,
+)
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
@@ -41,9 +44,11 @@ class HTTPIdentityProvider(IdentityProvider):
         self,
         session_id_getter: SessionIdGetter,
         session_repository: UserSessionRepository,
+        user_repository: UserRepository,
     ) -> None:
         self._session_id_getter = session_id_getter
         self._session_repository = session_repository
+        self._user_repository = user_repository
         self._active_session: UserSession | None = None
 
     async def _get_active_session(self) -> UserSession:
@@ -61,6 +66,10 @@ class HTTPIdentityProvider(IdentityProvider):
             raise UnauthorizedError()
 
         if get_datetime_utc() > session.expires_at:
+            raise UnauthorizedError()
+
+        user = await self._user_repository.get_by_id(session.user_id)
+        if user is None or not user.is_active:
             raise UnauthorizedError()
 
         self._active_session = session

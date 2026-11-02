@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from datetime import date
 from uuid import UUID, uuid4
 
@@ -56,6 +57,24 @@ class FakeTransactionManager:
         self.commits += 1
 
 
+class FakeRoleAssignmentRepository:
+    def __init__(self, revoked: int = 0) -> None:
+        self.revoked = revoked
+        self.revoked_for: list[UUID] = []
+
+    async def revoke_all_for_user(self, user_id: UUID) -> int:
+        self.revoked_for.append(user_id)
+        return self.revoked
+
+
+class FakeAuthAPI:
+    def __init__(self) -> None:
+        self.changes: list[tuple[UUID, bool]] = []
+
+    async def set_user_active(self, user_id: UUID, is_active: bool) -> None:
+        self.changes.append((user_id, is_active))
+
+
 def make_employee() -> Employee:
     return Employee.create(
         user_id=uuid4(),
@@ -69,26 +88,54 @@ def make_employee() -> Employee:
     )
 
 
-def build(employee: Employee | None, *, allowed: bool = True):
+@dataclass
+class Harness:
+    interactor: UpdateEmployeeInteractor
+    repository: FakeEmployeeRepository
+    transactions: FakeTransactionManager = field(
+        default_factory=FakeTransactionManager
+    )
+    roles: FakeRoleAssignmentRepository = field(
+        default_factory=FakeRoleAssignmentRepository
+    )
+    auth: FakeAuthAPI = field(default_factory=FakeAuthAPI)
+
+
+def build(
+    employee: Employee | None,
+    *,
+    allowed: bool = True,
+    revoked: int = 0,
+) -> Harness:
     repository = FakeEmployeeRepository(employee)
-    transaction_manager = FakeTransactionManager()
+    transactions = FakeTransactionManager()
+    roles = FakeRoleAssignmentRepository(revoked=revoked)
+    auth = FakeAuthAPI()
     interactor = UpdateEmployeeInteractor(
         identity_provider=FakeIdentityProvider(),
         employee_repository=repository,
         access_service=FakeAccessService(allowed=allowed),
         business_api=FakeBusinessAPI(),
-        transaction_manager=transaction_manager,
+        role_assignment_repository=roles,
+        auth_api=auth,
+        transaction_manager=transactions,
     )
 
-    return interactor, repository, transaction_manager
+    return Harness(
+        interactor=interactor,
+        repository=repository,
+        transactions=transactions,
+        roles=roles,
+        auth=auth,
+    )
 
 
 async def test_requires_manage_permission() -> None:
     employee = make_employee()
-    interactor, repository, _ = build(employee, allowed=False)
+    harness = build(employee, allowed=False)
 
     with pytest.raises(ForbiddenError):
-        await interactor(
+        await harness.interactor(
             UpdateEmployeeCommand(
                 employee_id=employee.id,
                 provided=frozenset({"position"}),
@@ -96,23 +143,23 @@ async def test_requires_manage_permission() -> None:
             )
         )
 
-    assert repository.saved == []
+    assert harness.repository.saved == []
 
 
 async def test_unknown_employee_raises_not_found() -> None:
-    interactor, _, _ = build(None)
+    harness = build(None)
 
     with pytest.raises(EmployeeNotFound):
-        await interactor(
+        await harness.interactor(
             UpdateEmployeeCommand(employee_id=uuid4(), provided=frozenset())
         )
 
 
 async def test_position_and_phone_are_changed() -> None:
     employee = make_employee()
-    interactor, repository, transaction_manager = build(employee)
+    harness = build(employee)
 
-    await interactor(
+    await harness.interactor(
         UpdateEmployeeCommand(
             employee_id=employee.id,
             provided=frozenset({"position", "phone_number"}),
@@ -123,15 +170,17 @@ async def test_position_and_phone_are_changed() -> None:
 
     assert employee.position == "Обвальщик"
     assert str(employee.phone_number) == "+79005554433"
-    assert repository.saved == [employee]
-    assert transaction_manager.commits == 1
+    assert harness.repository.saved == [employee]
+    assert harness.transactions.commits == 1
+    assert harness.roles.revoked_for == []
+    assert harness.auth.changes == []
 
 
 async def test_middle_name_can_be_cleared() -> None:
     employee = make_employee()
-    interactor, _, _ = build(employee)
+    harness = build(employee)
 
-    await interactor(
+    await harness.interactor(
         UpdateEmployeeCommand(
             employee_id=employee.id,
             provided=frozenset({"middle_name"}),
@@ -144,25 +193,64 @@ async def test_middle_name_can_be_cleared() -> None:
     assert employee.last_name == "Петров"
 
 
-async def test_dismiss_and_restore() -> None:
+async def test_dismiss_revokes_roles_and_blocks_user() -> None:
     employee = make_employee()
-    interactor, _, _ = build(employee)
+    harness = build(employee, revoked=2)
 
-    await interactor(
+    await harness.interactor(
         UpdateEmployeeCommand(
             employee_id=employee.id, provided=frozenset(), is_active=False
         )
     )
+
     assert employee.is_active is False
     assert employee.dismissed_at is not None
+    assert harness.roles.revoked_for == [employee.user_id]
+    assert harness.auth.changes == [(employee.user_id, False)]
+    assert harness.transactions.commits == 1
 
-    await interactor(
+
+async def test_restore_unblocks_user_but_does_not_restore_roles() -> None:
+    employee = make_employee()
+    harness = build(employee)
+
+    await harness.interactor(
+        UpdateEmployeeCommand(
+            employee_id=employee.id, provided=frozenset(), is_active=False
+        )
+    )
+    await harness.interactor(
         UpdateEmployeeCommand(
             employee_id=employee.id, provided=frozenset(), is_active=True
         )
     )
+
     assert employee.is_active is True
     assert employee.dismissed_at is None
+    assert harness.auth.changes == [
+        (employee.user_id, False),
+        (employee.user_id, True),
+    ]
+    assert harness.roles.revoked_for == [employee.user_id]
+
+
+async def test_repeated_dismiss_does_not_touch_access_twice() -> None:
+    employee = make_employee()
+    harness = build(employee)
+
+    await harness.interactor(
+        UpdateEmployeeCommand(
+            employee_id=employee.id, provided=frozenset(), is_active=False
+        )
+    )
+    await harness.interactor(
+        UpdateEmployeeCommand(
+            employee_id=employee.id, provided=frozenset(), is_active=False
+        )
+    )
+
+    assert harness.roles.revoked_for == [employee.user_id]
+    assert harness.auth.changes == [(employee.user_id, False)]
 
 
 async def test_transfer_checks_both_points_and_moves() -> None:
@@ -175,6 +263,8 @@ async def test_transfer_checks_both_points_and_moves() -> None:
         employee_repository=FakeEmployeeRepository(employee),
         access_service=access,
         business_api=FakeBusinessAPI(),
+        role_assignment_repository=FakeRoleAssignmentRepository(),
+        auth_api=FakeAuthAPI(),
         transaction_manager=FakeTransactionManager(),
     )
 
@@ -198,6 +288,8 @@ async def test_transfer_without_permission_on_target_is_denied() -> None:
         employee_repository=FakeEmployeeRepository(employee),
         access_service=FakeAccessService(allowed=False),
         business_api=FakeBusinessAPI(),
+        role_assignment_repository=FakeRoleAssignmentRepository(),
+        auth_api=FakeAuthAPI(),
         transaction_manager=FakeTransactionManager(),
     )
 

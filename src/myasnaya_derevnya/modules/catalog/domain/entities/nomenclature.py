@@ -29,6 +29,7 @@ class Nomenclature:
         is_active: bool = True,
         image_url: str | None = None,
         description: str | None = None,
+        requires_vetis: bool = False,
     ) -> None:
         self._id = id
         self._sku = sku
@@ -39,6 +40,7 @@ class Nomenclature:
         self._is_active = is_active
         self._image_url = image_url
         self._description = description
+        self._requires_vetis = requires_vetis
 
     @classmethod
     def create(
@@ -49,6 +51,7 @@ class Nomenclature:
         category_id: UUID,
         image_url: str | None = None,
         description: str | None = None,
+        requires_vetis: bool = False,
     ) -> Nomenclature:
         if not name.strip():
             raise EmptyNameError()
@@ -64,6 +67,7 @@ class Nomenclature:
             created_at=get_datetime_utc(),
             image_url=image_url,
             description=description,
+            requires_vetis=requires_vetis,
         )
 
     @property
@@ -101,6 +105,13 @@ class Nomenclature:
     @property
     def description(self) -> str | None:
         return self._description
+
+    @property
+    def requires_vetis(self) -> bool:
+        return self._requires_vetis
+
+    def change_vetis_requirement(self, requires_vetis: bool) -> None:
+        self._requires_vetis = requires_vetis
 
     def rename(self, name: str) -> None:
         if not name.strip():

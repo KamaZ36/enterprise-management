@@ -17,6 +17,7 @@ class NomenclatureListItem:
     is_active: bool
     image_url: str | None = None
     description: str | None = None
+    requires_vetis: bool = False
 
 
 @dataclass(frozen=True, slots=True)

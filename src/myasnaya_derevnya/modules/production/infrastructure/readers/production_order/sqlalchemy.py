@@ -84,6 +84,7 @@ class SQLAlchemyProductionOrderReader(ProductionOrderReader):
                     batch_count=row["batch_count"],
                     created_at=row["created_at"],
                     posted_at=row["posted_at"],
+                    vetis_status=row["vetis_status"],
                 )
                 for row in rows
             ],

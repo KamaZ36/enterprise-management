@@ -31,6 +31,7 @@ class CreateNomenclatureCommand:
     category_id: UUID
     image_url: str | None = None
     description: str | None = None
+    requires_vetis: bool = False
 
 
 class CreateNomenclatureInteractor:
@@ -68,6 +69,7 @@ class CreateNomenclatureInteractor:
             category_id=command.category_id,
             image_url=command.image_url,
             description=command.description,
+            requires_vetis=command.requires_vetis,
         )
 
         await self._nomenclature_repository.add(nomenclature)

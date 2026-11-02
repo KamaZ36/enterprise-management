@@ -81,6 +81,9 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
                 STOCK_LOTS_TABLE.c.expires_at,
                 STOCK_LOTS_TABLE.c.produced_at,
                 STOCK_LOTS_TABLE.c.supplier_name,
+                STOCK_LOTS_TABLE.c.vetis_vsd_number,
+                STOCK_LOTS_TABLE.c.vetis_vsd_guid,
+                STOCK_LOTS_TABLE.c.vetis_batch_id,
             )
             .select_from(source)
             .where(*conditions)
@@ -112,4 +115,7 @@ class SQLAlchemyLotBalanceReader(LotBalanceReader):
             supplier_name=row["supplier_name"],
             unit_cost=row["average_unit_cost"] if with_cost else None,
             total_value_kopecks=row["total_value"] if with_cost else None,
+            vetis_vsd_number=row["vetis_vsd_number"],
+            vetis_vsd_guid=row["vetis_vsd_guid"],
+            vetis_batch_id=row["vetis_batch_id"],
         )

@@ -22,6 +22,13 @@ class NomenclatureRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def get_vetis_requirements(
+        self, nomenclature_ids: set[UUID]
+    ) -> dict[UUID, bool]:
+        """Признак обязательности ВетИСа по номенклатурам."""
+        raise NotImplementedError
+
+    @abstractmethod
     async def get_ids_by_search(self, search: str, *, limit: int) -> list[UUID]:
         """Идентификаторы номенклатур, найденных по названию или артикулу."""
         raise NotImplementedError

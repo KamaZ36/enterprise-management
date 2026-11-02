@@ -17,6 +17,10 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.reset_employe
     ResetEmployeePasswordCommand,
     ResetEmployeePasswordInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.interactors.system.set_user_active import (
+    SetUserActiveCommand,
+    SetUserActiveInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.system.start_session import (
     StartSessionInteractor,
 )
@@ -35,6 +39,7 @@ class AuthAPI:
         request_login_code_interactor: RequestLoginCodeInteractor,
         verify_login_code_interactor: VerifyLoginCodeInteractor,
         start_session_interactor: StartSessionInteractor,
+        set_user_active_interactor: SetUserActiveInteractor,
     ) -> None:
         self._create_user_interactor = create_user_interactor
         self._create_employee_credential_interactor = (
@@ -45,6 +50,7 @@ class AuthAPI:
         self._request_login_code_interactor = request_login_code_interactor
         self._verify_login_code_interactor = verify_login_code_interactor
         self._start_session_interactor = start_session_interactor
+        self._set_user_active_interactor = set_user_active_interactor
 
     async def create_user(self) -> UUID:
         user_id = await self._create_user_interactor()
@@ -74,3 +80,8 @@ class AuthAPI:
 
     async def start_session(self, user_id: UUID) -> UUID:
         return await self._start_session_interactor(user_id)
+
+    async def set_user_active(self, user_id: UUID, is_active: bool) -> None:
+        await self._set_user_active_interactor(
+            SetUserActiveCommand(user_id=user_id, is_active=is_active)
+        )

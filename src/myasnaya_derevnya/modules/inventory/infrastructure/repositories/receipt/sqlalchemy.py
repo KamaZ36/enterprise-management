@@ -34,6 +34,8 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
                 org_unit_id=receipt.org_unit_id,
                 supplier_name=receipt.supplier_name,
                 supplier_document_number=receipt.supplier_document_number,
+                edo_document_id=receipt.edo_document_id,
+                edo_document_number=receipt.edo_document_number,
                 comment=receipt.comment,
                 created_by=receipt.created_by,
                 created_at=receipt.created_at,
@@ -53,6 +55,8 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
                 occurred_at=receipt.occurred_at,
                 supplier_name=receipt.supplier_name,
                 supplier_document_number=receipt.supplier_document_number,
+                edo_document_id=receipt.edo_document_id,
+                edo_document_number=receipt.edo_document_number,
                 comment=receipt.comment,
             )
         )
@@ -80,6 +84,10 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
                         "lot_id": line.lot_id,
                         "lot_code": line.lot_code,
                         "expires_at": line.expires_at,
+                        "vetis_vsd_number": line.vetis_vsd_number,
+                        "vetis_vsd_guid": line.vetis_vsd_guid,
+                        "vetis_batch_id": line.vetis_batch_id,
+                        "vetis_product_item_guid": line.vetis_product_item_guid,
                         "quantity": line.quantity,
                         "unit_cost": line.unit_cost,
                         "total_cost": line.total_cost.kopecks,
@@ -136,6 +144,8 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
             created_at=row["created_at"],
             posted_at=row["posted_at"],
             lines=lines,
+            edo_document_id=row["edo_document_id"],
+            edo_document_number=row["edo_document_number"],
         )
 
     def _to_line(self, row: RowMapping) -> ReceiptLine:
@@ -148,4 +158,8 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
             lot_id=row["lot_id"],
             lot_code=row["lot_code"],
             expires_at=row["expires_at"],
+            vetis_vsd_number=row["vetis_vsd_number"],
+            vetis_vsd_guid=row["vetis_vsd_guid"],
+            vetis_batch_id=row["vetis_batch_id"],
+            vetis_product_item_guid=row["vetis_product_item_guid"],
         )

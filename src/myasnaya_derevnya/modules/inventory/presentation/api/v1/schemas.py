@@ -42,6 +42,10 @@ class ReceiptLineSchema(BaseModel):
     unit_cost: Decimal = Field(default=Decimal(0), ge=0)
     lot_code: str | None = None
     expires_at: date | None = None
+    vetis_vsd_number: str | None = Field(default=None, max_length=64)
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = Field(default=None, max_length=255)
+    vetis_product_item_guid: UUID | None = None
 
 
 class CreateReceiptSchema(BaseModel):
@@ -50,6 +54,7 @@ class CreateReceiptSchema(BaseModel):
     lines: list[ReceiptLineSchema] = Field(min_length=1)
     supplier_name: str | None = None
     supplier_document_number: str | None = None
+    edo_document_id: UUID | None = None
     comment: str | None = None
 
 
@@ -72,6 +77,7 @@ class UpdateReceiptSchema(BaseModel):
     lines: list[ReceiptLineSchema] = Field(min_length=1)
     supplier_name: str | None = None
     supplier_document_number: str | None = None
+    edo_document_id: UUID | None = None
     comment: str | None = None
 
 
@@ -125,6 +131,9 @@ class LotBalanceSchema(BaseModel):
     expires_at: date | None = None
     produced_at: date | None = None
     supplier_name: str | None = None
+    vetis_vsd_number: str | None = None
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
     unit_cost: Decimal | None = Field(
         default=None,
         description="Себестоимость единицы по партии, рубли. null — нет права видеть стоимость",
@@ -146,6 +155,9 @@ class LotBalanceSchema(BaseModel):
             expires_at=item.expires_at,
             produced_at=item.produced_at,
             supplier_name=item.supplier_name,
+            vetis_vsd_number=item.vetis_vsd_number,
+            vetis_vsd_guid=item.vetis_vsd_guid,
+            vetis_batch_id=item.vetis_batch_id,
             unit_cost=item.unit_cost,
             total_value_kopecks=item.total_value_kopecks,
         )
@@ -208,6 +220,7 @@ class ReceiptListItemSchema(BaseModel):
     supplier_document_number: str | None
     line_count: int
     total_kopecks: int
+    edo_document_number: str | None = None
 
     @classmethod
     def from_dto(cls, item: ReceiptListItem) -> ReceiptListItemSchema:
@@ -221,6 +234,7 @@ class ReceiptListItemSchema(BaseModel):
             supplier_document_number=item.supplier_document_number,
             line_count=item.line_count,
             total_kopecks=item.total_kopecks,
+            edo_document_number=item.edo_document_number,
         )
 
 
@@ -233,6 +247,11 @@ class ReceiptLineViewSchema(BaseModel):
     total_kopecks: int
     lot_code: str | None
     expires_at: date | None
+    vetis_vsd_number: str | None = None
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
+    vetis_product_item_guid: UUID | None = None
+    requires_vetis: bool = False
 
     @classmethod
     def from_dto(cls, item) -> ReceiptLineViewSchema:
@@ -245,6 +264,11 @@ class ReceiptLineViewSchema(BaseModel):
             total_kopecks=item.total_kopecks,
             lot_code=item.lot_code,
             expires_at=item.expires_at,
+            vetis_vsd_number=item.vetis_vsd_number,
+            vetis_vsd_guid=item.vetis_vsd_guid,
+            vetis_batch_id=item.vetis_batch_id,
+            vetis_product_item_guid=item.vetis_product_item_guid,
+            requires_vetis=item.requires_vetis,
         )
 
 
@@ -265,6 +289,8 @@ class ReceiptDetailSchema(BaseModel):
     supplier_document_number: str | None
     comment: str | None
     lines: list[ReceiptLineViewSchema]
+    edo_document_id: UUID | None = None
+    edo_document_number: str | None = None
 
     @classmethod
     def from_dto(cls, detail: ReceiptDetail) -> ReceiptDetailSchema:
@@ -278,6 +304,8 @@ class ReceiptDetailSchema(BaseModel):
             supplier_document_number=detail.supplier_document_number,
             comment=detail.comment,
             lines=[ReceiptLineViewSchema.from_dto(line) for line in detail.lines],
+            edo_document_id=detail.edo_document_id,
+            edo_document_number=detail.edo_document_number,
         )
 
 

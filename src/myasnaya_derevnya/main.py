@@ -47,6 +47,9 @@ from myasnaya_derevnya.modules.customer.presentation.api.v1.customers import (
 from myasnaya_derevnya.modules.customer.presentation.api.v1.endpoints import (
     login_router as customer_login_router,
 )
+from myasnaya_derevnya.modules.edo.presentation.api.v1 import (
+    router as edo_router,
+)
 from myasnaya_derevnya.modules.fiscal.presentation.api.v1 import (
     router as fiscal_router,
 )
@@ -67,6 +70,9 @@ from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
 )
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
     router as staff_router,
+)
+from myasnaya_derevnya.modules.veterinary.presentation.api.v1 import (
+    router as veterinary_router,
 )
 
 STATUS_BY_CATEGORY: dict[type[AppError], int] = {
@@ -141,6 +147,8 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(customers_router)
     app.include_router(fiscal_router)
     app.include_router(pos_router)
+    app.include_router(edo_router)
+    app.include_router(veterinary_router)
 
 
 def include_media(app: FastAPI) -> None:

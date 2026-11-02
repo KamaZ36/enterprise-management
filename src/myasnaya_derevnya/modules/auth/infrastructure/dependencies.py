@@ -28,6 +28,9 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.request_login
 from myasnaya_derevnya.modules.auth.application.interactors.system.reset_employee_password import (
     ResetEmployeePasswordInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.interactors.system.set_user_active import (
+    SetUserActiveInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.system.start_session import (
     StartSessionInteractor,
 )
@@ -156,6 +159,10 @@ class AuthDepProvider(Provider):
     )
 
     start_session_interactor = provide(StartSessionInteractor, scope=Scope.REQUEST)
+
+    set_user_active_interactor = provide(
+        SetUserActiveInteractor, scope=Scope.REQUEST
+    )
 
 
     auth_api = provide(AuthAPI, scope=Scope.REQUEST)

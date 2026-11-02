@@ -86,6 +86,9 @@
       <el-table-column label="Документ" width="150">
         <template #default="{ row }">{{ row.supplier_document_number ?? "—" }}</template>
       </el-table-column>
+      <el-table-column label="УПД" width="140">
+        <template #default="{ row }">{{ row.edo_document_number ?? "—" }}</template>
+      </el-table-column>
       <el-table-column prop="line_count" label="Строк" width="90" align="right" />
       <el-table-column label="Сумма" width="150" align="right">
         <template #default="{ row }">{{ formatKopecks(row.total_kopecks) }}</template>
@@ -387,6 +390,7 @@
               v-model="form.org_unit_id"
               style="width: 100%"
               :disabled="Boolean(editingReceiptId)"
+              @change="onReceiptLocationChange"
             >
               <LocationOptions :locations="locations" />
             </el-select>
@@ -404,6 +408,22 @@
           <el-form-item label="Номер документа поставщика">
             <el-input v-model="form.supplier_document_number" placeholder="УПД-1042" />
           </el-form-item>
+          <el-form-item label="Входящий УПД из ЭДО">
+            <el-select
+              v-model="form.edo_document_id"
+              clearable
+              placeholder="Необязательно"
+              style="width: 100%"
+              @change="applyEdoDocument"
+            >
+              <el-option
+                v-for="document in edoDocuments"
+                :key="document.id"
+                :label="`${document.number} · ${document.supplier_name ?? 'без поставщика'}`"
+                :value="document.id"
+              />
+            </el-select>
+          </el-form-item>
         </div>
 
         <div class="lines-head">
@@ -420,7 +440,8 @@
           <span class="line__action" />
         </div>
 
-        <div v-for="(line, index) in lines" :key="index" class="line">
+        <div v-for="(line, index) in lines" :key="index">
+          <div class="line">
           <el-select
             v-model="line.nomenclature_id"
             filterable
@@ -428,6 +449,7 @@
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
             class="line__name"
+            @change="(value) => setNomenclature(line, value as string)"
           >
             <el-option
               v-for="option in line.options"
@@ -450,6 +472,30 @@
           <el-button text type="danger" :disabled="lines.length === 1" @click="removeLine(index)">
             Убрать
           </el-button>
+        </div>
+
+        <div
+          v-if="line.nomenclature_id && line.requires_vetis"
+          class="vetis-line"
+        >
+          <span class="vetis-line__label">ВетИС<br /><small>необязательно</small></span>
+          <el-input
+            v-model="line.vetis_vsd_number"
+            placeholder="Номер ВСД"
+          />
+          <el-input
+            v-model="line.vetis_vsd_guid"
+            placeholder="GUID ВСД"
+          />
+          <el-input
+            v-model="line.vetis_batch_id"
+            placeholder="Партия ВетИС"
+          />
+          <el-input
+            v-model="line.vetis_product_item_guid"
+            placeholder="GUID позиции"
+          />
+          </div>
         </div>
 
         <el-form-item label="Комментарий">
@@ -642,6 +688,9 @@
           <el-descriptions-item label="Документ поставщика">
             {{ receiptDetail.supplier_document_number ?? "—" }}
           </el-descriptions-item>
+          <el-descriptions-item label="Входящий УПД">
+            {{ receiptDetail.edo_document_number ?? "—" }}
+          </el-descriptions-item>
           <el-descriptions-item label="Проведён">
             {{ receiptDetail.posted_at ? formatDate(receiptDetail.posted_at) : "нет" }}
           </el-descriptions-item>
@@ -666,6 +715,17 @@
               <span>{{ row.lot_code ?? "—" }}</span>
               <div v-if="row.expires_at" class="muted hint">
                 до {{ formatDate(row.expires_at) }}
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="ВетИС" width="220">
+            <template #default="{ row }">
+              <span>{{ row.vetis_vsd_number ?? "—" }}</span>
+              <div v-if="row.vetis_vsd_guid" class="muted hint">
+                {{ row.vetis_vsd_guid }}
+              </div>
+              <div v-if="row.vetis_batch_id" class="muted hint">
+                партия: {{ row.vetis_batch_id }}
               </div>
             </template>
           </el-table-column>
@@ -958,6 +1018,7 @@ type InventoryCountListItem =
 type InventoryCountDetail = components["schemas"]["InventoryCountDetailSchema"];
 type TransferListItem = components["schemas"]["TransferListItemSchema"];
 type Location = components["schemas"]["LocationSchema"];
+type EdoDocument = components["schemas"]["EdoDocumentSchema"];
 
 const PAGE_SIZE = 20;
 
@@ -992,7 +1053,12 @@ const busy = ref(false);
 const createError = ref("");
 const editingReceiptId = ref<string | null>(null);
 
-type NomenclatureOption = { id: string; name: string; sku: string };
+type NomenclatureOption = {
+  id: string;
+  name: string;
+  sku: string;
+  requires_vetis?: boolean;
+};
 type DraftLine = {
   nomenclature_id: string;
   options: NomenclatureOption[];
@@ -1000,6 +1066,11 @@ type DraftLine = {
   unit_cost: string;
   lot_code: string;
   expires_at: string;
+  requires_vetis: boolean;
+  vetis_vsd_number: string;
+  vetis_vsd_guid: string;
+  vetis_batch_id: string;
+  vetis_product_item_guid: string;
 };
 
 function emptyLine(): DraftLine {
@@ -1010,6 +1081,11 @@ function emptyLine(): DraftLine {
     unit_cost: "",
     lot_code: "",
     expires_at: "",
+    requires_vetis: false,
+    vetis_vsd_number: "",
+    vetis_vsd_guid: "",
+    vetis_batch_id: "",
+    vetis_product_item_guid: "",
   };
 }
 
@@ -1027,8 +1103,10 @@ const form = reactive({
   occurred_at: new Date(),
   supplier_name: "",
   supplier_document_number: "",
+  edo_document_id: "",
   comment: "",
 });
+const edoDocuments = ref<EdoDocument[]>([]);
 const lines = ref<DraftLine[]>([emptyLine()]);
 
 type WriteOffLine = {
@@ -1260,9 +1338,50 @@ function openCreate(): void {
   form.occurred_at = new Date();
   form.supplier_name = "";
   form.supplier_document_number = "";
+  form.edo_document_id = "";
   form.comment = "";
   lines.value = [emptyLine()];
+  void loadEdoDocuments();
   createOpen.value = true;
+}
+
+async function loadEdoDocuments(): Promise<void> {
+  if (!form.org_unit_id) {
+    edoDocuments.value = [];
+    return;
+  }
+
+  const { data, response } = await api.GET("/api/edo/documents", {
+    params: {
+      query: { org_unit_id: form.org_unit_id, limit: 200 },
+    },
+  });
+
+  if (response.ok && data) {
+    edoDocuments.value = data.items;
+  } else {
+    edoDocuments.value = [];
+  }
+}
+
+function onReceiptLocationChange(): void {
+  form.edo_document_id = "";
+  void loadEdoDocuments();
+}
+
+function applyEdoDocument(documentId: string | undefined): void {
+  if (!documentId) {
+    return;
+  }
+
+  const document = edoDocuments.value.find((item) => item.id === documentId);
+  if (!document) {
+    return;
+  }
+
+  form.supplier_document_number =
+    form.supplier_document_number || document.number;
+  form.supplier_name = form.supplier_name || (document.supplier_name ?? "");
 }
 
 
@@ -1280,18 +1399,26 @@ function openReceiptEdit(): void {
   form.occurred_at = new Date(detail.occurred_at);
   form.supplier_name = detail.supplier_name ?? "";
   form.supplier_document_number = detail.supplier_document_number ?? "";
+  form.edo_document_id = detail.edo_document_id ?? "";
   form.comment = detail.comment ?? "";
+  void loadEdoDocuments();
   lines.value = detail.lines.map((line) => ({
     nomenclature_id: line.nomenclature_id,
     quantity: String(line.quantity),
     unit_cost: String(line.unit_cost),
     lot_code: line.lot_code ?? "",
     expires_at: line.expires_at ?? "",
+    requires_vetis: line.requires_vetis ?? false,
+    vetis_vsd_number: line.vetis_vsd_number ?? "",
+    vetis_vsd_guid: line.vetis_vsd_guid ?? "",
+    vetis_batch_id: line.vetis_batch_id ?? "",
+    vetis_product_item_guid: line.vetis_product_item_guid ?? "",
     options: [
       {
         id: line.nomenclature_id,
         name: line.nomenclature_name ?? line.nomenclature_id,
         sku: "",
+        requires_vetis: line.requires_vetis ?? false,
       },
     ],
   }));
@@ -1309,6 +1436,18 @@ function removeLine(index: number): void {
   lines.value = lines.value.filter((_, position) => position !== index);
 }
 
+
+function setNomenclature(line: DraftLine, nomenclatureId: string): void {
+  const option = line.options.find((item) => item.id === nomenclatureId);
+  line.requires_vetis = option?.requires_vetis ?? false;
+
+  if (!line.requires_vetis) {
+    line.vetis_vsd_number = "";
+    line.vetis_vsd_guid = "";
+    line.vetis_batch_id = "";
+    line.vetis_product_item_guid = "";
+  }
+}
 
 async function searchNomenclature(
   line: { options: NomenclatureOption[] },
@@ -1334,6 +1473,7 @@ async function createReceipt(postAfterCreate: boolean): Promise<void> {
       occurred_at: form.occurred_at.toISOString(),
       supplier_name: form.supplier_name.trim() || null,
       supplier_document_number: form.supplier_document_number.trim() || null,
+      edo_document_id: form.edo_document_id || null,
       comment: form.comment.trim() || null,
       lines: lines.value
         .filter(isCompleteLine)
@@ -1343,6 +1483,22 @@ async function createReceipt(postAfterCreate: boolean): Promise<void> {
           unit_cost: line.unit_cost,
           lot_code: line.lot_code.trim() || null,
           expires_at: line.expires_at || null,
+          vetis_vsd_number:
+            !line.requires_vetis
+              ? null
+              : line.vetis_vsd_number.trim() || null,
+          vetis_vsd_guid:
+            !line.requires_vetis
+              ? null
+              : line.vetis_vsd_guid.trim() || null,
+          vetis_batch_id:
+            !line.requires_vetis
+              ? null
+              : line.vetis_batch_id.trim() || null,
+          vetis_product_item_guid:
+            !line.requires_vetis
+              ? null
+              : line.vetis_product_item_guid.trim() || null,
         })),
     };
 
@@ -2381,6 +2537,19 @@ async function deleteInventoryCount(id: string): Promise<void> {
   color: #909399;
   font-size: 12px;
   margin-bottom: 4px;
+}
+
+.vetis-line {
+  display: grid;
+  grid-template-columns: 92px repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  align-items: center;
+  margin: -4px 0 12px;
+}
+
+.vetis-line__label {
+  color: #909399;
+  font-size: 12px;
 }
 
 .hint {

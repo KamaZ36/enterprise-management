@@ -6,24 +6,28 @@ def all_permissions() -> tuple[Permission, ...]:
     from myasnaya_derevnya.modules.business.domain import permissions as business
     from myasnaya_derevnya.modules.catalog.domain import permissions as catalog
     from myasnaya_derevnya.modules.customer.domain import permissions as customer
+    from myasnaya_derevnya.modules.edo.domain import permissions as edo
     from myasnaya_derevnya.modules.fiscal.domain import permissions as fiscal
     from myasnaya_derevnya.modules.inventory.domain import permissions as inventory
     from myasnaya_derevnya.modules.orders.domain import permissions as orders
     from myasnaya_derevnya.modules.pos.domain import permissions as pos
     from myasnaya_derevnya.modules.production.domain import permissions as production
     from myasnaya_derevnya.modules.staff.domain import permissions as staff
+    from myasnaya_derevnya.modules.veterinary.domain import permissions as veterinary
 
     modules = (
         auth,
         business,
         catalog,
         customer,
+        edo,
         fiscal,
         inventory,
         production,
         orders,
         pos,
         staff,
+        veterinary,
     )
     found = [
         value

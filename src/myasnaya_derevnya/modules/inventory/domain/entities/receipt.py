@@ -26,6 +26,10 @@ class ReceiptLine:
     lot_id: UUID | None
     lot_code: str | None
     expires_at: date | None
+    vetis_vsd_number: str | None = None
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
+    vetis_product_item_guid: UUID | None = None
 
     @classmethod
     def create(
@@ -36,6 +40,10 @@ class ReceiptLine:
         lot_id: UUID | None = None,
         lot_code: str | None = None,
         expires_at: date | None = None,
+        vetis_vsd_number: str | None = None,
+        vetis_vsd_guid: UUID | None = None,
+        vetis_batch_id: str | None = None,
+        vetis_product_item_guid: UUID | None = None,
     ) -> ReceiptLine:
         if quantity <= 0:
             raise EmptyMovementError()
@@ -49,6 +57,10 @@ class ReceiptLine:
             lot_id=lot_id,
             lot_code=lot_code,
             expires_at=expires_at,
+            vetis_vsd_number=vetis_vsd_number,
+            vetis_vsd_guid=vetis_vsd_guid,
+            vetis_batch_id=vetis_batch_id,
+            vetis_product_item_guid=vetis_product_item_guid,
         )
 
 
@@ -66,6 +78,8 @@ class Receipt:
         created_at: datetime,
         posted_at: datetime | None,
         lines: list[ReceiptLine],
+        edo_document_id: UUID | None = None,
+        edo_document_number: str | None = None,
     ) -> None:
         self._id = id
         self._status = status
@@ -78,6 +92,8 @@ class Receipt:
         self._created_at = created_at
         self._posted_at = posted_at
         self._lines = lines
+        self._edo_document_id = edo_document_id
+        self._edo_document_number = edo_document_number
 
     @classmethod
     def create(
@@ -89,6 +105,8 @@ class Receipt:
         supplier_name: str | None = None,
         supplier_document_number: str | None = None,
         comment: str | None = None,
+        edo_document_id: UUID | None = None,
+        edo_document_number: str | None = None,
     ) -> Receipt:
         if occurred_at.tzinfo is None:
             raise TimezoneRequiredError(field="occurred_at")
@@ -105,6 +123,8 @@ class Receipt:
             created_at=get_datetime_utc(),
             posted_at=None,
             lines=list(lines or []),
+            edo_document_id=edo_document_id,
+            edo_document_number=edo_document_number,
         )
 
     @property
@@ -148,6 +168,14 @@ class Receipt:
         return self._posted_at
 
     @property
+    def edo_document_id(self) -> UUID | None:
+        return self._edo_document_id
+
+    @property
+    def edo_document_number(self) -> str | None:
+        return self._edo_document_number
+
+    @property
     def lines(self) -> list[ReceiptLine]:
         return list(self._lines)
 
@@ -175,6 +203,8 @@ class Receipt:
         supplier_document_number: str | None,
         comment: str | None,
         lines: list[ReceiptLine],
+        edo_document_id: UUID | None = None,
+        edo_document_number: str | None = None,
     ) -> None:
         if not self.is_draft:
             raise DocumentAlreadyPostedError(self._id)
@@ -187,6 +217,8 @@ class Receipt:
         self._supplier_document_number = supplier_document_number
         self._comment = comment
         self._lines = list(lines)
+        self._edo_document_id = edo_document_id
+        self._edo_document_number = edo_document_number
 
     def post(self) -> None:
         if not self.is_draft:

@@ -10,6 +10,9 @@ from myasnaya_derevnya.modules.auth.infrastructure.identity_provider import (
     HTTPIdentityProvider,
     HTTPSessionIDGetter,
 )
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
+    UserRepository,
+)
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
@@ -42,7 +45,10 @@ class ServicesDepProvider(Provider):
         self,
         session_id_getter: SessionIdGetter,
         session_repository: UserSessionRepository,
+        user_repository: UserRepository,
     ) -> IdentityProvider:
         return HTTPIdentityProvider(
-            session_id_getter=session_id_getter, session_repository=session_repository
+            session_id_getter=session_id_getter,
+            session_repository=session_repository,
+            user_repository=user_repository,
         )

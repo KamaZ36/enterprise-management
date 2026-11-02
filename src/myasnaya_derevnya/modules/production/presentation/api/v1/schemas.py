@@ -25,6 +25,9 @@ from myasnaya_derevnya.modules.production.domain.value_objects.spec_line_role im
 from myasnaya_derevnya.modules.production.domain.value_objects.tech_card_basis import (
     TechCardBasis,
 )
+from myasnaya_derevnya.modules.production.domain.value_objects.vetis_status import (
+    VetisStatus,
+)
 
 
 class TechCardLineSchema(BaseModel):
@@ -126,6 +129,13 @@ class CreateTechCardSchema(BaseModel):
     comment: str | None = None
 
 
+class ProductionOrderLotSchema(BaseModel):
+    id: UUID
+    code: str
+    quantity: Decimal
+    expires_at: date | None = None
+
+
 class ProductionOrderLineSchema(BaseModel):
     id: UUID
     role: SpecLineRole
@@ -133,9 +143,16 @@ class ProductionOrderLineSchema(BaseModel):
     actual_quantity: Decimal
     nomenclature_id: UUID | None = None
     nomenclature_name: str | None = None
+    lot_id: UUID | None = None
+    lot_code: str | None = None
+    expires_at: date | None = None
+    vetis_production_vsd_number: str | None = None
+    vetis_production_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
     loss_kind: LossKind | None = None
     output_kind: OutputKind | None = None
     cost: int | None = None
+    available_lots: list[ProductionOrderLotSchema] = Field(default_factory=list)
 
     @classmethod
     def from_dto(cls, item: ProductionOrderLineItem) -> ProductionOrderLineSchema:
@@ -146,9 +163,24 @@ class ProductionOrderLineSchema(BaseModel):
             actual_quantity=item.actual_quantity,
             nomenclature_id=item.nomenclature_id,
             nomenclature_name=item.nomenclature_name,
+            lot_id=item.lot_id,
+            lot_code=item.lot_code,
+            expires_at=item.expires_at,
+            vetis_production_vsd_number=item.vetis_production_vsd_number,
+            vetis_production_vsd_guid=item.vetis_production_vsd_guid,
+            vetis_batch_id=item.vetis_batch_id,
             loss_kind=item.loss_kind,
             output_kind=item.output_kind,
             cost=item.cost,
+            available_lots=[
+                ProductionOrderLotSchema(
+                    id=lot.id,
+                    code=lot.code,
+                    quantity=lot.quantity,
+                    expires_at=lot.expires_at,
+                )
+                for lot in item.available_lots
+            ],
         )
 
 
@@ -164,6 +196,7 @@ class ProductionOrderListItemSchema(BaseModel):
     created_at: datetime
     posted_at: datetime | None = None
     location_name: str | None = None
+    vetis_status: VetisStatus = VetisStatus.NOT_SPECIFIED
 
     @classmethod
     def from_dto(
@@ -181,6 +214,7 @@ class ProductionOrderListItemSchema(BaseModel):
             created_at=item.created_at,
             posted_at=item.posted_at,
             location_name=item.location_name,
+            vetis_status=VetisStatus(item.vetis_status),
         )
 
 
@@ -203,6 +237,10 @@ class ProductionOrderDetailSchema(BaseModel):
     comment: str | None = None
     posted_at: datetime | None = None
     location_name: str | None = None
+    vetis_status: VetisStatus = VetisStatus.NOT_SPECIFIED
+    vetis_operation_id: str | None = None
+    vetis_no_vsd_reason: str | None = None
+    vetis_entered_at: datetime | None = None
 
     @classmethod
     def from_dto(
@@ -224,6 +262,10 @@ class ProductionOrderDetailSchema(BaseModel):
             comment=item.comment,
             posted_at=item.posted_at,
             location_name=item.location_name,
+            vetis_status=VetisStatus(item.vetis_status),
+            vetis_operation_id=item.vetis_operation_id,
+            vetis_no_vsd_reason=item.vetis_no_vsd_reason,
+            vetis_entered_at=item.vetis_entered_at,
         )
 
 
@@ -238,6 +280,8 @@ class CreateProductionOrderSchema(BaseModel):
 class ProductionOrderActualSchema(BaseModel):
     line_id: UUID
     quantity: Decimal = Field(ge=0)
+    lot_id: UUID | None = None
+    expires_at: date | None = None
 
 
 class UpdateProductionOrderSchema(BaseModel):
@@ -246,3 +290,17 @@ class UpdateProductionOrderSchema(BaseModel):
 
 class CreatedProductionSchema(BaseModel):
     id: UUID
+
+
+class ProductionOutputVetisSchema(BaseModel):
+    line_id: UUID
+    production_vsd_number: str | None = Field(default=None, max_length=64)
+    production_vsd_guid: UUID | None = None
+    batch_id: str | None = Field(default=None, max_length=255)
+
+
+class SetProductionOrderVetisSchema(BaseModel):
+    status: VetisStatus
+    operation_id: str | None = Field(default=None, max_length=64)
+    no_vsd_reason: str | None = Field(default=None, max_length=255)
+    outputs: list[ProductionOutputVetisSchema] = Field(default_factory=list)

@@ -15,6 +15,7 @@ class ReceiptListItem:
     supplier_document_number: str | None
     line_count: int
     total_kopecks: int
+    edo_document_number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +28,11 @@ class ReceiptLineItem:
     lot_code: str | None
     expires_at: date | None
     nomenclature_name: str | None = None
+    vetis_vsd_number: str | None = None
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
+    vetis_product_item_guid: UUID | None = None
+    requires_vetis: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +46,8 @@ class ReceiptDetail:
     supplier_document_number: str | None
     comment: str | None
     lines: list[ReceiptLineItem]
+    edo_document_id: UUID | None = None
+    edo_document_number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,6 +105,9 @@ class LotBalanceListItem:
     nomenclature_name: str | None = None
     unit_cost: Decimal | None = None
     total_value_kopecks: int | None = None
+    vetis_vsd_number: str | None = None
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

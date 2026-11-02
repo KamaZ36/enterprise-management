@@ -30,13 +30,29 @@ STOCK_LOTS_TABLE = Table(
     Column("produced_at", Date, nullable=True),
     Column("expires_at", Date, nullable=True),
     Column("supplier_name", String(255), nullable=True),
+    Column("origin_org_unit_id", UUID, nullable=True),
+    Column("vetis_vsd_number", String(64), nullable=True),
+    Column("vetis_vsd_guid", UUID, nullable=True),
+    Column("vetis_batch_id", String(255), nullable=True),
+    Column("vetis_product_item_guid", UUID, nullable=True),
+    Column("vetis_entered_at", DateTime(timezone=True), nullable=True),
+    Column("vetis_entered_by", UUID, nullable=True),
+    Column("veterinary_document_id", UUID, nullable=True),
     Column(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
-    UniqueConstraint(
-        "nomenclature_id", "lot_code", name="uq_stock_lots_nomenclature_lot_code"
+    Index(
+        "uq_stock_lots_identity",
+        "nomenclature_id",
+        "lot_code",
+        "produced_at",
+        "supplier_name",
+        unique=True,
+        postgresql_nulls_not_distinct=True,
     ),
     Index("ix_stock_lots_expires_at", "expires_at"),
+    Index("ix_stock_lots_vetis_vsd_guid", "vetis_vsd_guid"),
+    Index("ix_stock_lots_veterinary_document_id", "veterinary_document_id"),
     schema=DATABASE_SCHEMA,
 )
 
@@ -70,6 +86,8 @@ RECEIPTS_TABLE = Table(
     Column("org_unit_id", UUID, nullable=False),
     Column("supplier_name", String(255), nullable=True),
     Column("supplier_document_number", String(64), nullable=True),
+    Column("edo_document_id", UUID, nullable=True),
+    Column("edo_document_number", String(64), nullable=True),
     Column("comment", String(512), nullable=True),
     Column("created_by", UUID, nullable=True),
     Column(
@@ -78,6 +96,7 @@ RECEIPTS_TABLE = Table(
     Column("posted_at", DateTime(timezone=True), nullable=True),
     Index("ix_receipts_org_unit_occurred_at", "org_unit_id", "occurred_at"),
     Index("ix_receipts_status", "status"),
+    Index("ix_receipts_edo_document_id", "edo_document_id"),
     schema=DATABASE_SCHEMA,
 )
 
@@ -101,6 +120,10 @@ RECEIPT_LINES_TABLE = Table(
     ),
     Column("lot_code", String(64), nullable=True),
     Column("expires_at", Date, nullable=True),
+    Column("vetis_vsd_number", String(64), nullable=True),
+    Column("vetis_vsd_guid", UUID, nullable=True),
+    Column("vetis_batch_id", String(255), nullable=True),
+    Column("vetis_product_item_guid", UUID, nullable=True),
     Column("quantity", QUANTITY, nullable=False),
     Column("unit_cost", Numeric(18, 6), nullable=False, server_default="0"),
     Column("total_cost", BigInteger, nullable=False, server_default="0"),

@@ -15,6 +15,7 @@ EXPECTED_NAMESPACES = {
     "cash_register",
     "category",
     "customer",
+    "edo",
     "image",
     "inventory",
     "nomenclature",
@@ -25,6 +26,7 @@ EXPECTED_NAMESPACES = {
     "price_list",
     "production",
     "staff",
+    "veterinary",
 }
 
 
@@ -44,12 +46,14 @@ def test_registry_matches_permissions_declared_in_modules() -> None:
     from myasnaya_derevnya.modules.business.domain import permissions as business
     from myasnaya_derevnya.modules.catalog.domain import permissions as catalog
     from myasnaya_derevnya.modules.customer.domain import permissions as customer
+    from myasnaya_derevnya.modules.edo.domain import permissions as edo
     from myasnaya_derevnya.modules.fiscal.domain import permissions as fiscal
     from myasnaya_derevnya.modules.inventory.domain import permissions as inventory
     from myasnaya_derevnya.modules.orders.domain import permissions as orders
     from myasnaya_derevnya.modules.pos.domain import permissions as pos
     from myasnaya_derevnya.modules.production.domain import permissions as production
     from myasnaya_derevnya.modules.staff.domain import permissions as staff
+    from myasnaya_derevnya.modules.veterinary.domain import permissions as veterinary
 
     declared = [
         value.code
@@ -57,12 +61,14 @@ def test_registry_matches_permissions_declared_in_modules() -> None:
             business,
             catalog,
             customer,
+            edo,
             fiscal,
             inventory,
             production,
             orders,
             pos,
             staff,
+            veterinary,
         )
         for value in vars(module).values()
         if isinstance(value, Permission)

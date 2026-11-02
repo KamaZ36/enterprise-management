@@ -109,6 +109,9 @@ class FakeCatalogAPI:
         self.calls.append(set(nomenclature_ids))
         return {key: self.names[key] for key in nomenclature_ids if key in self.names}
 
+    async def nomenclature_vetis_requirements(self, nomenclature_ids) -> dict:
+        return {key: False for key in nomenclature_ids}
+
 
 class FakeReceiptReader:
     def __init__(self, detail: ReceiptDetail | None = None) -> None:

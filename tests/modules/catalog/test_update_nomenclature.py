@@ -225,6 +225,46 @@ async def test_same_unit_is_not_treated_as_a_change() -> None:
     assert repository.saved == [nomenclature]
 
 
+async def test_vetis_requirement_can_be_toggled() -> None:
+    nomenclature = make_nomenclature()
+    interactor, _, _, _ = build(nomenclature)
+
+    assert nomenclature.requires_vetis is False
+
+    await interactor(
+        UpdateNomenclatureCommand(
+            nomenclature_id=nomenclature.id,
+            requires_vetis=True,
+            set_requires_vetis=True,
+        )
+    )
+    assert nomenclature.requires_vetis is True
+
+    await interactor(
+        UpdateNomenclatureCommand(
+            nomenclature_id=nomenclature.id,
+            requires_vetis=False,
+            set_requires_vetis=True,
+        )
+    )
+    assert nomenclature.requires_vetis is False
+
+
+async def test_vetis_requirement_is_not_changed_without_flag() -> None:
+    nomenclature = make_nomenclature()
+    nomenclature.change_vetis_requirement(True)
+    interactor, _, _, _ = build(nomenclature)
+
+    await interactor(
+        UpdateNomenclatureCommand(
+            nomenclature_id=nomenclature.id,
+            requires_vetis=False,
+        )
+    )
+
+    assert nomenclature.requires_vetis is True
+
+
 async def test_deactivate_and_activate() -> None:
     nomenclature = make_nomenclature()
     interactor, _, _, _ = build(nomenclature)

@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
@@ -26,6 +27,8 @@ logger = logging.getLogger(__name__)
 class ProductionOrderActualCommand:
     line_id: UUID
     quantity: Decimal
+    lot_id: UUID | None = None
+    expires_at: date | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +73,11 @@ class UpdateProductionOrderInteractor:
 
         for actual in command.actuals:
             order.set_actual(actual.line_id, actual.quantity)
+
+            if actual.lot_id is not None:
+                order.set_lot(actual.line_id, actual.lot_id)
+            if actual.expires_at is not None:
+                order.set_expires_at(actual.line_id, actual.expires_at)
 
         await self._order_repository.save(order)
         await self._transaction_manager.commit()

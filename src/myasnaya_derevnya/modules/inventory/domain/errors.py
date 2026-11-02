@@ -84,6 +84,92 @@ class StockLotNotFoundError(NotFoundError):
 
 
 @dataclass(slots=True, eq=False)
+class AmbiguousLotCodeError(ConflictError):
+    nomenclature_id: UUID
+    lot_code: str
+
+    def __str__(self) -> str:
+        return (
+            f"Код партии '{self.lot_code}' соответствует нескольким партиям: "
+            "укажите конкретную партию"
+        )
+
+
+@dataclass(slots=True, eq=False)
+class StockLotNotFoundByIdError(NotFoundError):
+    lot_id: UUID
+
+    def __str__(self) -> str:
+        return f"Партия {self.lot_id} не найдена"
+
+
+@dataclass(slots=True, eq=False)
+class LotNomenclatureMismatchError(InventoryDomainError):
+    lot_id: UUID
+    nomenclature_id: UUID
+
+    def __str__(self) -> str:
+        return (
+            f"Партия {self.lot_id} не относится к номенклатуре "
+            f"{self.nomenclature_id}"
+        )
+
+
+@dataclass(slots=True, eq=False)
+class LotVetisConflictError(ConflictError):
+    lot_id: UUID
+    existing_guid: UUID
+    new_guid: UUID
+
+    def __str__(self) -> str:
+        return (
+            f"К партии {self.lot_id} уже привязана ВСД "
+            f"{self.existing_guid}; нельзя привязать {self.new_guid}"
+        )
+
+
+@dataclass(slots=True, eq=False)
+class EdoDocumentNotFoundError(NotFoundError):
+    document_id: UUID
+
+    def __str__(self) -> str:
+        return f"Документ ЭДО {self.document_id} не найден"
+
+
+@dataclass(slots=True, eq=False)
+class EdoDocumentMismatchError(InventoryDomainError):
+    document_id: UUID
+    org_unit_id: UUID
+
+    def __str__(self) -> str:
+        return (
+            f"Документ ЭДО {self.document_id} относится к другой точке, "
+            f"а не к {self.org_unit_id}"
+        )
+
+
+@dataclass(slots=True, eq=False)
+class LotVeterinaryDocumentConflictError(ConflictError):
+    lot_id: UUID
+    existing_document_id: UUID
+    new_document_id: UUID
+
+    def __str__(self) -> str:
+        return (
+            f"К партии {self.lot_id} уже привязан ветеринарный документ "
+            f"{self.existing_document_id}; нельзя привязать {self.new_document_id}"
+        )
+
+
+@dataclass(slots=True, eq=False)
+class ReceiptLineNotFoundError(NotFoundError):
+    line_id: UUID
+
+    def __str__(self) -> str:
+        return f"Строка поступления {self.line_id} не найдена"
+
+
+@dataclass(slots=True, eq=False)
 class NomenclatureNotFoundError(NotFoundError):
     nomenclature_id: UUID
 

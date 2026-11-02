@@ -155,6 +155,7 @@ class PostInventoryCountInteractor:
             lot_id = await self._lot_resolver.find_or_create(
                 nomenclature_id=line.nomenclature_id,
                 lot_code=line.lot_code,
+                origin_org_unit_id=org_unit_id,
             )
 
         if lot_id is not None:

@@ -86,3 +86,20 @@ class CostAllocationError(ProductionDomainError):
 class ProductionOrderNotDraftError(ConflictError):
     def __str__(self) -> str:
         return "Изменить можно только черновик производственного задания."
+
+
+class VetisReferenceRequiredError(ProductionDomainError):
+    def __str__(self) -> str:
+        return "Для ручного ВетИСа укажите идентификатор производственной операции."
+
+
+class WrongProductionLineRoleError(ProductionDomainError):
+    def __init__(self, line_id: UUID, expected_role: str) -> None:
+        self._line_id = line_id
+        self._expected_role = expected_role
+
+    def __str__(self) -> str:
+        return (
+            f"Строка {self._line_id} не является строкой роли "
+            f"'{self._expected_role}'."
+        )

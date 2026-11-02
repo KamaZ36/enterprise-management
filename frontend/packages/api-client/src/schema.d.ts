@@ -4,6 +4,46 @@
  */
 
 export interface paths {
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health
+         * @description Живой ли процесс
+         */
+        get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ready
+         * @description Готов ли принимать запросы (проверка БД)
+         */
+        get: operations["ready_ready_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login/password": {
         parameters: {
             query?: never;
@@ -1300,6 +1340,26 @@ export interface paths {
         patch: operations["update_production_order_api_production_orders__order_id__patch"];
         trace?: never;
     };
+    "/api/production/orders/{order_id}/vetis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Set Production Order Vetis
+         * @description Указать реквизиты ВетИСа или отметить отсутствие ВСД
+         */
+        patch: operations["set_production_order_vetis_api_production_orders__order_id__vetis_patch"];
+        trace?: never;
+    };
     "/api/production/orders/{order_id}/post": {
         parameters: {
             query?: never;
@@ -1960,6 +2020,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/edo/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Edo Documents
+         * @description Входящие документы ЭДО точки
+         */
+        get: operations["list_edo_documents_api_edo_documents_get"];
+        put?: never;
+        /**
+         * Create Edo Document
+         * @description Зарегистрировать входящий документ ЭДО вручную
+         */
+        post: operations["create_edo_document_api_edo_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/veterinary/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Veterinary Documents
+         * @description Ветеринарные документы точки
+         */
+        get: operations["list_veterinary_documents_api_veterinary_documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2375,6 +2479,28 @@ export interface components {
             /** Username */
             username: string;
         };
+        /** CreateEdoDocumentSchema */
+        CreateEdoDocumentSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Number */
+            number: string;
+            /** External Id */
+            external_id?: string | null;
+            /** Doc Date */
+            doc_date?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /** Supplier Inn */
+            supplier_inn?: string | null;
+            /** Delivery Address */
+            delivery_address?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
         /** CreateEmployeeCommand */
         CreateEmployeeCommand: {
             /** First Name */
@@ -2431,6 +2557,11 @@ export interface components {
             image_url?: string | null;
             /** Description */
             description?: string | null;
+            /**
+             * Requires Vetis
+             * @default false
+             */
+            requires_vetis: boolean;
         };
         /** CreateOrderSchema */
         CreateOrderSchema: {
@@ -2536,6 +2667,8 @@ export interface components {
             supplier_name?: string | null;
             /** Supplier Document Number */
             supplier_document_number?: string | null;
+            /** Edo Document Id */
+            edo_document_id?: string | null;
             /** Comment */
             comment?: string | null;
         };
@@ -2733,6 +2866,53 @@ export interface components {
             items: components["schemas"]["CustomerListItemSchema"][];
             /** Total */
             total: number;
+        };
+        /** EdoDocumentListSchema */
+        EdoDocumentListSchema: {
+            /** Items */
+            items: components["schemas"]["EdoDocumentSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** EdoDocumentSchema */
+        EdoDocumentSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** External Id */
+            external_id: string | null;
+            /** Number */
+            number: string;
+            /** Doc Date */
+            doc_date: string | null;
+            /** Supplier Name */
+            supplier_name: string | null;
+            /** Supplier Inn */
+            supplier_inn: string | null;
+            /** Delivery Address */
+            delivery_address: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Status */
+            status: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** EmployeeListSchema */
         EmployeeListSchema: {
@@ -3066,6 +3246,12 @@ export interface components {
             produced_at?: string | null;
             /** Supplier Name */
             supplier_name?: string | null;
+            /** Vetis Vsd Number */
+            vetis_vsd_number?: string | null;
+            /** Vetis Vsd Guid */
+            vetis_vsd_guid?: string | null;
+            /** Vetis Batch Id */
+            vetis_batch_id?: string | null;
             /**
              * Unit Cost
              * @description Себестоимость единицы по партии, рубли. null — нет права видеть стоимость
@@ -3303,6 +3489,11 @@ export interface components {
             image_url?: string | null;
             /** Description */
             description?: string | null;
+            /**
+             * Requires Vetis
+             * @default false
+             */
+            requires_vetis: boolean;
         };
         /** OfdBatchPostResultSchema */
         OfdBatchPostResultSchema: {
@@ -4056,6 +4247,10 @@ export interface components {
             line_id: string;
             /** Quantity */
             quantity: number | string;
+            /** Lot Id */
+            lot_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
         };
         /** ProductionOrderDetailSchema */
         ProductionOrderDetailSchema: {
@@ -4099,6 +4294,14 @@ export interface components {
             posted_at?: string | null;
             /** Location Name */
             location_name?: string | null;
+            /** @default not_specified */
+            vetis_status: components["schemas"]["VetisStatus"];
+            /** Vetis Operation Id */
+            vetis_operation_id?: string | null;
+            /** Vetis No Vsd Reason */
+            vetis_no_vsd_reason?: string | null;
+            /** Vetis Entered At */
+            vetis_entered_at?: string | null;
         };
         /** ProductionOrderLineSchema */
         ProductionOrderLineSchema: {
@@ -4116,10 +4319,24 @@ export interface components {
             nomenclature_id?: string | null;
             /** Nomenclature Name */
             nomenclature_name?: string | null;
+            /** Lot Id */
+            lot_id?: string | null;
+            /** Lot Code */
+            lot_code?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Vetis Production Vsd Number */
+            vetis_production_vsd_number?: string | null;
+            /** Vetis Production Vsd Guid */
+            vetis_production_vsd_guid?: string | null;
+            /** Vetis Batch Id */
+            vetis_batch_id?: string | null;
             loss_kind?: components["schemas"]["LossKind"] | null;
             output_kind?: components["schemas"]["OutputKind"] | null;
             /** Cost */
             cost?: number | null;
+            /** Available Lots */
+            available_lots?: components["schemas"]["ProductionOrderLotSchema"][];
         };
         /** ProductionOrderListItemSchema */
         ProductionOrderListItemSchema: {
@@ -4159,6 +4376,8 @@ export interface components {
             posted_at?: string | null;
             /** Location Name */
             location_name?: string | null;
+            /** @default not_specified */
+            vetis_status: components["schemas"]["VetisStatus"];
         };
         /** ProductionOrderListSchema */
         ProductionOrderListSchema: {
@@ -4167,11 +4386,39 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ProductionOrderLotSchema */
+        ProductionOrderLotSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Quantity */
+            quantity: string;
+            /** Expires At */
+            expires_at?: string | null;
+        };
         /**
          * ProductionOrderStatus
          * @enum {string}
          */
         ProductionOrderStatus: "draft" | "posted" | "cancelled";
+        /** ProductionOutputVetisSchema */
+        ProductionOutputVetisSchema: {
+            /**
+             * Line Id
+             * Format: uuid
+             */
+            line_id: string;
+            /** Production Vsd Number */
+            production_vsd_number?: string | null;
+            /** Production Vsd Guid */
+            production_vsd_guid?: string | null;
+            /** Batch Id */
+            batch_id?: string | null;
+        };
         /** ReceiptDetailSchema */
         ReceiptDetailSchema: {
             /**
@@ -4201,6 +4448,10 @@ export interface components {
             comment: string | null;
             /** Lines */
             lines: components["schemas"]["ReceiptLineViewSchema"][];
+            /** Edo Document Id */
+            edo_document_id?: string | null;
+            /** Edo Document Number */
+            edo_document_number?: string | null;
         };
         /** ReceiptLineSchema */
         ReceiptLineSchema: {
@@ -4220,6 +4471,14 @@ export interface components {
             lot_code?: string | null;
             /** Expires At */
             expires_at?: string | null;
+            /** Vetis Vsd Number */
+            vetis_vsd_number?: string | null;
+            /** Vetis Vsd Guid */
+            vetis_vsd_guid?: string | null;
+            /** Vetis Batch Id */
+            vetis_batch_id?: string | null;
+            /** Vetis Product Item Guid */
+            vetis_product_item_guid?: string | null;
         };
         /** ReceiptLineViewSchema */
         ReceiptLineViewSchema: {
@@ -4245,6 +4504,19 @@ export interface components {
             lot_code: string | null;
             /** Expires At */
             expires_at: string | null;
+            /** Vetis Vsd Number */
+            vetis_vsd_number?: string | null;
+            /** Vetis Vsd Guid */
+            vetis_vsd_guid?: string | null;
+            /** Vetis Batch Id */
+            vetis_batch_id?: string | null;
+            /** Vetis Product Item Guid */
+            vetis_product_item_guid?: string | null;
+            /**
+             * Requires Vetis
+             * @default false
+             */
+            requires_vetis: boolean;
         };
         /** ReceiptListItemSchema */
         ReceiptListItemSchema: {
@@ -4275,6 +4547,8 @@ export interface components {
             line_count: number;
             /** Total Kopecks */
             total_kopecks: number;
+            /** Edo Document Number */
+            edo_document_number?: string | null;
         };
         /** ReceiptListSchema */
         ReceiptListSchema: {
@@ -4320,6 +4594,16 @@ export interface components {
         SetPosAgentActiveSchema: {
             /** Is Active */
             is_active: boolean;
+        };
+        /** SetProductionOrderVetisSchema */
+        SetProductionOrderVetisSchema: {
+            status: components["schemas"]["VetisStatus"];
+            /** Operation Id */
+            operation_id?: string | null;
+            /** No Vsd Reason */
+            no_vsd_reason?: string | null;
+            /** Outputs */
+            outputs?: components["schemas"]["ProductionOutputVetisSchema"][];
         };
         /**
          * SpecLineRole
@@ -4675,6 +4959,8 @@ export interface components {
             unit?: components["schemas"]["UnitOfMeasurement"] | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Requires Vetis */
+            requires_vetis?: boolean | null;
             /** Image Url */
             image_url?: string | null;
             /** Description */
@@ -4730,6 +5016,8 @@ export interface components {
             supplier_name?: string | null;
             /** Supplier Document Number */
             supplier_document_number?: string | null;
+            /** Edo Document Id */
+            edo_document_id?: string | null;
             /** Comment */
             comment?: string | null;
         };
@@ -4809,6 +5097,52 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VeterinaryDocumentListSchema */
+        VeterinaryDocumentListSchema: {
+            /** Items */
+            items: components["schemas"]["VeterinaryDocumentSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** VeterinaryDocumentSchema */
+        VeterinaryDocumentSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Number */
+            number: string | null;
+            /** Guid */
+            guid: string | null;
+            /** Batch Id */
+            batch_id: string | null;
+            /** Product Item Guid */
+            product_item_guid: string | null;
+            /** Source */
+            source: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * VetisStatus
+         * @enum {string}
+         */
+        VetisStatus: "not_specified" | "manual" | "no_vsd";
         /** WriteOffDetailSchema */
         WriteOffDetailSchema: {
             /**
@@ -4914,6 +5248,50 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    ready_ready_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
     login_by_password_api_auth_login_password_post: {
         parameters: {
             query?: never;
@@ -7708,6 +8086,41 @@ export interface operations {
             };
         };
     };
+    set_production_order_vetis_api_production_orders__order_id__vetis_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetProductionOrderVetisSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_production_order_api_production_orders__order_id__post_post: {
         parameters: {
             query?: never;
@@ -8876,6 +9289,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HeartbeatResultSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_edo_documents_api_edo_documents_get: {
+        parameters: {
+            query: {
+                org_unit_id: string;
+                search?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EdoDocumentListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_edo_document_api_edo_documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEdoDocumentSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_veterinary_documents_api_veterinary_documents_get: {
+        parameters: {
+            query: {
+                org_unit_id: string;
+                search?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VeterinaryDocumentListSchema"];
                 };
             };
             /** @description Validation Error */

@@ -35,6 +35,11 @@ from myasnaya_derevnya.modules.production.application.interactors.list_tech_card
 from myasnaya_derevnya.modules.production.application.interactors.post_production_order import (
     PostProductionOrderInteractor,
 )
+from myasnaya_derevnya.modules.production.application.interactors.set_production_order_vetis import (
+    ProductionOutputVetisCommand,
+    SetProductionOrderVetisCommand,
+    SetProductionOrderVetisInteractor,
+)
 from myasnaya_derevnya.modules.production.application.interactors.update_production_order import (
     ProductionOrderActualCommand,
     UpdateProductionOrderCommand,
@@ -47,6 +52,7 @@ from myasnaya_derevnya.modules.production.presentation.api.v1.schemas import (
     ProductionOrderDetailSchema,
     ProductionOrderListItemSchema,
     ProductionOrderListSchema,
+    SetProductionOrderVetisSchema,
     TechCardDetailSchema,
     TechCardListItemSchema,
     TechCardListSchema,
@@ -216,7 +222,10 @@ async def update_production_order(
         order_id=order_id,
         actuals=tuple(
             ProductionOrderActualCommand(
-                line_id=actual.line_id, quantity=actual.quantity
+                line_id=actual.line_id,
+                quantity=actual.quantity,
+                lot_id=actual.lot_id,
+                expires_at=actual.expires_at,
             )
             for actual in data.actuals
         ),
@@ -224,6 +233,36 @@ async def update_production_order(
 
     async with container(context={Request: request}) as context:
         interactor = await context.get(UpdateProductionOrderInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.patch(
+    "/orders/{order_id}/vetis",
+    description="Указать реквизиты ВетИСа или отметить отсутствие ВСД",
+)
+async def set_production_order_vetis(
+    request: Request, order_id: UUID, data: SetProductionOrderVetisSchema
+) -> JSONResponse:
+    command = SetProductionOrderVetisCommand(
+        order_id=order_id,
+        status=data.status,
+        operation_id=data.operation_id,
+        no_vsd_reason=data.no_vsd_reason,
+        outputs=tuple(
+            ProductionOutputVetisCommand(
+                line_id=output.line_id,
+                production_vsd_number=output.production_vsd_number,
+                production_vsd_guid=output.production_vsd_guid,
+                batch_id=output.batch_id,
+            )
+            for output in data.outputs
+        ),
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(SetProductionOrderVetisInteractor)
         await interactor(command)
 
     return JSONResponse(content={"message": "ok"})

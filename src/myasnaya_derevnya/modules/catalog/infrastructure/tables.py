@@ -61,6 +61,9 @@ NOMENCLATURES_TABLE = Table(
         nullable=False,
     ),
     Column("gtin", String(14), nullable=True),
+    Column(
+        "requires_vetis", Boolean, nullable=False, server_default="false"
+    ),
     Column("image_url", String(512), nullable=True),
     Column("description", String(1024), nullable=True),
     Column("is_active", Boolean, nullable=False, server_default="true"),

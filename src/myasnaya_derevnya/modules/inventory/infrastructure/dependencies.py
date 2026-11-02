@@ -403,6 +403,8 @@ class InventoryDepProvider(Provider):
         balance_repository: StockBalanceRepository,
         movement_repository: StockMovementRepository,
         posting_repository: StockPostingRepository,
+        lot_repository: StockLotRepository,
+        lot_balance_reader: LotBalanceReader,
         business_api: BusinessAPI,
     ) -> InventoryAPI:
         return InventoryAPI(
@@ -413,5 +415,7 @@ class InventoryDepProvider(Provider):
             balance_repository=balance_repository,
             movement_repository=movement_repository,
             posting_repository=posting_repository,
+            lot_repository=lot_repository,
+            lot_balance_reader=lot_balance_reader,
             business_api=business_api,
         )

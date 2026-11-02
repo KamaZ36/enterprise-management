@@ -64,7 +64,6 @@ class PostProductionOrderInteractor:
 
         issues = [line for line in order.components if line.actual_quantity > 0]
         outputs = [line for line in order.outputs if line.actual_quantity > 0]
-        lot_code = self._lot_code(order)
 
         posted = await self._inventory_api.post_production(
             document_id=order.id,
@@ -74,6 +73,7 @@ class PostProductionOrderInteractor:
                 ProductionIssue(
                     nomenclature_id=line.nomenclature_id,
                     quantity=line.actual_quantity,
+                    lot_id=line.lot_id,
                 )
                 for line in issues
             ],
@@ -82,9 +82,13 @@ class PostProductionOrderInteractor:
                     nomenclature_id=line.nomenclature_id,
                     quantity=line.actual_quantity,
                     share=line.cost_weight,
-                    lot_code=lot_code,
+                    lot_code=self._lot_code(order, index),
+                    expires_at=line.expires_at,
+                    vetis_vsd_number=line.vetis_production_vsd_number,
+                    vetis_vsd_guid=line.vetis_production_vsd_guid,
+                    vetis_batch_id=line.vetis_batch_id,
                 )
-                for line in outputs
+                for index, line in enumerate(outputs, start=1)
             ],
             posted_by=user_id,
         )
@@ -92,6 +96,12 @@ class PostProductionOrderInteractor:
         order.apply_costs(
             {
                 line.id: posted.receipts[index].cost_kopecks
+                for index, line in enumerate(outputs)
+            }
+        )
+        order.apply_output_lots(
+            {
+                line.id: posted.receipts[index].lot_id
                 for index, line in enumerate(outputs)
             }
         )
@@ -108,7 +118,10 @@ class PostProductionOrderInteractor:
             },
         )
 
-    def _lot_code(self, order: ProductionOrder) -> str:
+    def _lot_code(self, order: ProductionOrder, output_number: int) -> str:
         day = order.occurred_at.strftime("%Y%m%d")
 
-        return f"{order.tech_card_code}-{day}-{str(order.id)[:8]}"
+        return (
+            f"{order.tech_card_code}-{day}-{str(order.id)[:8]}-"
+            f"{output_number:02d}"
+        )

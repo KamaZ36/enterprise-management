@@ -9,6 +9,7 @@ from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
 from myasnaya_derevnya.modules.production.application.dto import (
     ProductionOrderDetail,
     ProductionOrderLineItem,
+    ProductionOrderLotItem,
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
     ProductionLocationNotFoundError,
@@ -63,6 +64,31 @@ class GetProductionOrderInteractor:
             ]
         )
 
+        component_nomenclature_ids = [
+            line.nomenclature_id
+            for line in order.components
+            if line.nomenclature_id is not None
+        ]
+        available = await self._inventory_api.available_lots(
+            org_unit_id=order.org_unit_id,
+            nomenclature_ids=component_nomenclature_ids,
+        )
+        available_by_nomenclature: dict[UUID, list[ProductionOrderLotItem]] = {}
+        for lot in available:
+            available_by_nomenclature.setdefault(lot.nomenclature_id, []).append(
+                ProductionOrderLotItem(
+                    id=lot.id,
+                    code=lot.code,
+                    quantity=lot.quantity,
+                    expires_at=lot.expires_at,
+                )
+            )
+
+        component_line_ids = {line.id for line in order.components}
+        lot_codes = await self._inventory_api.lot_codes(
+            line.lot_id for line in order.lines if line.lot_id is not None
+        )
+
         return ProductionOrderDetail(
             id=order.id,
             org_unit_id=order.org_unit_id,
@@ -76,6 +102,10 @@ class GetProductionOrderInteractor:
             created_at=order.created_at,
             comment=order.comment,
             posted_at=order.posted_at,
+            vetis_status=order.vetis_status.value,
+            vetis_operation_id=order.vetis_operation_id,
+            vetis_no_vsd_reason=order.vetis_no_vsd_reason,
+            vetis_entered_at=order.vetis_entered_at,
             lines=[
                 ProductionOrderLineItem(
                     id=line.id,
@@ -86,6 +116,20 @@ class GetProductionOrderInteractor:
                     nomenclature_name=names.get(line.nomenclature_id)
                     if line.nomenclature_id
                     else None,
+                    lot_id=line.lot_id,
+                    lot_code=lot_codes.get(line.lot_id)
+                    if line.lot_id is not None
+                    else None,
+                    expires_at=line.expires_at,
+                    vetis_production_vsd_number=line.vetis_production_vsd_number,
+                    vetis_production_vsd_guid=line.vetis_production_vsd_guid,
+                    vetis_batch_id=line.vetis_batch_id,
+                    available_lots=tuple(
+                        available_by_nomenclature.get(line.nomenclature_id, ())
+                    )
+                    if line.id in component_line_ids
+                    and line.nomenclature_id is not None
+                    else (),
                     loss_kind=line.loss_kind,
                     output_kind=line.output_kind,
                     cost=line.cost_kopecks,

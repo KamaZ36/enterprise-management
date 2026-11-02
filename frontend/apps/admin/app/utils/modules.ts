@@ -74,6 +74,18 @@ export const MODULES: ModuleDefinition[
         icon: "Switch",
         permissions: CAN.movementsOpen,
       },
+      {
+        path: "/inventory/veterinary",
+        title: "Ветеринария",
+        icon: "Document",
+        permissions: CAN.veterinaryDocumentsOpen,
+      },
+      {
+        path: "/inventory/edo",
+        title: "Входящие УПД",
+        icon: "Document",
+        permissions: CAN.edoDocumentsOpen,
+      },
     ],
   },
   {

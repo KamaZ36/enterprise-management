@@ -96,6 +96,7 @@ async def create_nomenclature(
         category_id=data.category_id,
         image_url=data.image_url,
         description=data.description,
+        requires_vetis=data.requires_vetis,
     )
 
     async with container(context={Request: request}) as context:
@@ -217,6 +218,8 @@ async def update_nomenclature(
         category_id=data.category_id,
         unit=data.unit,
         is_active=data.is_active,
+        requires_vetis=bool(data.requires_vetis),
+        set_requires_vetis="requires_vetis" in data.model_fields_set,
         image_url=data.image_url,
         description=data.description,
     )

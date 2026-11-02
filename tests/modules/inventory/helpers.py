@@ -26,6 +26,10 @@ from myasnaya_derevnya.modules.catalog.infrastructure.repositories.price_list_bi
     SQLAlchemyPriceListBindingRepository,
 )
 from myasnaya_derevnya.modules.catalog.presentation.catalog_api import CatalogAPI
+from myasnaya_derevnya.modules.edo.infrastructure.repositories.document.sqlalchemy import (
+    SQLAlchemyEdoDocumentRepository,
+)
+from myasnaya_derevnya.modules.edo.presentation.edo_api import EdoAPI
 from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
     PostProductionInteractor,
 )
@@ -92,6 +96,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.s
 from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
     AccessScope,
 )
+from myasnaya_derevnya.modules.veterinary.infrastructure.repositories.veterinary_document.sqlalchemy import (
+    SQLAlchemyVeterinaryDocumentRepository,
+)
+from myasnaya_derevnya.modules.veterinary.presentation.veterinary_api import (
+    VeterinaryAPI,
+)
 
 
 class FakeIdentityProvider:
@@ -156,6 +166,12 @@ def build_interactors(
 
     receipts = SQLAlchemyReceiptRepository(session)
     write_offs = SQLAlchemyWriteOffRepository(session)
+    veterinary_api = VeterinaryAPI(
+        document_repository=SQLAlchemyVeterinaryDocumentRepository(session)
+    )
+    edo_api = EdoAPI(
+        document_repository=SQLAlchemyEdoDocumentRepository(session)
+    )
 
     preconditions, lot_resolver, ledger = build_posting(session)
 
@@ -165,6 +181,7 @@ def build_interactors(
             business_api=api,
             receipt_repository=receipts,
             staff_api=staff_api,
+            edo_api=edo_api,
             transaction_manager=transaction_manager,
         ),
         post_receipt=PostReceiptInteractor(
@@ -174,6 +191,7 @@ def build_interactors(
             preconditions=preconditions,
             lot_resolver=lot_resolver,
             ledger=ledger,
+            veterinary_api=veterinary_api,
             transaction_manager=transaction_manager,
         ),
         update_receipt=UpdateReceiptInteractor(
@@ -181,6 +199,7 @@ def build_interactors(
             business_api=api,
             receipt_repository=receipts,
             staff_api=staff_api,
+            edo_api=edo_api,
             transaction_manager=transaction_manager,
         ),
         delete_receipt=DeleteReceiptInteractor(

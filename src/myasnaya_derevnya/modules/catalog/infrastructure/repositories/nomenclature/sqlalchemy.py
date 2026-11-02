@@ -30,6 +30,7 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 is_active=nomenclature.is_active,
                 image_url=nomenclature.image_url,
                 description=nomenclature.description,
+                requires_vetis=nomenclature.requires_vetis,
                 created_at=nomenclature.created_at,
             )
         )
@@ -46,6 +47,7 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 is_active=nomenclature.is_active,
                 image_url=nomenclature.image_url,
                 description=nomenclature.description,
+                requires_vetis=nomenclature.requires_vetis,
             )
         )
 
@@ -68,6 +70,20 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
         stmt = select(NOMENCLATURES_TABLE.c.id, NOMENCLATURES_TABLE.c.name).where(
             NOMENCLATURES_TABLE.c.id.in_(nomenclature_ids)
         )
+        rows = (await self._session.execute(stmt)).all()
+
+        return {row[0]: row[1] for row in rows}
+
+    async def get_vetis_requirements(
+        self, nomenclature_ids: set[UUID]
+    ) -> dict[UUID, bool]:
+        if not nomenclature_ids:
+            return {}
+
+        stmt = select(
+            NOMENCLATURES_TABLE.c.id,
+            NOMENCLATURES_TABLE.c.requires_vetis,
+        ).where(NOMENCLATURES_TABLE.c.id.in_(nomenclature_ids))
         rows = (await self._session.execute(stmt)).all()
 
         return {row[0]: row[1] for row in rows}
@@ -125,4 +141,5 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
             is_active=row["is_active"],
             image_url=row["image_url"],
             description=row["description"],
+            requires_vetis=row["requires_vetis"],
         )

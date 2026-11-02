@@ -17,6 +17,9 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base 
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base import (
     UserIdentityRepository,
 )
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.user.base import (
+    UserRepository,
+)
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.user_session.base import (
     UserSessionRepository,
 )
@@ -36,12 +39,14 @@ class LoginByPasswordInteractor:
         self,
         identity_repository: UserIdentityRepository,
         credential_repository: CredentialRepository,
+        user_repository: UserRepository,
         session_repository: UserSessionRepository,
         transaction_manager: TransactionManager,
         password_service: PasswordService,
     ) -> None:
         self._identity_repository = identity_repository
         self._credential_repository = credential_repository
+        self._user_repository = user_repository
         self._session_repository = session_repository
         self._transaction_manager = transaction_manager
         self._password_service = password_service
@@ -69,6 +74,14 @@ class LoginByPasswordInteractor:
         if not self._password_service.verify(command.password, user_credential.secret):
             logger.warning(
                 "Неудачный вход: неверный пароль",
+                extra={"user_id": str(user_credential.user_id)},
+            )
+            raise IncorrectCredentials()
+
+        user = await self._user_repository.get_by_id(user_credential.user_id)
+        if user is None or not user.is_active:
+            logger.warning(
+                "Неудачный вход: пользователь заблокирован",
                 extra={"user_id": str(user_credential.user_id)},
             )
             raise IncorrectCredentials()

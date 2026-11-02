@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid7
 
@@ -12,6 +12,8 @@ from myasnaya_derevnya.modules.production.domain.errors import (
     OutputExceedsInputError,
     ProductionOrderLineNotFoundError,
     ProductionOrderNotDraftError,
+    VetisReferenceRequiredError,
+    WrongProductionLineRoleError,
 )
 from myasnaya_derevnya.modules.production.domain.services.quantity_split import (
     split_quantity,
@@ -26,6 +28,9 @@ from myasnaya_derevnya.modules.production.domain.value_objects.spec_line_role im
     OutputKind,
     SpecLineRole,
 )
+from myasnaya_derevnya.modules.production.domain.value_objects.vetis_status import (
+    VetisStatus,
+)
 from myasnaya_derevnya.utils import get_datetime_utc
 
 ONE = Decimal(1)
@@ -38,13 +43,38 @@ class ProductionOrderLine:
     planned_quantity: Decimal
     actual_quantity: Decimal
     nomenclature_id: UUID | None = None
+    lot_id: UUID | None = None
     loss_kind: LossKind | None = None
     output_kind: OutputKind | None = None
     cost_coefficient: Decimal | None = None
+    expires_at: date | None = None
+    vetis_production_vsd_number: str | None = None
+    vetis_production_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
     cost_kopecks: int | None = None
 
     def with_actual(self, quantity: Decimal) -> ProductionOrderLine:
         return replace(self, actual_quantity=quantity)
+
+    def with_lot(self, lot_id: UUID | None) -> ProductionOrderLine:
+        return replace(self, lot_id=lot_id)
+
+    def with_expiry(self, expires_at: date | None) -> ProductionOrderLine:
+        return replace(self, expires_at=expires_at)
+
+    def with_output_vetis(
+        self,
+        *,
+        production_vsd_number: str | None,
+        production_vsd_guid: UUID | None,
+        batch_id: str | None,
+    ) -> ProductionOrderLine:
+        return replace(
+            self,
+            vetis_production_vsd_number=production_vsd_number,
+            vetis_production_vsd_guid=production_vsd_guid,
+            vetis_batch_id=batch_id,
+        )
 
     def with_cost(self, kopecks: int) -> ProductionOrderLine:
         return replace(self, cost_kopecks=kopecks)
@@ -74,6 +104,11 @@ class ProductionOrder:
         created_by: UUID | None = None,
         comment: str | None = None,
         posted_at: datetime | None = None,
+        vetis_status: VetisStatus = VetisStatus.NOT_SPECIFIED,
+        vetis_operation_id: str | None = None,
+        vetis_no_vsd_reason: str | None = None,
+        vetis_entered_by: UUID | None = None,
+        vetis_entered_at: datetime | None = None,
     ) -> None:
         self._id = id
         self._org_unit_id = org_unit_id
@@ -88,6 +123,11 @@ class ProductionOrder:
         self._created_by = created_by
         self._comment = comment
         self._posted_at = posted_at
+        self._vetis_status = vetis_status
+        self._vetis_operation_id = vetis_operation_id
+        self._vetis_no_vsd_reason = vetis_no_vsd_reason
+        self._vetis_entered_by = vetis_entered_by
+        self._vetis_entered_at = vetis_entered_at
 
     @classmethod
     def create(
@@ -181,6 +221,26 @@ class ProductionOrder:
         return self._posted_at
 
     @property
+    def vetis_status(self) -> VetisStatus:
+        return self._vetis_status
+
+    @property
+    def vetis_operation_id(self) -> str | None:
+        return self._vetis_operation_id
+
+    @property
+    def vetis_no_vsd_reason(self) -> str | None:
+        return self._vetis_no_vsd_reason
+
+    @property
+    def vetis_entered_by(self) -> UUID | None:
+        return self._vetis_entered_by
+
+    @property
+    def vetis_entered_at(self) -> datetime | None:
+        return self._vetis_entered_at
+
+    @property
     def is_draft(self) -> bool:
         return self._status is ProductionOrderStatus.DRAFT
 
@@ -209,6 +269,96 @@ class ProductionOrder:
         self._lines = [
             line.with_actual(quantity) if line.id == line_id else line
             for line in self._lines
+        ]
+
+    def set_lot(self, line_id: UUID, lot_id: UUID | None) -> None:
+        if not self.is_draft:
+            raise ProductionOrderNotDraftError()
+
+        line = self._line(line_id)
+        if line.role is not SpecLineRole.COMPONENT:
+            raise WrongProductionLineRoleError(
+                line_id=line_id, expected_role=SpecLineRole.COMPONENT.value
+            )
+
+        self._lines = [
+            item.with_lot(lot_id) if item.id == line_id else item
+            for item in self._lines
+        ]
+
+    def set_expires_at(self, line_id: UUID, expires_at: date | None) -> None:
+        if not self.is_draft:
+            raise ProductionOrderNotDraftError()
+
+        line = self._line(line_id)
+        if line.role is not SpecLineRole.OUTPUT:
+            raise WrongProductionLineRoleError(
+                line_id=line_id, expected_role=SpecLineRole.OUTPUT.value
+            )
+
+        self._lines = [
+            item.with_expiry(expires_at) if item.id == line_id else item
+            for item in self._lines
+        ]
+
+    def set_vetis(
+        self,
+        *,
+        status: VetisStatus,
+        operation_id: str | None,
+        no_vsd_reason: str | None,
+        entered_by: UUID | None,
+    ) -> None:
+        """Фиксирует связь с ВетИСом. Не привязана к статусу документа."""
+        if status is VetisStatus.MANUAL and not operation_id:
+            raise VetisReferenceRequiredError()
+
+        if status is VetisStatus.MANUAL:
+            self._vetis_operation_id = operation_id
+            self._vetis_no_vsd_reason = None
+        elif status is VetisStatus.NO_VSD:
+            self._vetis_operation_id = None
+            self._vetis_no_vsd_reason = no_vsd_reason
+        else:
+            self._vetis_operation_id = None
+            self._vetis_no_vsd_reason = None
+
+        self._vetis_status = status
+        self._vetis_entered_by = entered_by
+        self._vetis_entered_at = get_datetime_utc()
+
+    def set_output_vetis(
+        self,
+        *,
+        line_id: UUID,
+        production_vsd_number: str | None = None,
+        production_vsd_guid: UUID | None = None,
+        batch_id: str | None = None,
+    ) -> None:
+        line = self._line(line_id)
+        if line.role is not SpecLineRole.OUTPUT:
+            raise WrongProductionLineRoleError(
+                line_id=line_id, expected_role=SpecLineRole.OUTPUT.value
+            )
+
+        self._lines = [
+            item.with_output_vetis(
+                production_vsd_number=production_vsd_number,
+                production_vsd_guid=production_vsd_guid,
+                batch_id=batch_id,
+            )
+            if item.id == line_id
+            else item
+            for item in self._lines
+        ]
+
+    def apply_output_lots(self, lot_ids: Mapping[UUID, UUID | None]) -> None:
+        """Запоминает партии, созданные при проведении по выходным строкам."""
+        self._lines = [
+            replace(item, lot_id=lot_ids[item.id])
+            if item.id in lot_ids and item.role is SpecLineRole.OUTPUT
+            else item
+            for item in self._lines
         ]
 
     def post(self) -> None:
@@ -250,6 +400,13 @@ class ProductionOrder:
             raise ProductionOrderNotDraftError()
 
         self._status = ProductionOrderStatus.CANCELLED
+
+    def _line(self, line_id: UUID) -> ProductionOrderLine:
+        for line in self._lines:
+            if line.id == line_id:
+                return line
+
+        raise ProductionOrderLineNotFoundError(line_id)
 
     def _loss_lines(self, residual: Decimal) -> list[ProductionOrderLine]:
         planned = self.losses

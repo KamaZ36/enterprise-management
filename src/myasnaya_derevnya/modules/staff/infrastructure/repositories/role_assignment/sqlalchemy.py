@@ -102,6 +102,19 @@ class SQLAlchemyRoleAssignmentRepository(RoleAssignmentRepository):
 
         return resolved
 
+    async def revoke_all_for_user(self, user_id: UUID) -> int:
+        result = await self._session.execute(
+            update(ROLE_ASSIGNMENTS_TABLE)
+            .where(
+                ROLE_ASSIGNMENTS_TABLE.c.user_id == user_id,
+                ROLE_ASSIGNMENTS_TABLE.c.status
+                == RoleAssignmentStatus.ACTIVE.value,
+            )
+            .values(status=RoleAssignmentStatus.REVOKED.value)
+        )
+
+        return result.rowcount or 0
+
     async def _load_roles(self, role_ids: set[UUID]) -> dict[UUID, Role]:
         permissions_subq = (
             select(func.array_agg(ROLE_PERMISSIONS_TABLE.c.permission_code))

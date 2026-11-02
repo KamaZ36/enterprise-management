@@ -61,6 +61,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
                 RECEIPTS_TABLE.c.posted_at,
                 RECEIPTS_TABLE.c.supplier_name,
                 RECEIPTS_TABLE.c.supplier_document_number,
+                RECEIPTS_TABLE.c.edo_document_number,
                 func.count(RECEIPT_LINES_TABLE.c.id).label("line_count"),
                 func.coalesce(func.sum(RECEIPT_LINES_TABLE.c.total_cost), 0).label(
                     "total_kopecks"
@@ -119,6 +120,8 @@ class SQLAlchemyReceiptReader(ReceiptReader):
             supplier_document_number=header["supplier_document_number"],
             comment=header["comment"],
             lines=[self._to_line_item(row) for row in lines],
+            edo_document_id=header["edo_document_id"],
+            edo_document_number=header["edo_document_number"],
         )
 
     def _to_list_item(self, row: RowMapping) -> ReceiptListItem:
@@ -132,6 +135,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
             supplier_document_number=row["supplier_document_number"],
             line_count=row["line_count"],
             total_kopecks=row["total_kopecks"],
+            edo_document_number=row["edo_document_number"],
         )
 
     def _to_line_item(self, row: RowMapping) -> ReceiptLineItem:
@@ -143,4 +147,8 @@ class SQLAlchemyReceiptReader(ReceiptReader):
             total_kopecks=row["total_cost"],
             lot_code=row["lot_code"],
             expires_at=row["expires_at"],
+            vetis_vsd_number=row["vetis_vsd_number"],
+            vetis_vsd_guid=row["vetis_vsd_guid"],
+            vetis_batch_id=row["vetis_batch_id"],
+            vetis_product_item_guid=row["vetis_product_item_guid"],
         )

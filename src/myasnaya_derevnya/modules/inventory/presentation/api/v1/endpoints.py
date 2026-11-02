@@ -174,6 +174,10 @@ def _receipt_lines(lines: list[ReceiptLineSchema]) -> list[ReceiptLineCommand]:
             unit_cost=line.unit_cost,
             lot_code=line.lot_code,
             expires_at=line.expires_at,
+            vetis_vsd_number=line.vetis_vsd_number,
+            vetis_vsd_guid=line.vetis_vsd_guid,
+            vetis_batch_id=line.vetis_batch_id,
+            vetis_product_item_guid=line.vetis_product_item_guid,
         )
         for line in lines
     ]
@@ -200,6 +204,10 @@ def _update_receipt_lines(
             unit_cost=line.unit_cost,
             lot_code=line.lot_code,
             expires_at=line.expires_at,
+            vetis_vsd_number=line.vetis_vsd_number,
+            vetis_vsd_guid=line.vetis_vsd_guid,
+            vetis_batch_id=line.vetis_batch_id,
+            vetis_product_item_guid=line.vetis_product_item_guid,
         )
         for line in lines
     ]
@@ -239,6 +247,7 @@ async def create_receipt(request: Request, data: CreateReceiptSchema) -> JSONRes
         lines=_receipt_lines(data.lines),
         supplier_name=data.supplier_name,
         supplier_document_number=data.supplier_document_number,
+        edo_document_id=data.edo_document_id,
         comment=data.comment,
     )
 
@@ -296,6 +305,7 @@ async def update_receipt(
         lines=_update_receipt_lines(data.lines),
         supplier_name=data.supplier_name,
         supplier_document_number=data.supplier_document_number,
+        edo_document_id=data.edo_document_id,
         comment=data.comment,
     )
 

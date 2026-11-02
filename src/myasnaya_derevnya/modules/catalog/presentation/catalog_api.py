@@ -28,6 +28,14 @@ class CatalogAPI:
     ) -> dict[UUID, str]:
         return await self._nomenclature_repository.get_names(set(nomenclature_ids))
 
+    async def nomenclature_vetis_requirements(
+        self, nomenclature_ids: Iterable[UUID]
+    ) -> dict[UUID, bool]:
+        """Признак «нужен ВетИС» по номенклатурам."""
+        return await self._nomenclature_repository.get_vetis_requirements(
+            set(nomenclature_ids)
+        )
+
     async def nomenclature_ids_matching(self, search: str) -> list[UUID]:
         """Идентификаторы номенклатур, подходящих под поиск по названию/артикулу."""
 

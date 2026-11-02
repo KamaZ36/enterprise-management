@@ -37,3 +37,22 @@ async def test_gtin_lookup_returns_only_active_nomenclature(
     await db_session.commit()
 
     assert await repository.get_id_by_gtin(gtin) is None
+
+
+async def test_requires_vetis_is_persisted_and_returned(
+    db_session, make_nomenclature
+) -> None:
+    repository = SQLAlchemyNomenclatureRepository(db_session)
+    nomenclature = await make_nomenclature()
+    nomenclature.change_vetis_requirement(False)
+
+    await repository.save(nomenclature)
+    await db_session.commit()
+
+    stored = await repository.get_by_id(nomenclature.id)
+
+    assert stored is not None
+    assert stored.requires_vetis is False
+    assert await repository.get_vetis_requirements({nomenclature.id}) == {
+        nomenclature.id: False
+    }

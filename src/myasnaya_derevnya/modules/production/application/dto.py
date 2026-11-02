@@ -63,6 +63,14 @@ class TechCardPage:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductionOrderLotItem:
+    id: UUID
+    code: str
+    quantity: Decimal
+    expires_at: date | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ProductionOrderLineItem:
     id: UUID
     role: SpecLineRole
@@ -70,9 +78,16 @@ class ProductionOrderLineItem:
     actual_quantity: Decimal
     nomenclature_id: UUID | None = None
     nomenclature_name: str | None = None
+    lot_id: UUID | None = None
+    lot_code: str | None = None
+    expires_at: date | None = None
+    vetis_production_vsd_number: str | None = None
+    vetis_production_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
     loss_kind: LossKind | None = None
     output_kind: OutputKind | None = None
     cost: int | None = None
+    available_lots: tuple[ProductionOrderLotItem, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +103,7 @@ class ProductionOrderListItem:
     created_at: datetime
     posted_at: datetime | None = None
     location_name: str | None = None
+    vetis_status: str = "not_specified"
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +121,10 @@ class ProductionOrderDetail:
     comment: str | None = None
     posted_at: datetime | None = None
     location_name: str | None = None
+    vetis_status: str = "not_specified"
+    vetis_operation_id: str | None = None
+    vetis_no_vsd_reason: str | None = None
+    vetis_entered_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

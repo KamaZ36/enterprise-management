@@ -1,8 +1,9 @@
 from datetime import timedelta
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
+from myasnaya_derevnya.core.errors import UnauthorizedError
 from myasnaya_derevnya.modules.auth.application.errors import (
     InvalidPhoneNumber,
     LoginCodeAttemptsExceeded,
@@ -32,6 +33,7 @@ from myasnaya_derevnya.modules.auth.domain.entities.identity import (
     UserIdentityType,
 )
 from myasnaya_derevnya.modules.auth.domain.entities.one_time_code import OneTimeCode
+from myasnaya_derevnya.modules.auth.domain.entities.user import User
 from myasnaya_derevnya.utils import get_datetime_utc
 
 PHONE = "+79991234567"
@@ -316,12 +318,32 @@ async def test_ensure_user_rejects_invalid_phone() -> None:
 
 async def test_start_session_creates_session_with_future_expiry() -> None:
     sessions = FakeSessionRepository()
-    interactor = StartSessionInteractor(session_repository=sessions)
-    user_id = uuid4()
+    users = FakeUserRepository()
+    user = User.create()
+    await users.add(user)
+    interactor = StartSessionInteractor(
+        session_repository=sessions, user_repository=users
+    )
 
-    session_id = await interactor(user_id)
+    session_id = await interactor(user.id)
 
     assert len(sessions.added) == 1
     assert sessions.added[0].id == session_id
-    assert sessions.added[0].user_id == user_id
+    assert sessions.added[0].user_id == user.id
     assert sessions.added[0].expires_at > get_datetime_utc()
+
+
+async def test_blocked_user_does_not_get_session() -> None:
+    sessions = FakeSessionRepository()
+    users = FakeUserRepository()
+    user = User.create()
+    user.block()
+    await users.add(user)
+    interactor = StartSessionInteractor(
+        session_repository=sessions, user_repository=users
+    )
+
+    with pytest.raises(UnauthorizedError):
+        await interactor(user.id)
+
+    assert sessions.added == []

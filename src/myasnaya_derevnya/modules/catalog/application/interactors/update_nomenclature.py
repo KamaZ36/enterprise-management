@@ -36,6 +36,8 @@ class UpdateNomenclatureCommand:
     category_id: UUID | None = None
     unit: UnitOfMeasurement | None = None
     is_active: bool | None = None
+    requires_vetis: bool = False
+    set_requires_vetis: bool = False
 
     image_url: str | None = None
     description: str | None = None
@@ -102,6 +104,8 @@ class UpdateNomenclatureInteractor:
             nomenclature.change_unit(command.unit)
         if command.is_active is not None:
             nomenclature.activate() if command.is_active else nomenclature.deactivate()
+        if command.set_requires_vetis:
+            nomenclature.change_vetis_requirement(command.requires_vetis)
         if command.image_url is not None:
             nomenclature.change_image_url(command.image_url)
         if command.description is not None:

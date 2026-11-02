@@ -83,6 +83,17 @@
       <el-table-column label="Поставщик" min-width="180">
         <template #default="{ row }">{{ row.supplier_name ?? "—" }}</template>
       </el-table-column>
+      <el-table-column label="ВСД" min-width="200">
+        <template #default="{ row }">
+          <span>{{ row.vetis_vsd_number ?? "—" }}</span>
+          <div v-if="row.vetis_vsd_guid" class="muted hint">
+            {{ row.vetis_vsd_guid }}
+          </div>
+          <div v-if="row.vetis_batch_id" class="muted hint">
+            партия: {{ row.vetis_batch_id }}
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column
         v-if="costVisible"
         label="Себестоимость"
@@ -275,6 +286,10 @@ onMounted(async () => {
 
 .page__table {
   margin-top: 4px;
+}
+
+.hint {
+  font-size: 11px;
 }
 
 .pager {

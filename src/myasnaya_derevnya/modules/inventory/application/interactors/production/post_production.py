@@ -41,6 +41,9 @@ class ProductionReceiptCommand:
     lot_code: str | None = None
     produced_at: date | None = None
     expires_at: date | None = None
+    vetis_vsd_number: str | None = None
+    vetis_vsd_guid: UUID | None = None
+    vetis_batch_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +101,11 @@ class PostProductionInteractor:
                 lot_code=receipt.lot_code,
                 produced_at=receipt.produced_at,
                 expires_at=receipt.expires_at,
+                origin_org_unit_id=org_unit_id,
+                vetis_vsd_number=receipt.vetis_vsd_number,
+                vetis_vsd_guid=receipt.vetis_vsd_guid,
+                vetis_batch_id=receipt.vetis_batch_id,
+                vetis_entered_by=command.posted_by,
             )
             for receipt in command.receipts
         ]
@@ -178,6 +186,10 @@ class PostProductionInteractor:
         issue: ProductionIssueCommand,
     ) -> list[tuple[UUID | None, Decimal]]:
         if issue.lot_id is not None:
+            await self._lot_resolver.ensure_matches(
+                nomenclature_id=issue.nomenclature_id,
+                lot_id=issue.lot_id,
+            )
             await posting.lock(
                 lot_keys=[(org_unit_id, issue.nomenclature_id, issue.lot_id)]
             )

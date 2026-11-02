@@ -37,14 +37,24 @@ class GetReceiptInteractor:
 
         await self._document_scope.ensure_can_read([detail.org_unit_id])
 
-        names = await self._catalog_api.nomenclature_names(
-            {line.nomenclature_id for line in detail.lines}
+        nomenclature_ids = {line.nomenclature_id for line in detail.lines}
+        names = await self._catalog_api.nomenclature_names(nomenclature_ids)
+        vetis_requirements = (
+            await self._catalog_api.nomenclature_vetis_requirements(
+                nomenclature_ids
+            )
         )
 
         return replace(
             detail,
             lines=[
-                replace(line, nomenclature_name=names.get(line.nomenclature_id))
+                replace(
+                    line,
+                    nomenclature_name=names.get(line.nomenclature_id),
+                    requires_vetis=vetis_requirements.get(
+                        line.nomenclature_id, False
+                    ),
+                )
                 for line in detail.lines
             ],
         )
