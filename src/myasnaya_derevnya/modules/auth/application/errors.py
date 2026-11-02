@@ -4,6 +4,7 @@ from uuid import UUID
 from myasnaya_derevnya.core.errors import (
     ConflictError,
     NotFoundError,
+    RateLimitError,
     UnauthorizedError,
     ValidationError,
 )
@@ -13,6 +14,15 @@ from myasnaya_derevnya.core.errors import (
 class IncorrectCredentials(UnauthorizedError):
     def __str__(self) -> str:
         return "Неверный логин или пароль"
+
+
+@dataclass(slots=True, eq=False)
+class TooManyLoginAttempts(RateLimitError):
+    def __str__(self) -> str:
+        return (
+            "Слишком много попыток входа. "
+            f"Повторите через {self.retry_after_seconds} с."
+        )
 
 
 @dataclass(slots=True, eq=False)

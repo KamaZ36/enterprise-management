@@ -15,6 +15,7 @@ from myasnaya_derevnya.core.errors import (
     ForbiddenError,
     NotFoundError,
     ProjectError,
+    RateLimitError,
     UnauthorizedError,
     ValidationError,
 )
@@ -81,6 +82,7 @@ STATUS_BY_CATEGORY: dict[type[AppError], int] = {
     ForbiddenError: 403,
     NotFoundError: 404,
     ConflictError: 409,
+    RateLimitError: 429,
 }
 
 logger = logging.getLogger(__name__)
@@ -109,9 +111,14 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
 
     logger.info("Отклонён запрос: %s: %s", type(exc).__name__, exc)
 
+    headers: dict[str, str] = {}
+    if isinstance(exc, RateLimitError) and exc.retry_after_seconds > 0:
+        headers["Retry-After"] = str(exc.retry_after_seconds)
+
     return JSONResponse(
         status_code=status_code,
         content={"error": type(exc).__name__, "message": str(exc)},
+        headers=headers,
     )
 
 

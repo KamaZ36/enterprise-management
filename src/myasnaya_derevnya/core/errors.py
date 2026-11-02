@@ -42,6 +42,14 @@ class ConflictError(AppError):
 
 
 @dataclass(slots=True, eq=False)
+class RateLimitError(AppError):
+    retry_after_seconds: int = 0
+
+    def __str__(self) -> str:
+        return "Слишком много запросов. Попробуйте позже."
+
+
+@dataclass(slots=True, eq=False)
 class UniqueViolationError(ConflictError):
     constraint: str | None = None
 

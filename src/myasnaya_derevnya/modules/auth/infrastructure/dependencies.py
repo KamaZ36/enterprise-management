@@ -40,6 +40,9 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.verify_login_
 from myasnaya_derevnya.modules.auth.application.services.login_code_service import (
     LoginCodeService,
 )
+from myasnaya_derevnya.modules.auth.application.services.password_login_policy import (
+    PasswordLoginPolicy,
+)
 from myasnaya_derevnya.modules.auth.application.services.password_service import (
     PasswordService,
 )
@@ -54,6 +57,12 @@ from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.base im
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.identity.sqlalchemy import (
     SQLAlchemyUserIdentityRepository,
+)
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.login_attempt.base import (
+    LoginAttemptRepository,
+)
+from myasnaya_derevnya.modules.auth.infrastructure.repositories.login_attempt.sqlalchemy import (
+    SQLAlchemyLoginAttemptRepository,
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.one_time_code.base import (
     OneTimeCodeRepository,
@@ -104,6 +113,14 @@ class AuthDepProvider(Provider):
     def get_login_code_sender(self) -> LoginCodeSender:
         return LoggingLoginCodeSender(debug=settings.debug)
 
+    @provide(scope=Scope.APP)
+    def get_password_login_policy(self) -> PasswordLoginPolicy:
+        return PasswordLoginPolicy(
+            max_attempts=settings.login_max_attempts,
+            window=timedelta(seconds=settings.login_attempt_window_seconds),
+            lockout=timedelta(seconds=settings.login_lockout_seconds),
+        )
+
 
     @provide(scope=Scope.REQUEST)
     def get_credential_repository(self, session: AsyncSession) -> CredentialRepository:
@@ -112,6 +129,12 @@ class AuthDepProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_user_repository(self, session: AsyncSession) -> UserRepository:
         return SQLAlchemyUserRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_login_attempt_repository(
+        self, session: AsyncSession
+    ) -> LoginAttemptRepository:
+        return SQLAlchemyLoginAttemptRepository(session)
 
     @provide(scope=Scope.REQUEST)
     def get_user_session_repository(

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from myasnaya_derevnya.core.database import metadata
 from myasnaya_derevnya.core.settings import settings
 from myasnaya_derevnya.modules.auth.infrastructure.tables import (  # noqa: F401
+    LOGIN_ATTEMPTS_TABLE,
     USER_CREDENTIALS_TABLE,
     USER_IDENTITIES_TABLE,
     USER_SESSIONS_TABLE,

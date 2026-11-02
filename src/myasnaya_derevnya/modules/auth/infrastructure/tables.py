@@ -94,6 +94,21 @@ USER_SESSIONS_TABLE = Table(
 )
 
 
+LOGIN_ATTEMPTS_TABLE = Table(
+    "login_attempts",
+    metadata,
+    Column("identifier", String(255), primary_key=True),
+    Column("failed_attempts", Integer, nullable=False, server_default="0"),
+    Column("window_started_at", DateTime(timezone=True), nullable=False),
+    Column("locked_until", DateTime(timezone=True), nullable=True),
+    Column(
+        "updated_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Index("ix_login_attempts_updated_at", "updated_at"),
+    schema=DATABASE_SCHEMA,
+)
+
+
 ONE_TIME_CODES_TABLE = Table(
     "one_time_codes",
     metadata,

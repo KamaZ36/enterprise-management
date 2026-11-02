@@ -86,9 +86,10 @@ _CLEANUP_STATEMENTS = (
            (select id from business.org_units where code like :prefix)
     """,
     "delete from business.org_units where code like :prefix",
-    # сессии и одноразовые коды нужны только внутри отдельного теста
+    # сессии, коды и счётчики попыток нужны только внутри отдельного теста
     "delete from auth.one_time_codes",
     "delete from auth.user_sessions",
+    "delete from auth.login_attempts",
 )
 
 
