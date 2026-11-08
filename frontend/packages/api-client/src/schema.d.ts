@@ -4896,7 +4896,7 @@ export interface components {
             /** Output Quantity */
             output_quantity: string;
             /** Cost Kopecks */
-            cost_kopecks: number;
+            cost_kopecks: number | null;
         };
         /** ProductionReportSchema */
         ProductionReportSchema: {
@@ -5054,17 +5054,17 @@ export interface components {
             /** Revenue Kopecks */
             revenue_kopecks: number;
             /** Cost Kopecks */
-            cost_kopecks: number;
+            cost_kopecks: number | null;
             /** Margin Kopecks */
-            margin_kopecks: number;
+            margin_kopecks: number | null;
             /** Receipts Count */
             receipts_count: number;
             /** Stock Value Kopecks */
-            stock_value_kopecks: number;
+            stock_value_kopecks: number | null;
             /** Production Orders */
             production_orders: number;
             /** Write Off Cost Kopecks */
-            write_off_cost_kopecks: number;
+            write_off_cost_kopecks: number | null;
             /** Problem Receipts */
             problem_receipts: number;
         };
@@ -5127,9 +5127,9 @@ export interface components {
             /** Total Revenue Kopecks */
             total_revenue_kopecks: number;
             /** Total Cost Kopecks */
-            total_cost_kopecks: number;
+            total_cost_kopecks: number | null;
             /** Total Margin Kopecks */
-            total_margin_kopecks: number;
+            total_margin_kopecks: number | null;
             /** Total Receipts */
             total_receipts: number;
         };
@@ -5177,7 +5177,7 @@ export interface components {
             /** Positions */
             positions: number;
             /** Value Kopecks */
-            value_kopecks: number;
+            value_kopecks: number | null;
             /** Expiring Lots */
             expiring_lots: number;
         };
@@ -5870,7 +5870,7 @@ export interface components {
             /** Quantity */
             quantity: string;
             /** Cost Kopecks */
-            cost_kopecks: number;
+            cost_kopecks: number | null;
         };
         /** WriteOffReportSchema */
         WriteOffReportSchema: {

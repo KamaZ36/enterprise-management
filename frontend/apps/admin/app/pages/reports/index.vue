@@ -55,21 +55,35 @@
       class="page__error"
     />
 
+    <el-alert
+      v-if="!canSeeCosts"
+      type="info"
+      :closable="false"
+      show-icon
+      title="Себестоимость и маржа скрыты"
+      description="Для просмотра сумм нужно право inventory.cost.read."
+      class="page__error"
+    />
+
     <div v-if="summary" class="tiles">
       <div class="tile">
         <div class="tile__value">{{ formatKopecks(summary.revenue_kopecks) }}</div>
         <div class="tile__title">Выручка</div>
         <div class="tile__hint">{{ summary.receipts_count }} чеков</div>
       </div>
-      <div class="tile">
+      <div v-if="canSeeCosts" class="tile">
         <div class="tile__value">{{ formatKopecks(summary.cost_kopecks) }}</div>
         <div class="tile__title">Себестоимость</div>
       </div>
-      <div class="tile" :class="{ 'tile--negative': summary.margin_kopecks < 0 }">
+      <div
+        v-if="canSeeCosts"
+        class="tile"
+        :class="{ 'tile--negative': (summary.margin_kopecks ?? 0) < 0 }"
+      >
         <div class="tile__value">{{ formatKopecks(summary.margin_kopecks) }}</div>
         <div class="tile__title">Маржа</div>
       </div>
-      <div class="tile">
+      <div v-if="canSeeCosts" class="tile">
         <div class="tile__value">
           {{ formatKopecks(summary.stock_value_kopecks) }}
         </div>
@@ -79,7 +93,7 @@
         <div class="tile__value">{{ summary.production_orders }}</div>
         <div class="tile__title">Заданий производства</div>
       </div>
-      <div class="tile">
+      <div v-if="canSeeCosts" class="tile">
         <div class="tile__value">
           {{ formatKopecks(summary.write_off_cost_kopecks) }}
         </div>
@@ -115,14 +129,24 @@
               {{ formatKopecks(row.revenue_kopecks) }}
             </template>
           </el-table-column>
-          <el-table-column label="Себестоимость" width="150" align="right">
+          <el-table-column
+            v-if="canSeeCosts"
+            label="Себестоимость"
+            width="150"
+            align="right"
+          >
             <template #default="{ row }">
               {{ formatKopecks(row.cost_kopecks) }}
             </template>
           </el-table-column>
-          <el-table-column label="Маржа" width="140" align="right">
+          <el-table-column
+            v-if="canSeeCosts"
+            label="Маржа"
+            width="140"
+            align="right"
+          >
             <template #default="{ row }">
-              <span :class="{ negative: row.margin_kopecks < 0 }">
+              <span :class="{ negative: (row.margin_kopecks ?? 0) < 0 }">
                 {{ formatKopecks(row.margin_kopecks) }}
               </span>
             </template>
@@ -132,7 +156,9 @@
         <div v-if="sales && sales.items.length" class="totals">
           <span>Итого: {{ sales.total_receipts }} чеков</span>
           <span>Выручка: {{ formatKopecks(sales.total_revenue_kopecks) }}</span>
-          <span>Маржа: {{ formatKopecks(sales.total_margin_kopecks) }}</span>
+          <span v-if="canSeeCosts">
+            Маржа: {{ formatKopecks(sales.total_margin_kopecks) }}
+          </span>
         </div>
       </el-tab-pane>
 
@@ -148,7 +174,12 @@
           <el-table-column label="Позиций" width="110" align="right">
             <template #default="{ row }">{{ row.positions }}</template>
           </el-table-column>
-          <el-table-column label="Стоимость" width="160" align="right">
+          <el-table-column
+            v-if="canSeeCosts"
+            label="Стоимость"
+            width="160"
+            align="right"
+          >
             <template #default="{ row }">
               {{ formatKopecks(row.value_kopecks) }}
             </template>
@@ -182,7 +213,12 @@
               {{ formatQuantity(row.output_quantity) }}
             </template>
           </el-table-column>
-          <el-table-column label="Себестоимость" width="160" align="right">
+          <el-table-column
+            v-if="canSeeCosts"
+            label="Себестоимость"
+            width="160"
+            align="right"
+          >
             <template #default="{ row }">
               {{ formatKopecks(row.cost_kopecks) }}
             </template>
@@ -213,7 +249,12 @@
               {{ formatQuantity(row.quantity) }}
             </template>
           </el-table-column>
-          <el-table-column label="Стоимость" width="150" align="right">
+          <el-table-column
+            v-if="canSeeCosts"
+            label="Стоимость"
+            width="150"
+            align="right"
+          >
             <template #default="{ row }">
               {{ formatKopecks(row.cost_kopecks) }}
             </template>
@@ -257,6 +298,7 @@ const stock = ref<Stock | null>(null);
 const production = ref<Production | null>(null);
 const writeOffs = ref<WriteOffs | null>(null);
 
+const canSeeCosts = computed(() => can("inventory.cost.read"));
 const isCompanyWide = computed(() => (user.value?.scopes?.length ?? 0) === 0);
 
 const selectedPoint = computed(

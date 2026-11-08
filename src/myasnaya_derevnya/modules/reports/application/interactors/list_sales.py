@@ -47,11 +47,33 @@ class ListSalesReportInteractor:
             replace(row, org_unit_name=titles.get(row.org_unit_id))
             for row in rows
         ]
+        include_costs = await self._report_scope.can_see_costs()
+
+        total_cost = (
+            sum(row.cost_kopecks for row in items if row.cost_kopecks is not None)
+            if include_costs
+            else None
+        )
+        total_margin = (
+            sum(
+                row.margin_kopecks
+                for row in items
+                if row.margin_kopecks is not None
+            )
+            if include_costs
+            else None
+        )
+
+        if not include_costs:
+            items = [
+                replace(row, cost_kopecks=None, margin_kopecks=None)
+                for row in items
+            ]
 
         return SalesReport(
             items=items,
             total_revenue_kopecks=sum(row.revenue_kopecks for row in items),
-            total_cost_kopecks=sum(row.cost_kopecks for row in items),
-            total_margin_kopecks=sum(row.margin_kopecks for row in items),
+            total_cost_kopecks=total_cost,
+            total_margin_kopecks=total_margin,
             total_receipts=sum(row.receipts_count for row in items),
         )

@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from myasnaya_derevnya.core.errors import ForbiddenError
+from myasnaya_derevnya.modules.inventory.domain.permissions import READ_COSTS
 from myasnaya_derevnya.modules.reports.application.services.report_scope import (
     ReportScope,
 )
@@ -32,17 +33,30 @@ class FakeBusinessAPI:
 
 
 class FakeStaffAPI:
-    def __init__(self, scope: AccessScope) -> None:
+    def __init__(
+        self, scope: AccessScope, can_see_costs: bool = True
+    ) -> None:
         self.scope = scope
+        self.can_see_costs = can_see_costs
         self.checked: list[str] = []
+        self.cost_checked: list[str] = []
 
     async def scope_for(self, user_id: UUID, permission) -> AccessScope:
         self.checked.append(permission.code)
         return self.scope
 
+    async def can_anywhere(self, user_id: UUID, permission) -> bool:
+        self.cost_checked.append(permission.code)
+        return self.can_see_costs
 
-def build(scope: AccessScope, location_ids: list[UUID]):
-    staff_api = FakeStaffAPI(scope)
+
+def build(
+    scope: AccessScope,
+    location_ids: list[UUID],
+    *,
+    can_see_costs: bool = True,
+):
+    staff_api = FakeStaffAPI(scope, can_see_costs=can_see_costs)
     interactor = ReportScope(
         identity_provider=FakeIdentityProvider(),  # type: ignore[arg-type]
         business_api=FakeBusinessAPI(location_ids),  # type: ignore[arg-type]
@@ -81,3 +95,12 @@ async def test_empty_scope_is_forbidden() -> None:
 
     with pytest.raises(ForbiddenError):
         await interactor.visible_org_unit_ids()
+
+
+async def test_cost_access_checks_inventory_permission() -> None:
+    interactor, staff_api = build(
+        AccessScope.company_wide(), [], can_see_costs=False
+    )
+
+    assert await interactor.can_see_costs() is False
+    assert staff_api.cost_checked == [READ_COSTS.code]

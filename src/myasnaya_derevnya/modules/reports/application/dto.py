@@ -10,8 +10,8 @@ class SalesReportRow:
     org_unit_id: UUID
     org_unit_name: str | None
     revenue_kopecks: int
-    cost_kopecks: int
-    margin_kopecks: int
+    cost_kopecks: int | None
+    margin_kopecks: int | None
     receipts_count: int
 
 
@@ -20,7 +20,7 @@ class StockReportRow:
     org_unit_id: UUID
     org_unit_name: str | None
     positions: int
-    value_kopecks: int
+    value_kopecks: int | None
     expiring_lots: int
 
 
@@ -31,7 +31,7 @@ class ProductionReportRow:
     tech_card_code: str
     orders_count: int
     output_quantity: Decimal
-    cost_kopecks: int
+    cost_kopecks: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,18 +42,18 @@ class WriteOffReportRow:
     reason: str | None
     documents_count: int
     quantity: Decimal
-    cost_kopecks: int
+    cost_kopecks: int | None
 
 
 @dataclass(frozen=True, slots=True)
 class ReportSummary:
     revenue_kopecks: int
-    cost_kopecks: int
-    margin_kopecks: int
+    cost_kopecks: int | None
+    margin_kopecks: int | None
     receipts_count: int
-    stock_value_kopecks: int
+    stock_value_kopecks: int | None
     production_orders: int
-    write_off_cost_kopecks: int
+    write_off_cost_kopecks: int | None
     problem_receipts: int
 
 
@@ -61,6 +61,6 @@ class ReportSummary:
 class SalesReport:
     items: list[SalesReportRow]
     total_revenue_kopecks: int
-    total_cost_kopecks: int
-    total_margin_kopecks: int
+    total_cost_kopecks: int | None
+    total_margin_kopecks: int | None
     total_receipts: int

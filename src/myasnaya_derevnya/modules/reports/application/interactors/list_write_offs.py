@@ -45,7 +45,13 @@ class ListWriteOffReportInteractor:
             {row.org_unit_id for row in rows}
         )
 
+        include_costs = await self._report_scope.can_see_costs()
+
         return [
-            replace(row, org_unit_name=titles.get(row.org_unit_id))
+            replace(
+                row,
+                org_unit_name=titles.get(row.org_unit_id),
+                cost_kopecks=row.cost_kopecks if include_costs else None,
+            )
             for row in rows
         ]

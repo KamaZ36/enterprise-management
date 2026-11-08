@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from uuid import UUID
 
@@ -32,8 +32,19 @@ class GetSummaryInteractor:
             query.org_unit_id
         )
 
-        return await self._reader.summary(
+        summary = await self._reader.summary(
             date_from=query.date_from,
             date_to=query.date_to,
             org_unit_ids=org_unit_ids,
+        )
+
+        if await self._report_scope.can_see_costs():
+            return summary
+
+        return replace(
+            summary,
+            cost_kopecks=None,
+            margin_kopecks=None,
+            stock_value_kopecks=None,
+            write_off_cost_kopecks=None,
         )

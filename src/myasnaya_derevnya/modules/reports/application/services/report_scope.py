@@ -3,6 +3,7 @@ from uuid import UUID
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
+from myasnaya_derevnya.modules.inventory.domain.permissions import READ_COSTS
 from myasnaya_derevnya.modules.reports.domain.permissions import READ_REPORTS
 from myasnaya_derevnya.modules.staff.presentation.staff_api import StaffAPI
 
@@ -46,3 +47,10 @@ class ReportScope:
             raise ForbiddenError()
 
         return [requested]
+
+    async def can_see_costs(self) -> bool:
+        user_id = await self._identity_provider.get_current_user_id()
+
+        return await self._staff_api.can_anywhere(
+            user_id=user_id, permission=READ_COSTS
+        )
