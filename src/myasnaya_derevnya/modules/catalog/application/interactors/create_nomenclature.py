@@ -1,7 +1,10 @@
 import logging
 from dataclasses import dataclass
-from uuid import UUID
+from uuid import UUID, uuid4
 
+from sqlalchemy.exc import IntegrityError
+
+from myasnaya_derevnya.core.database.conflicts import conflict_error
 from myasnaya_derevnya.core.database.transaction_manager.base import TransactionManager
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
@@ -25,13 +28,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class CreateNomenclatureCommand:
-    sku: str
     name: str
     unit: UnitOfMeasurement
     category_id: UUID
+    sku: str | None = None
     image_url: str | None = None
     description: str | None = None
     requires_vetis: bool = False
+    gtin: str | None = None
 
 
 class CreateNomenclatureInteractor:
@@ -62,18 +66,24 @@ class CreateNomenclatureInteractor:
         if not await self._category_repository.check_exists_by_id(command.category_id):
             raise CategoryNotFound(command.category_id)
 
+        sku = (command.sku or "").strip() or f"NOM-{uuid4().hex[:8].upper()}"
+
         nomenclature = Nomenclature.create(
-            sku=command.sku,
+            sku=sku,
             name=command.name,
             unit=command.unit,
             category_id=command.category_id,
             image_url=command.image_url,
             description=command.description,
             requires_vetis=command.requires_vetis,
+            gtin=command.gtin,
         )
 
-        await self._nomenclature_repository.add(nomenclature)
-        await self._transaction_manager.commit()
+        try:
+            await self._nomenclature_repository.add(nomenclature)
+            await self._transaction_manager.commit()
+        except IntegrityError as exc:
+            raise conflict_error(exc) from exc
 
         logger.info(
             "Создана номенклатура",

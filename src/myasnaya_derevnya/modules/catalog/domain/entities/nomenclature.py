@@ -5,6 +5,7 @@ from uuid import UUID, uuid7
 from myasnaya_derevnya.modules.catalog.domain.errors import (
     EmptyNameError,
     EmptySkuError,
+    InvalidGtinError,
 )
 from myasnaya_derevnya.utils import get_datetime_utc
 
@@ -15,6 +16,28 @@ class UnitOfMeasurement(StrEnum):
     PIECE = "pcs"
     LITER = "l"
     METER = "m"
+
+
+GTIN_LENGTHS = frozenset({8, 13, 14})
+
+
+def normalize_gtin(gtin: str | None) -> str | None:
+    """Возвращает GTIN без пробелов или ``None``, если значение пустое."""
+
+    normalized = gtin.strip() if gtin else ""
+
+    return normalized or None
+
+
+def validate_gtin(gtin: str | None) -> str | None:
+    normalized = normalize_gtin(gtin)
+    if normalized is None:
+        return None
+
+    if not normalized.isdigit() or len(normalized) not in GTIN_LENGTHS:
+        raise InvalidGtinError(normalized)
+
+    return normalized
 
 
 class Nomenclature:
@@ -30,6 +53,7 @@ class Nomenclature:
         image_url: str | None = None,
         description: str | None = None,
         requires_vetis: bool = False,
+        gtin: str | None = None,
     ) -> None:
         self._id = id
         self._sku = sku
@@ -41,6 +65,7 @@ class Nomenclature:
         self._image_url = image_url
         self._description = description
         self._requires_vetis = requires_vetis
+        self._gtin = normalize_gtin(gtin)
 
     @classmethod
     def create(
@@ -52,6 +77,7 @@ class Nomenclature:
         image_url: str | None = None,
         description: str | None = None,
         requires_vetis: bool = False,
+        gtin: str | None = None,
     ) -> Nomenclature:
         if not name.strip():
             raise EmptyNameError()
@@ -68,6 +94,7 @@ class Nomenclature:
             image_url=image_url,
             description=description,
             requires_vetis=requires_vetis,
+            gtin=validate_gtin(gtin),
         )
 
     @property
@@ -109,6 +136,13 @@ class Nomenclature:
     @property
     def requires_vetis(self) -> bool:
         return self._requires_vetis
+
+    @property
+    def gtin(self) -> str | None:
+        return self._gtin
+
+    def change_gtin(self, gtin: str | None) -> None:
+        self._gtin = validate_gtin(gtin)
 
     def change_vetis_requirement(self, requires_vetis: bool) -> None:
         self._requires_vetis = requires_vetis

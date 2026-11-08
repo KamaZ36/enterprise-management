@@ -11,6 +11,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -78,6 +79,12 @@ NOMENCLATURES_TABLE = Table(
         onupdate=func.now(),
     ),
     Index("ix_nomenclatures_category_id", "category_id"),
+    Index(
+        "uq_nomenclatures_gtin",
+        "gtin",
+        unique=True,
+        postgresql_where=text("gtin IS NOT NULL"),
+    ),
     schema=DATABASE_SCHEMA,
 )
 

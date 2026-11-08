@@ -41,6 +41,8 @@ class UpdateNomenclatureCommand:
 
     image_url: str | None = None
     description: str | None = None
+    gtin: str | None = None
+    set_gtin: bool = False
 
 
 class UpdateNomenclatureInteractor:
@@ -110,6 +112,8 @@ class UpdateNomenclatureInteractor:
             nomenclature.change_image_url(command.image_url)
         if command.description is not None:
             nomenclature.change_description(command.description)
+        if command.set_gtin or command.gtin is not None:
+            nomenclature.change_gtin(command.gtin)
 
         await self._nomenclature_repository.save(nomenclature)
         await self._transaction_manager.commit()

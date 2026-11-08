@@ -46,6 +46,7 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 NOMENCLATURES_TABLE.c.image_url,
                 NOMENCLATURES_TABLE.c.description,
                 NOMENCLATURES_TABLE.c.requires_vetis,
+                NOMENCLATURES_TABLE.c.gtin,
                 CATEGORIES_TABLE.c.name.label("category_name"),
             )
             .join(
@@ -74,6 +75,7 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 or_(
                     NOMENCLATURES_TABLE.c.sku == exact,
                     NOMENCLATURES_TABLE.c.name == exact,
+                    NOMENCLATURES_TABLE.c.gtin == exact,
                 ),
                 0,
             ),
@@ -93,6 +95,7 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
                 or_(
                     NOMENCLATURES_TABLE.c.name.ilike(like_pattern(token), escape="\\"),
                     NOMENCLATURES_TABLE.c.sku.ilike(like_pattern(token), escape="\\"),
+                    NOMENCLATURES_TABLE.c.gtin == token,
                 )
                 for token in search.split()
             )
@@ -113,4 +116,5 @@ class SQLAlchemyNomenclatureReader(NomenclatureReader):
             image_url=row["image_url"],
             description=row["description"],
             requires_vetis=row["requires_vetis"],
+            gtin=row["gtin"],
         )

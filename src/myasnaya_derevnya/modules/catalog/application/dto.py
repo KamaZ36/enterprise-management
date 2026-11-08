@@ -19,6 +19,7 @@ class NomenclatureListItem:
     image_url: str | None = None
     description: str | None = None
     requires_vetis: bool = False
+    gtin: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

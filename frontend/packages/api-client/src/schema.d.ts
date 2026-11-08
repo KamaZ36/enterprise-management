@@ -2768,7 +2768,7 @@ export interface components {
         /** CreateNomenclatureSchema */
         CreateNomenclatureSchema: {
             /** Sku */
-            sku: string;
+            sku?: string | null;
             /** Name */
             name: string;
             unit: components["schemas"]["UnitOfMeasurement"];
@@ -2786,6 +2786,8 @@ export interface components {
              * @default false
              */
             requires_vetis: boolean;
+            /** Gtin */
+            gtin?: string | null;
         };
         /** CreateOpeningBalanceSchema */
         CreateOpeningBalanceSchema: {
@@ -3741,6 +3743,8 @@ export interface components {
              * @default false
              */
             requires_vetis: boolean;
+            /** Gtin */
+            gtin?: string | null;
         };
         /** OfdBatchPostResultSchema */
         OfdBatchPostResultSchema: {
@@ -5453,6 +5457,8 @@ export interface components {
             image_url?: string | null;
             /** Description */
             description?: string | null;
+            /** Gtin */
+            gtin?: string | null;
         };
         /** UpdateOpeningBalanceSchema */
         UpdateOpeningBalanceSchema: {

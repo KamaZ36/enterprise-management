@@ -31,6 +31,7 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 image_url=nomenclature.image_url,
                 description=nomenclature.description,
                 requires_vetis=nomenclature.requires_vetis,
+                gtin=nomenclature.gtin,
                 created_at=nomenclature.created_at,
             )
         )
@@ -48,6 +49,7 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
                 image_url=nomenclature.image_url,
                 description=nomenclature.description,
                 requires_vetis=nomenclature.requires_vetis,
+                gtin=nomenclature.gtin,
             )
         )
 
@@ -97,6 +99,7 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
             or_(
                 NOMENCLATURES_TABLE.c.name.ilike(like_pattern(token), escape="\\"),
                 NOMENCLATURES_TABLE.c.sku.ilike(like_pattern(token), escape="\\"),
+                NOMENCLATURES_TABLE.c.gtin == token,
             )
             for token in tokens
         ]
@@ -142,4 +145,5 @@ class SQLAlchemyNomenclatureRepository(NomenclatureRepository):
             image_url=row["image_url"],
             description=row["description"],
             requires_vetis=row["requires_vetis"],
+            gtin=row["gtin"],
         )

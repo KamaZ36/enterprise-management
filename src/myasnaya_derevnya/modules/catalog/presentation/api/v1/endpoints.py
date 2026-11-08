@@ -112,6 +112,7 @@ async def create_nomenclature(
         image_url=data.image_url,
         description=data.description,
         requires_vetis=data.requires_vetis,
+        gtin=data.gtin,
     )
 
     async with container(context={Request: request}) as context:
@@ -237,6 +238,8 @@ async def update_nomenclature(
         set_requires_vetis="requires_vetis" in data.model_fields_set,
         image_url=data.image_url,
         description=data.description,
+        gtin=data.gtin or "",
+        set_gtin="gtin" in data.model_fields_set,
     )
 
     async with container(context={Request: request}) as context:

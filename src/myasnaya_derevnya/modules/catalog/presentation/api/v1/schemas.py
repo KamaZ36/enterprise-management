@@ -16,13 +16,14 @@ from myasnaya_derevnya.modules.catalog.domain.entities.nomenclature import (
 
 
 class CreateNomenclatureSchema(BaseModel):
-    sku: str
-    name: str
+    sku: str | None = Field(default=None, max_length=64)
+    name: str = Field(min_length=1, max_length=255)
     unit: UnitOfMeasurement
     category_id: UUID
     image_url: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)
     requires_vetis: bool = False
+    gtin: str | None = Field(default=None, max_length=14)
 
 
 class NomenclatureSchema(BaseModel):
@@ -36,6 +37,7 @@ class NomenclatureSchema(BaseModel):
     image_url: str | None = None
     description: str | None = None
     requires_vetis: bool = False
+    gtin: str | None = None
 
     @classmethod
     def from_dto(cls, item: NomenclatureListItem) -> NomenclatureSchema:
@@ -50,6 +52,7 @@ class NomenclatureSchema(BaseModel):
             image_url=item.image_url,
             description=item.description,
             requires_vetis=item.requires_vetis,
+            gtin=item.gtin,
         )
 
 
@@ -81,6 +84,7 @@ class UpdateNomenclatureSchema(BaseModel):
     requires_vetis: bool | None = None
     image_url: str | None = Field(default=None, max_length=512)
     description: str | None = Field(default=None, max_length=1024)
+    gtin: str | None = Field(default=None, max_length=14)
 
 
 class CreateCategorySchema(BaseModel):

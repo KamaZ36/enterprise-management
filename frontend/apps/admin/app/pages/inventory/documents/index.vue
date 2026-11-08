@@ -402,6 +402,7 @@
             remote
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
+            @focus="line.query = ''"
             class="line__name"
           >
             <el-option
@@ -410,6 +411,23 @@
               :label="`${option.name} · ${option.sku}`"
               :value="option.id"
             />
+            <template #empty>
+              <div class="nomenclature-empty">
+                <template v-if="line.query">
+                  <span>Ничего не найдено</span>
+                  <el-button
+                    v-if="can('nomenclature.create')"
+                    text
+                    type="primary"
+                    size="small"
+                    @click.stop="openQuickNomenclature(line)"
+                  >
+                    Создать «{{ line.query }}»
+                  </el-button>
+                </template>
+                <span v-else>Начните вводить название или артикул</span>
+              </div>
+            </template>
           </el-select>
 
           <el-input v-model="line.quantity" class="line__qty" placeholder="например 2,5" />
@@ -522,6 +540,7 @@
             remote
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
+            @focus="line.query = ''"
             class="line__name"
             @change="(value) => setNomenclature(line, value as string)"
           >
@@ -531,6 +550,23 @@
               :label="`${option.name} · ${option.sku}`"
               :value="option.id"
             />
+            <template #empty>
+              <div class="nomenclature-empty">
+                <template v-if="line.query">
+                  <span>Ничего не найдено</span>
+                  <el-button
+                    v-if="can('nomenclature.create')"
+                    text
+                    type="primary"
+                    size="small"
+                    @click.stop="openQuickNomenclature(line)"
+                  >
+                    Создать «{{ line.query }}»
+                  </el-button>
+                </template>
+                <span v-else>Начните вводить название или артикул</span>
+              </div>
+            </template>
           </el-select>
 
           <el-input v-model="line.quantity" class="line__qty" placeholder="например 12,5" />
@@ -647,6 +683,7 @@
             remote
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
+            @focus="line.query = ''"
             class="line__name"
           >
             <el-option
@@ -655,6 +692,23 @@
               :label="option.sku ? `${option.name} · ${option.sku}` : option.name"
               :value="option.id"
             />
+            <template #empty>
+              <div class="nomenclature-empty">
+                <template v-if="line.query">
+                  <span>Ничего не найдено</span>
+                  <el-button
+                    v-if="can('nomenclature.create')"
+                    text
+                    type="primary"
+                    size="small"
+                    @click.stop="openQuickNomenclature(line)"
+                  >
+                    Создать «{{ line.query }}»
+                  </el-button>
+                </template>
+                <span v-else>Начните вводить название или артикул</span>
+              </div>
+            </template>
           </el-select>
 
           <el-input v-model="line.quantity" class="line__qty" placeholder="например 2,5" />
@@ -959,6 +1013,7 @@
             remote
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
+            @focus="line.query = ''"
             class="line__name"
             @change="onInventoryCountNomenclatureChange"
           >
@@ -968,6 +1023,23 @@
               :label="option.sku ? `${option.name} · ${option.sku}` : option.name"
               :value="option.id"
             />
+            <template #empty>
+              <div class="nomenclature-empty">
+                <template v-if="line.query">
+                  <span>Ничего не найдено</span>
+                  <el-button
+                    v-if="can('nomenclature.create')"
+                    text
+                    type="primary"
+                    size="small"
+                    @click.stop="openQuickNomenclature(line)"
+                  >
+                    Создать «{{ line.query }}»
+                  </el-button>
+                </template>
+                <span v-else>Начните вводить название или артикул</span>
+              </div>
+            </template>
           </el-select>
 
           <span class="line__qty line__qty--book">{{ bookQuantity(line.nomenclature_id) }}</span>
@@ -1153,6 +1225,7 @@
             remote
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
+            @focus="line.query = ''"
             class="line__name"
           >
             <el-option
@@ -1161,6 +1234,23 @@
               :label="option.sku ? `${option.name} · ${option.sku}` : option.name"
               :value="option.id"
             />
+            <template #empty>
+              <div class="nomenclature-empty">
+                <template v-if="line.query">
+                  <span>Ничего не найдено</span>
+                  <el-button
+                    v-if="can('nomenclature.create')"
+                    text
+                    type="primary"
+                    size="small"
+                    @click.stop="openQuickNomenclature(line)"
+                  >
+                    Создать «{{ line.query }}»
+                  </el-button>
+                </template>
+                <span v-else>Начните вводить название или артикул</span>
+              </div>
+            </template>
           </el-select>
 
           <el-input v-model="line.quantity" class="line__qty" placeholder="например 12,5" />
@@ -1283,6 +1373,116 @@
         </div>
       </template>
     </el-drawer>
+
+    <el-dialog v-model="quickOpen" title="Новая номенклатура" width="560">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="Позиция создастся и сразу подставится в строку"
+        description="Артикул можно не заполнять — сгенерируем автоматически. Штрихкод поможет находить товар сканером."
+        class="page__error"
+      />
+
+      <el-alert
+        v-if="quickError"
+        :title="quickError"
+        type="error"
+        :closable="false"
+        show-icon
+        class="page__error"
+      />
+
+      <el-alert
+        v-if="quickMatches.length"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="Похожие позиции уже есть"
+        description="Проверьте, не создаёте ли дубль. Можно выбрать существующую строку."
+        class="page__error"
+      />
+      <div v-if="quickMatches.length" class="quick-matches">
+        <div v-for="match in quickMatches" :key="match.id" class="quick-match">
+          <span>{{ match.name }} · {{ match.sku }}</span>
+          <el-button text type="primary" size="small" @click="chooseExistingNomenclature(match)">
+            Выбрать
+          </el-button>
+        </div>
+      </div>
+
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item label="Название">
+          <el-input
+            v-model="quickForm.name"
+            placeholder="Например: Говядина лопатка"
+            @change="loadQuickMatches"
+          />
+        </el-form-item>
+
+        <div class="form-grid">
+          <el-form-item label="Артикул">
+            <el-input v-model="quickForm.sku" placeholder="необязательно" />
+          </el-form-item>
+          <el-form-item label="Штрихкод (GTIN)">
+            <el-input v-model="quickForm.gtin" placeholder="4600000000017" maxlength="14" />
+          </el-form-item>
+          <el-form-item label="Единица измерения">
+            <el-select v-model="quickForm.unit" style="width: 100%">
+              <el-option
+                v-for="(title, code) in UNITS"
+                :key="code"
+                :label="title"
+                :value="code"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="Категория">
+            <el-select
+              v-model="quickForm.category_id"
+              placeholder="Выберите категорию"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="category in quickCategories"
+                :key="category.id"
+                :label="category.name"
+                :value="category.id"
+              />
+            </el-select>
+          </el-form-item>
+        </div>
+
+        <el-form-item label="ВетИС">
+          <el-select v-model="quickForm.requires_vetis" style="width: 100%">
+            <el-option label="Не требуется" :value="false" />
+            <el-option label="Требуется ВСД" :value="true" />
+          </el-select>
+          <span class="hint">включайте для мяса, молочки и рыбы</span>
+        </el-form-item>
+
+        <el-alert
+          v-if="!quickCategories.length"
+          type="warning"
+          :closable="false"
+          show-icon
+          title="Нет доступных категорий"
+          description="Создайте категорию в справочнике, иначе номенклатуру сохранить не получится."
+        />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="quickOpen = false">Отмена</el-button>
+        <el-button
+          type="primary"
+          :loading="quickSaving"
+          :disabled="!quickForm.name.trim() || !quickForm.category_id"
+          @click="createQuickNomenclature"
+        >
+          Создать и выбрать
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1294,6 +1494,7 @@ definePageMeta({ permissions: CAN.documentsOpen });
 import { formatKopecks, formatQuantity } from "@md/money";
 import type { components } from "@md/api-client";
 import { locationDisplay } from "~/utils/locations";
+import { UNITS } from "~/utils/labels";
 
 type ReceiptListItem = components["schemas"]["ReceiptListItemSchema"];
 type ReceiptDetail = components["schemas"]["ReceiptDetailSchema"];
@@ -1355,9 +1556,15 @@ type NomenclatureOption = {
   sku: string;
   requires_vetis?: boolean;
 };
+type NomenclatureLine = {
+  nomenclature_id: string;
+  options: NomenclatureOption[];
+  query?: string;
+};
 type DraftLine = {
   nomenclature_id: string;
   options: NomenclatureOption[];
+  query?: string;
   quantity: string;
   unit_cost: string;
   lot_code: string;
@@ -1408,6 +1615,7 @@ const lines = ref<DraftLine[]>([emptyLine()]);
 type WriteOffLine = {
   nomenclature_id: string;
   options: NomenclatureOption[];
+  query?: string;
   quantity: string;
   lot_code: string;
 };
@@ -1762,15 +1970,174 @@ function setNomenclature(line: DraftLine, nomenclatureId: string): void {
 }
 
 async function searchNomenclature(
-  line: { options: NomenclatureOption[] },
+  line: NomenclatureLine,
   query: string,
 ): Promise<void> {
+  line.query = query.trim();
+
   const { data, response } = await api.GET("/api/catalog/nomenclatures", {
     params: { query: { search: query || undefined, limit: 20 } },
   });
 
   if (response.ok && data) {
     line.options = data.items;
+  }
+}
+
+type NomenclatureCategory = components["schemas"]["CategorySchema"];
+type NomenclatureUnit = components["schemas"]["CreateNomenclatureSchema"]["unit"];
+
+const quickOpen = ref(false);
+const quickSaving = ref(false);
+const quickError = ref("");
+const quickTarget = ref<NomenclatureLine | null>(null);
+const quickCategories = ref<NomenclatureCategory[]>([]);
+const quickMatches = ref<NomenclatureOption[]>([]);
+const quickForm = reactive({
+  name: "",
+  sku: "",
+  gtin: "",
+  unit: "kg" as NomenclatureUnit,
+  category_id: "",
+  requires_vetis: false,
+});
+
+async function loadQuickCategories(): Promise<void> {
+  if (quickCategories.value.length || !can("category.read")) {
+    return;
+  }
+
+  const { data, response } = await api.GET("/api/catalog/categories", {});
+  if (response.ok && data) {
+    quickCategories.value = data;
+  }
+}
+
+async function loadQuickMatches(): Promise<void> {
+  const name = quickForm.name.trim();
+  if (name.length < 2) {
+    quickMatches.value = [];
+    return;
+  }
+
+  const { data, response } = await api.GET("/api/catalog/nomenclatures", {
+    params: { query: { search: name, limit: 5 } },
+  });
+
+  if (response.ok && data) {
+    quickMatches.value = data.items;
+  }
+}
+
+function openQuickNomenclature(line: NomenclatureLine): void {
+  quickTarget.value = line;
+  quickError.value = "";
+  quickForm.name = (line.query ?? "").trim();
+  quickForm.sku = "";
+  quickForm.gtin = "";
+  quickForm.unit = "kg";
+  quickForm.requires_vetis = false;
+  quickForm.category_id = quickCategories.value[0]?.id ?? "";
+  quickMatches.value = [];
+  quickOpen.value = true;
+
+  void loadQuickCategories().then(() => {
+    if (!quickForm.category_id) {
+      quickForm.category_id = quickCategories.value[0]?.id ?? "";
+    }
+  });
+  void loadQuickMatches();
+}
+
+function chooseExistingNomenclature(option: NomenclatureOption): void {
+  const target = quickTarget.value;
+  if (!target) {
+    return;
+  }
+
+  if (!target.options.some((item) => item.id === option.id)) {
+    target.options = [option, ...target.options];
+  }
+  target.nomenclature_id = option.id;
+
+  if ("requires_vetis" in target) {
+    setNomenclature(target as DraftLine, option.id);
+  }
+  if ("counted_quantity" in target) {
+    void loadBookQuantity(option.id);
+  }
+
+  quickOpen.value = false;
+  notice.value = `Выбрана существующая позиция «${option.name}»`;
+}
+
+async function createQuickNomenclature(): Promise<void> {
+  quickSaving.value = true;
+  quickError.value = "";
+
+  try {
+    const name = quickForm.name.trim();
+    const created = await api.POST("/api/catalog/nomenclatures", {
+      body: {
+        name,
+        sku: quickForm.sku.trim() || null,
+        gtin: quickForm.gtin.trim() || null,
+        unit: quickForm.unit,
+        category_id: quickForm.category_id,
+        requires_vetis: quickForm.requires_vetis,
+      },
+    });
+
+    if (!created.response.ok || !created.data) {
+      throw new Error(
+        serverMessage(
+          created.error,
+          `Не удалось создать номенклатуру: ${created.response.status}`,
+        ),
+      );
+    }
+
+    const createdId = (
+      created.data as unknown as { nomenclature_id: string }
+    ).nomenclature_id;
+    const listed = await api.GET("/api/catalog/nomenclatures", {
+      params: { query: { search: name, limit: 20 } },
+    });
+
+    const target = quickTarget.value;
+    if (target) {
+      const items: NomenclatureOption[] = listed.data?.items ?? [];
+      const found = items.find((item) => item.id === createdId);
+
+      target.options = found
+        ? items
+        : [
+            {
+              id: createdId,
+              name,
+              sku: quickForm.sku.trim(),
+              requires_vetis: quickForm.requires_vetis,
+            },
+            ...items,
+          ];
+      target.nomenclature_id = createdId;
+
+      if ("requires_vetis" in target) {
+        setNomenclature(target as DraftLine, createdId);
+      }
+      if ("counted_quantity" in target) {
+        void loadBookQuantity(createdId);
+      }
+    }
+
+    notice.value = `Номенклатура «${name}» создана и выбрана`;
+    quickMatches.value = [];
+    quickOpen.value = false;
+  } catch (cause) {
+    quickError.value =
+      cause instanceof Error ? cause.message : "Ошибка создания номенклатуры";
+  } finally {
+    quickSaving.value = false;
   }
 }
 
@@ -2131,6 +2498,7 @@ async function loadTransfers(): Promise<void> {
 
 type TransferLine = {
   nomenclature_id: string;
+  query?: string;
   quantity: string;
   lot_code: string;
   options: NomenclatureOption[];
@@ -2356,6 +2724,7 @@ function openTransferEdit(): void {
 type InventoryCountLine = {
   nomenclature_id: string;
   options: NomenclatureOption[];
+  query?: string;
   counted_quantity: string;
   lot_code: string;
 };
@@ -2677,6 +3046,7 @@ async function postInventoryCount(id: string): Promise<void> {
 type OpeningBalanceLine = {
   nomenclature_id: string;
   options: NomenclatureOption[];
+  query?: string;
   quantity: string;
   unit_cost: string;
   lot_code: string;
@@ -3190,5 +3560,32 @@ async function deleteInventoryCount(id: string): Promise<void> {
 
 .hint {
   font-size: 11px;
+}
+
+.nomenclature-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.quick-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+
+.quick-match {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
 }
 </style>

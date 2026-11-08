@@ -10,7 +10,7 @@
       </el-button>
       <el-input
         v-model="search"
-        placeholder="Название или артикул"
+        placeholder="Название, артикул или штрихкод"
         clearable
         style="max-width: 320px"
         @keyup.enter="applySearch"
@@ -39,6 +39,9 @@
 
     <el-table v-loading="pending" :data="items" stripe border>
       <el-table-column prop="sku" label="Артикул" width="180" />
+      <el-table-column label="Штрихкод" width="160">
+        <template #default="{ row }">{{ row.gtin ?? "—" }}</template>
+      </el-table-column>
       <el-table-column prop="name" label="Название" min-width="260" />
       <el-table-column label="Ед." width="90">
         <template #default="{ row }">{{ label(UNITS, row.unit) }}</template>
@@ -153,6 +156,11 @@
         <div class="form-grid">
           <el-form-item label="Артикул">
             <el-input v-model="form.sku" placeholder="BEEF-SHOULDER" />
+            <span class="hint">можно не заполнять — сгенерируем автоматически</span>
+          </el-form-item>
+          <el-form-item label="Штрихкод (GTIN)">
+            <el-input v-model="form.gtin" placeholder="4600000000017" maxlength="14" />
+            <span class="hint">8, 13 или 14 цифр с упаковки</span>
           </el-form-item>
           <el-form-item label="Название">
             <el-input v-model="form.name" placeholder="Говядина лопатка" />
@@ -236,7 +244,7 @@
         <el-button
           type="primary"
           :loading="saving"
-          :disabled="!form.sku || !form.name || !form.category_id"
+          :disabled="!form.name || !form.category_id"
           @click="createNomenclature"
         >
           Создать
@@ -260,6 +268,10 @@
                 :value="code"
               />
             </el-select>
+          </el-form-item>
+          <el-form-item label="Штрихкод (GTIN)">
+            <el-input v-model="editForm.gtin" placeholder="4600000000017" maxlength="14" />
+            <span class="hint">8, 13 или 14 цифр; пусто — без штрихкода</span>
           </el-form-item>
         </div>
 
@@ -378,6 +390,7 @@ const editForm = reactive({
   requires_vetis: false,
   image_url: "",
   description: "",
+  gtin: "",
 });
 const saving = ref(false);
 const uploading = ref(false);
@@ -391,6 +404,7 @@ const form = reactive({
   requires_vetis: false,
   image_url: "",
   description: "",
+  gtin: "",
 });
 
 function reasonOf(status: number, fallback: string): string {
@@ -398,7 +412,7 @@ function reasonOf(status: number, fallback: string): string {
     return "Нет прав на это действие";
   }
   if (status === 409) {
-    return "Номенклатура с таким артикулом уже есть";
+    return "Артикул или штрихкод уже заняты другой номенклатурой";
   }
   if (status === 422) {
     return "Проверьте заполненные поля";
@@ -464,6 +478,7 @@ function openCreate(): void {
   form.requires_vetis = false;
   form.image_url = "";
   form.description = "";
+  form.gtin = "";
   createOpen.value = true;
 }
 
@@ -474,13 +489,14 @@ async function createNomenclature(): Promise<void> {
   try {
     const { response } = await api.POST("/api/catalog/nomenclatures", {
       body: {
-        sku: form.sku.trim(),
+        sku: form.sku.trim() || null,
         name: form.name.trim(),
         unit: form.unit as Nomenclature["unit"],
         category_id: form.category_id,
         requires_vetis: form.requires_vetis,
         image_url: form.image_url.trim() || null,
         description: form.description.trim() || null,
+        gtin: form.gtin.trim() || null,
       },
     });
 
@@ -552,6 +568,7 @@ function openEdit(row: Nomenclature): void {
   editForm.requires_vetis = row.requires_vetis;
   editForm.image_url = row.image_url ?? "";
   editForm.description = row.description ?? "";
+  editForm.gtin = row.gtin ?? "";
   editOpen.value = true;
 }
 
@@ -585,6 +602,9 @@ async function saveEdit(): Promise<void> {
   }
   if (editForm.description.trim() !== (row.description ?? "")) {
     body.description = editForm.description.trim();
+  }
+  if (editForm.gtin.trim() !== (row.gtin ?? "")) {
+    body.gtin = editForm.gtin.trim();
   }
 
   if (!Object.keys(body).length) {
