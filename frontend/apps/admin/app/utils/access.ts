@@ -1,6 +1,12 @@
 export const CAN = {
   documentsOpen: ["inventory.document.read", "nomenclature.read"],
   documentsCreate: ["inventory.document.create", "nomenclature.read"],
+  openingBalancesOpen: [
+    "inventory.document.read",
+    "inventory.opening_balance.manage",
+    "nomenclature.read",
+  ],
+  openingBalancesManage: ["inventory.opening_balance.manage"],
   balancesOpen: ["inventory.balance.read"],
   lotsOpen: ["inventory.balance.read"],
   movementsOpen: ["inventory.balance.read"],

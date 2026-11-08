@@ -16,7 +16,9 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
     LocationNotFoundError,
     OpeningBalanceNotFoundError,
 )
-from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
+from myasnaya_derevnya.modules.inventory.domain.permissions import (
+    MANAGE_OPENING_BALANCE,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.opening_balance.base import (
     OpeningBalanceRepository,
 )
@@ -76,7 +78,7 @@ class UpdateOpeningBalanceInteractor:
 
         allowed = await self._staff_api.can(
             user_id=current_user_id,
-            permission=CREATE_DOCUMENT,
+            permission=MANAGE_OPENING_BALANCE,
             org_unit_id=location.id,
         )
         if not allowed:

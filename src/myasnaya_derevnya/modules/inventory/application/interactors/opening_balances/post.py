@@ -21,7 +21,9 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
     OpeningBalanceNotFoundError,
 )
-from myasnaya_derevnya.modules.inventory.domain.permissions import POST_DOCUMENT
+from myasnaya_derevnya.modules.inventory.domain.permissions import (
+    MANAGE_OPENING_BALANCE,
+)
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
     DocumentType,
 )
@@ -78,7 +80,7 @@ class PostOpeningBalanceInteractor:
 
         allowed = await self._staff_api.can(
             user_id=current_user_id,
-            permission=POST_DOCUMENT,
+            permission=MANAGE_OPENING_BALANCE,
             org_unit_id=location.id,
         )
         if not allowed:

@@ -23,9 +23,6 @@
       <el-button v-if="canCreateDocument" @click="openInventoryCountCreate">
         Новая инвентаризация
       </el-button>
-      <el-button v-if="canCreateDocument" @click="openOpeningBalanceCreate">
-        Ввод начальных остатков
-      </el-button>
       <el-input
         v-model="filter"
         placeholder="Поставщик, номер документа или причина"
@@ -51,7 +48,6 @@
       <el-tab-pane label="Списания" name="write-offs" />
       <el-tab-pane label="Перемещения" name="transfers" />
       <el-tab-pane label="Инвентаризации" name="inventory-counts" />
-      <el-tab-pane label="Ввод остатков" name="opening-balances" />
     </el-tabs>
 
     <el-alert
@@ -239,63 +235,6 @@
       </el-table-column>
       <template #empty>
         <el-empty description="Инвентаризаций пока нет" />
-      </template>
-    </el-table>
-
-    <el-table
-      v-else-if="tab === 'opening-balances'"
-      v-loading="pending"
-      :data="openingBalances"
-      stripe
-      border
-      @row-click="openOpeningBalance"
-    >
-      <el-table-column label="Дата" width="120">
-        <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
-      </el-table-column>
-      <el-table-column label="Номер" width="150">
-        <template #default="{ row }">{{ row.number ?? "—" }}</template>
-      </el-table-column>
-      <el-table-column label="Подразделение" min-width="180">
-        <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
-      </el-table-column>
-      <el-table-column label="Комментарий" min-width="220">
-        <template #default="{ row }">{{ row.comment ?? "—" }}</template>
-      </el-table-column>
-      <el-table-column prop="line_count" label="Строк" width="90" align="right" />
-      <el-table-column label="Сумма" width="150" align="right">
-        <template #default="{ row }">{{ formatKopecks(row.total_kopecks) }}</template>
-      </el-table-column>
-      <el-table-column label="Статус" width="120">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 'posted' ? 'success' : 'info'" effect="light">
-            {{ row.status === "posted" ? "проведён" : "черновик" }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column width="230" align="right">
-        <template #default="{ row }">
-          <el-button
-            v-if="row.status === 'draft' && can('inventory.document.post')"
-            text
-            :disabled="busy"
-            @click.stop="askDoc('opening-balance', 'post', row as OpeningBalanceListItem)"
-          >
-            Провести
-          </el-button>
-          <el-button
-            v-if="row.status === 'draft' && canCreateDocument"
-            text
-            type="danger"
-            :disabled="busy"
-            @click.stop="askDoc('opening-balance', 'delete', row as OpeningBalanceListItem)"
-          >
-            Удалить
-          </el-button>
-        </template>
-      </el-table-column>
-      <template #empty>
-        <el-empty description="Вводов остатков пока нет" />
       </template>
     </el-table>
 
@@ -1157,332 +1096,8 @@
       </template>
     </el-drawer>
 
-    <el-dialog
-      v-model="obOpen"
-      :title="obEditingId ? 'Изменить ввод остатков' : 'Ввод начальных остатков'"
-      width="900"
-    >
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        title="Документ для перехода с бумажного учёта"
-        description="Укажите количество, себестоимость, партию и срок годности. После проведения остатки попадут в баланс и отчёты."
-        class="page__error"
-      />
 
-      <el-alert
-        v-if="obError"
-        :title="obError"
-        type="error"
-        :closable="false"
-        show-icon
-        class="page__error"
-      />
-
-      <el-form label-position="top" @submit.prevent>
-        <div class="form-grid">
-          <el-form-item label="Подразделение">
-            <el-select
-              v-model="obForm.org_unit_id"
-              style="width: 100%"
-              :disabled="Boolean(obEditingId)"
-            >
-              <LocationOptions :locations="locations" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="Дата и время">
-            <el-date-picker
-              v-model="obForm.occurred_at"
-              type="datetime"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </div>
-
-        <el-form-item label="Комментарий">
-          <el-input v-model="obForm.comment" placeholder="Например: перенос остатков на 01.11.2026" />
-        </el-form-item>
-
-        <div class="lines-head">
-          <span>Строки документа</span>
-          <el-button size="small" @click="addOpeningBalanceLine">Добавить строку</el-button>
-        </div>
-
-        <div class="line line--head">
-          <span class="line__name">Номенклатура</span>
-          <span class="line__qty">Количество</span>
-          <span class="line__qty">Цена, ₽</span>
-          <span class="line__lot">Партия</span>
-          <span class="line__date">Годен до</span>
-          <span class="line__action" />
-        </div>
-
-        <div v-for="(line, index) in obLines" :key="index" class="line">
-          <el-select
-            v-model="line.nomenclature_id"
-            filterable
-            remote
-            placeholder="Начните вводить название или артикул"
-            :remote-method="(query: string) => searchNomenclature(line, query)"
-            @focus="line.query = ''"
-            class="line__name"
-          >
-            <el-option
-              v-for="option in line.options"
-              :key="option.id"
-              :label="option.sku ? `${option.name} · ${option.sku}` : option.name"
-              :value="option.id"
-            />
-            <template #empty>
-              <div class="nomenclature-empty">
-                <template v-if="line.query">
-                  <span>Ничего не найдено</span>
-                  <el-button
-                    v-if="can('nomenclature.create')"
-                    text
-                    type="primary"
-                    size="small"
-                    @click.stop="openQuickNomenclature(line)"
-                  >
-                    Создать «{{ line.query }}»
-                  </el-button>
-                </template>
-                <span v-else>Начните вводить название или артикул</span>
-              </div>
-            </template>
-          </el-select>
-
-          <el-input v-model="line.quantity" class="line__qty" placeholder="например 12,5" />
-          <el-input v-model="line.unit_cost" class="line__qty" placeholder="например 450,50" />
-          <el-input v-model="line.lot_code" class="line__lot" placeholder="Партия" />
-          <el-date-picker
-            v-model="line.expires_at"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="Годен до"
-            class="line__date"
-          />
-          <el-button
-            text
-            type="danger"
-            :disabled="obLines.length === 1"
-            @click="removeOpeningBalanceLine(index)"
-          >
-            Убрать
-          </el-button>
-        </div>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="obOpen = false">Отмена</el-button>
-        <el-button :loading="obSaving" :disabled="!obCanSubmit" @click="saveOpeningBalance(false)">
-          {{ obEditingId ? "Сохранить" : "Сохранить черновик" }}
-        </el-button>
-        <el-button
-          v-if="!obEditingId"
-          type="primary"
-          :loading="obSaving"
-          :disabled="!obCanSubmit"
-          @click="saveOpeningBalance(true)"
-        >
-          Сохранить и провести
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <el-drawer v-model="obDrawerOpen" :title="obDrawerTitle" size="680px">
-      <template v-if="openingBalanceDetail">
-        <el-alert
-          v-if="obDetailError"
-          :title="obDetailError"
-          type="error"
-          :closable="false"
-          show-icon
-          class="page__error"
-        />
-
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="Номер">
-            {{ openingBalanceDetail.number ?? "—" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Дата">
-            {{ formatDate(openingBalanceDetail.occurred_at) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Подразделение">
-            {{ locationName(openingBalanceDetail.org_unit_id) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="Статус">
-            <el-tag
-              :type="openingBalanceDetail.status === 'posted' ? 'success' : 'info'"
-              effect="light"
-            >
-              {{ openingBalanceDetail.status === "posted" ? "проведён" : "черновик" }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="Проведён">
-            {{ openingBalanceDetail.posted_at ? formatDate(openingBalanceDetail.posted_at) : "нет" }}
-          </el-descriptions-item>
-          <el-descriptions-item v-if="openingBalanceDetail.comment" label="Комментарий" :span="2">
-            {{ openingBalanceDetail.comment }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <el-table :data="openingBalanceDetail.lines" border class="lines">
-          <el-table-column prop="nomenclature_name" label="Номенклатура" min-width="200" />
-          <el-table-column label="Количество" width="120" align="right">
-            <template #default="{ row }">{{ formatQuantity(row.quantity) }}</template>
-          </el-table-column>
-          <el-table-column label="Цена" width="110" align="right">
-            <template #default="{ row }">{{ formatQuantity(row.unit_cost, 2) }}</template>
-          </el-table-column>
-          <el-table-column label="Сумма" width="130" align="right">
-            <template #default="{ row }">{{ formatKopecks(row.total_kopecks) }}</template>
-          </el-table-column>
-          <el-table-column label="Партия" width="150">
-            <template #default="{ row }">
-              <span>{{ row.lot_code ?? "—" }}</span>
-              <div v-if="row.expires_at" class="muted hint">
-                до {{ formatDate(row.expires_at) }}
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div
-          v-if="openingBalanceDetail.status !== 'posted'"
-          style="display: flex; gap: 8px; margin-top: 16px"
-        >
-          <el-button @click="openOpeningBalanceEdit">Редактировать</el-button>
-          <el-button
-            type="primary"
-            :loading="obPosting"
-            @click="askDoc('opening-balance', 'post', openingBalanceDetail)"
-          >
-            Провести
-          </el-button>
-          <el-button
-            v-if="canCreateDocument"
-            type="danger"
-            text
-            :disabled="busy"
-            @click="askDoc('opening-balance', 'delete', openingBalanceDetail)"
-          >
-            Удалить
-          </el-button>
-        </div>
-      </template>
-    </el-drawer>
-
-    <el-dialog v-model="quickOpen" title="Новая номенклатура" width="560">
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        title="Позиция создастся и сразу подставится в строку"
-        description="Артикул можно не заполнять — сгенерируем автоматически. Штрихкод поможет находить товар сканером."
-        class="page__error"
-      />
-
-      <el-alert
-        v-if="quickError"
-        :title="quickError"
-        type="error"
-        :closable="false"
-        show-icon
-        class="page__error"
-      />
-
-      <el-alert
-        v-if="quickMatches.length"
-        type="warning"
-        :closable="false"
-        show-icon
-        title="Похожие позиции уже есть"
-        description="Проверьте, не создаёте ли дубль. Можно выбрать существующую строку."
-        class="page__error"
-      />
-      <div v-if="quickMatches.length" class="quick-matches">
-        <div v-for="match in quickMatches" :key="match.id" class="quick-match">
-          <span>{{ match.name }} · {{ match.sku }}</span>
-          <el-button text type="primary" size="small" @click="chooseExistingNomenclature(match)">
-            Выбрать
-          </el-button>
-        </div>
-      </div>
-
-      <el-form label-position="top" @submit.prevent>
-        <el-form-item label="Название">
-          <el-input
-            v-model="quickForm.name"
-            placeholder="Например: Говядина лопатка"
-            @change="loadQuickMatches"
-          />
-        </el-form-item>
-
-        <div class="form-grid">
-          <el-form-item label="Артикул">
-            <el-input v-model="quickForm.sku" placeholder="необязательно" />
-          </el-form-item>
-          <el-form-item label="Штрихкод (GTIN)">
-            <el-input v-model="quickForm.gtin" placeholder="4600000000017" maxlength="14" />
-          </el-form-item>
-          <el-form-item label="Единица измерения">
-            <el-select v-model="quickForm.unit" style="width: 100%">
-              <el-option
-                v-for="(title, code) in UNITS"
-                :key="code"
-                :label="title"
-                :value="code"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="Категория">
-            <el-select
-              v-model="quickForm.category_id"
-              placeholder="Выберите категорию"
-              style="width: 100%"
-            >
-              <el-option
-                v-for="category in quickCategories"
-                :key="category.id"
-                :label="category.name"
-                :value="category.id"
-              />
-            </el-select>
-          </el-form-item>
-        </div>
-
-        <el-form-item label="ВетИС">
-          <el-select v-model="quickForm.requires_vetis" style="width: 100%">
-            <el-option label="Не требуется" :value="false" />
-            <el-option label="Требуется ВСД" :value="true" />
-          </el-select>
-          <span class="hint">включайте для мяса, молочки и рыбы</span>
-        </el-form-item>
-
-        <el-alert
-          v-if="!quickCategories.length"
-          type="warning"
-          :closable="false"
-          show-icon
-          title="Нет доступных категорий"
-          description="Создайте категорию в справочнике, иначе номенклатуру сохранить не получится."
-        />
-      </el-form>
-
-      <template #footer>
-        <el-button @click="quickOpen = false">Отмена</el-button>
-        <el-button
-          type="primary"
-          :loading="quickSaving"
-          :disabled="!quickForm.name.trim() || !quickForm.category_id"
-          @click="createQuickNomenclature"
-        >
-          Создать и выбрать
-        </el-button>
-      </template>
-    </el-dialog>
+    <QuickNomenclatureDialog ref="quickDialog" @selected="applyQuickNomenclature" />
   </div>
 </template>
 
@@ -1494,7 +1109,6 @@ definePageMeta({ permissions: CAN.documentsOpen });
 import { formatKopecks, formatQuantity } from "@md/money";
 import type { components } from "@md/api-client";
 import { locationDisplay } from "~/utils/locations";
-import { UNITS } from "~/utils/labels";
 
 type ReceiptListItem = components["schemas"]["ReceiptListItemSchema"];
 type ReceiptDetail = components["schemas"]["ReceiptDetailSchema"];
@@ -1503,10 +1117,6 @@ type WriteOffDetail = components["schemas"]["WriteOffDetailSchema"];
 type InventoryCountListItem =
   components["schemas"]["InventoryCountListItemSchema"];
 type InventoryCountDetail = components["schemas"]["InventoryCountDetailSchema"];
-type OpeningBalanceListItem =
-  components["schemas"]["OpeningBalanceListItemSchema"];
-type OpeningBalanceDetail =
-  components["schemas"]["OpeningBalanceDetailSchema"];
 type TransferListItem = components["schemas"]["TransferListItemSchema"];
 type Location = components["schemas"]["LocationSchema"];
 type EdoDocument = components["schemas"]["EdoDocumentSchema"];
@@ -1524,17 +1134,14 @@ const tab = ref<
   | "write-offs"
   | "transfers"
   | "inventory-counts"
-  | "opening-balances"
 >("receipts");
 const transfers = ref<components["schemas"]["TransferListItemSchema"][]>([]);
 const receipts = ref<ReceiptListItem[]>([]);
 const writeOffs = ref<WriteOffListItem[]>([]);
 const inventoryCounts = ref<InventoryCountListItem[]>([]);
-const openingBalances = ref<OpeningBalanceListItem[]>([]);
 const receiptsTotal = ref(0);
 const writeOffsTotal = ref(0);
 const inventoryCountsTotal = ref(0);
-const openingBalancesTotal = ref(0);
 const locations = ref<Location[]>([]);
 const locationId = ref<string | null>(null);
 const page = ref(1);
@@ -1711,19 +1318,6 @@ async function load(): Promise<void> {
 
       receipts.value = data.items;
       receiptsTotal.value = data.total;
-    } else if (tab.value === "opening-balances") {
-      const { data, response } = await api.GET(
-        "/api/inventory/opening-balances",
-        { params: { query } },
-      );
-      if (!response.ok || !data) {
-        throw new Error(
-          reasonOf(response.status, "Не удалось загрузить ввод остатков"),
-        );
-      }
-
-      openingBalances.value = data.items;
-      openingBalancesTotal.value = data.total;
     } else {
       const { data, response } = await api.GET("/api/inventory/write-offs", {
         params: { query },
@@ -1776,9 +1370,6 @@ const pagerTotal = computed(() => {
   }
   if (tab.value === "write-offs") {
     return writeOffsTotal.value;
-  }
-  if (tab.value === "opening-balances") {
-    return openingBalancesTotal.value;
   }
 
   return inventoryCountsTotal.value;
@@ -1984,72 +1575,15 @@ async function searchNomenclature(
   }
 }
 
-type NomenclatureCategory = components["schemas"]["CategorySchema"];
-type NomenclatureUnit = components["schemas"]["CreateNomenclatureSchema"]["unit"];
-
-const quickOpen = ref(false);
-const quickSaving = ref(false);
-const quickError = ref("");
+const quickDialog = ref<{ show: (name?: string) => void } | null>(null);
 const quickTarget = ref<NomenclatureLine | null>(null);
-const quickCategories = ref<NomenclatureCategory[]>([]);
-const quickMatches = ref<NomenclatureOption[]>([]);
-const quickForm = reactive({
-  name: "",
-  sku: "",
-  gtin: "",
-  unit: "kg" as NomenclatureUnit,
-  category_id: "",
-  requires_vetis: false,
-});
-
-async function loadQuickCategories(): Promise<void> {
-  if (quickCategories.value.length || !can("category.read")) {
-    return;
-  }
-
-  const { data, response } = await api.GET("/api/catalog/categories", {});
-  if (response.ok && data) {
-    quickCategories.value = data;
-  }
-}
-
-async function loadQuickMatches(): Promise<void> {
-  const name = quickForm.name.trim();
-  if (name.length < 2) {
-    quickMatches.value = [];
-    return;
-  }
-
-  const { data, response } = await api.GET("/api/catalog/nomenclatures", {
-    params: { query: { search: name, limit: 5 } },
-  });
-
-  if (response.ok && data) {
-    quickMatches.value = data.items;
-  }
-}
 
 function openQuickNomenclature(line: NomenclatureLine): void {
   quickTarget.value = line;
-  quickError.value = "";
-  quickForm.name = (line.query ?? "").trim();
-  quickForm.sku = "";
-  quickForm.gtin = "";
-  quickForm.unit = "kg";
-  quickForm.requires_vetis = false;
-  quickForm.category_id = quickCategories.value[0]?.id ?? "";
-  quickMatches.value = [];
-  quickOpen.value = true;
-
-  void loadQuickCategories().then(() => {
-    if (!quickForm.category_id) {
-      quickForm.category_id = quickCategories.value[0]?.id ?? "";
-    }
-  });
-  void loadQuickMatches();
+  quickDialog.value?.show(line.query ?? "");
 }
 
-function chooseExistingNomenclature(option: NomenclatureOption): void {
+function applyQuickNomenclature(option: NomenclatureOption): void {
   const target = quickTarget.value;
   if (!target) {
     return;
@@ -2059,6 +1593,7 @@ function chooseExistingNomenclature(option: NomenclatureOption): void {
     target.options = [option, ...target.options];
   }
   target.nomenclature_id = option.id;
+  target.query = "";
 
   if ("requires_vetis" in target) {
     setNomenclature(target as DraftLine, option.id);
@@ -2067,78 +1602,8 @@ function chooseExistingNomenclature(option: NomenclatureOption): void {
     void loadBookQuantity(option.id);
   }
 
-  quickOpen.value = false;
-  notice.value = `Выбрана существующая позиция «${option.name}»`;
-}
-
-async function createQuickNomenclature(): Promise<void> {
-  quickSaving.value = true;
-  quickError.value = "";
-
-  try {
-    const name = quickForm.name.trim();
-    const created = await api.POST("/api/catalog/nomenclatures", {
-      body: {
-        name,
-        sku: quickForm.sku.trim() || null,
-        gtin: quickForm.gtin.trim() || null,
-        unit: quickForm.unit,
-        category_id: quickForm.category_id,
-        requires_vetis: quickForm.requires_vetis,
-      },
-    });
-
-    if (!created.response.ok || !created.data) {
-      throw new Error(
-        serverMessage(
-          created.error,
-          `Не удалось создать номенклатуру: ${created.response.status}`,
-        ),
-      );
-    }
-
-    const createdId = (
-      created.data as unknown as { nomenclature_id: string }
-    ).nomenclature_id;
-    const listed = await api.GET("/api/catalog/nomenclatures", {
-      params: { query: { search: name, limit: 20 } },
-    });
-
-    const target = quickTarget.value;
-    if (target) {
-      const items: NomenclatureOption[] = listed.data?.items ?? [];
-      const found = items.find((item) => item.id === createdId);
-
-      target.options = found
-        ? items
-        : [
-            {
-              id: createdId,
-              name,
-              sku: quickForm.sku.trim(),
-              requires_vetis: quickForm.requires_vetis,
-            },
-            ...items,
-          ];
-      target.nomenclature_id = createdId;
-
-      if ("requires_vetis" in target) {
-        setNomenclature(target as DraftLine, createdId);
-      }
-      if ("counted_quantity" in target) {
-        void loadBookQuantity(createdId);
-      }
-    }
-
-    notice.value = `Номенклатура «${name}» создана и выбрана`;
-    quickMatches.value = [];
-    quickOpen.value = false;
-  } catch (cause) {
-    quickError.value =
-      cause instanceof Error ? cause.message : "Ошибка создания номенклатуры";
-  } finally {
-    quickSaving.value = false;
-  }
+  notice.value = `Выбрана номенклатура «${option.name}»`;
+  quickTarget.value = null;
 }
 
 
@@ -2427,12 +1892,7 @@ async function postReceipt(row: { id: string }): Promise<void> {
 }
 
 
-type DocKind =
-  | "receipt"
-  | "write-off"
-  | "transfer"
-  | "inventory-count"
-  | "opening-balance";
+type DocKind = "receipt" | "write-off" | "transfer" | "inventory-count";
 
 /** Одно окно подтверждения для критичных команд: проведение и удаление черновиков. */
 async function askDoc(
@@ -2450,16 +1910,14 @@ async function askDoc(
     if (kind === "receipt") await postReceipt(doc);
     else if (kind === "write-off") await postWriteOff(doc);
     else if (kind === "transfer") await postTransfer();
-    else if (kind === "inventory-count") await postInventoryCount(doc.id);
-    else await postOpeningBalance(doc.id);
+    else await postInventoryCount(doc.id);
     return;
   }
 
   if (kind === "receipt") await deleteReceipt(doc);
   else if (kind === "write-off") await deleteWriteOff(doc);
   else if (kind === "transfer") await deleteTransfer(doc);
-  else if (kind === "inventory-count") await deleteInventoryCount(doc.id);
-  else await deleteOpeningBalance(doc.id);
+  else await deleteInventoryCount(doc.id);
 }
 
 
@@ -3043,309 +2501,6 @@ async function postInventoryCount(id: string): Promise<void> {
 }
 
 
-type OpeningBalanceLine = {
-  nomenclature_id: string;
-  options: NomenclatureOption[];
-  query?: string;
-  quantity: string;
-  unit_cost: string;
-  lot_code: string;
-  expires_at: string;
-};
-
-function emptyOpeningBalanceLine(): OpeningBalanceLine {
-  return {
-    nomenclature_id: "",
-    options: [],
-    quantity: "",
-    unit_cost: "",
-    lot_code: "",
-    expires_at: "",
-  };
-}
-
-function isCompleteOpeningBalanceLine(line: OpeningBalanceLine): boolean {
-  return (
-    Boolean(line.nomenclature_id) &&
-    Number(line.quantity) > 0 &&
-    line.unit_cost !== "" &&
-    Number(line.unit_cost) >= 0
-  );
-}
-
-const obOpen = ref(false);
-const obSaving = ref(false);
-const obError = ref("");
-const obEditingId = ref<string | null>(null);
-const obForm = reactive({
-  org_unit_id: "",
-  occurred_at: new Date(),
-  comment: "",
-});
-const obLines = ref<OpeningBalanceLine[]>([emptyOpeningBalanceLine()]);
-
-const obCanSubmit = computed(
-  () =>
-    Boolean(obForm.org_unit_id) &&
-    obLines.value.some(isCompleteOpeningBalanceLine),
-);
-
-const obDrawerOpen = ref(false);
-const openingBalanceDetail = ref<OpeningBalanceDetail | null>(null);
-const obDetailError = ref("");
-const obPosting = ref(false);
-
-const obDrawerTitle = computed(() =>
-  openingBalanceDetail.value
-    ? `Ввод остатков от ${formatDate(openingBalanceDetail.value.occurred_at)}`
-    : "Ввод остатков",
-);
-
-function openOpeningBalanceCreate(): void {
-  obEditingId.value = null;
-  obError.value = "";
-  notice.value = "";
-  obForm.org_unit_id = locations.value[0]?.id ?? "";
-  obForm.occurred_at = new Date();
-  obForm.comment = "";
-  obLines.value = [emptyOpeningBalanceLine()];
-  obOpen.value = true;
-}
-
-function openOpeningBalanceEdit(): void {
-  const detail = openingBalanceDetail.value;
-
-  if (!detail) {
-    return;
-  }
-
-  obError.value = "";
-  notice.value = "";
-  obEditingId.value = detail.id;
-  obForm.org_unit_id = detail.org_unit_id;
-  obForm.occurred_at = new Date(detail.occurred_at);
-  obForm.comment = detail.comment ?? "";
-  obLines.value = detail.lines.map((line) => ({
-    nomenclature_id: line.nomenclature_id,
-    quantity: String(line.quantity),
-    unit_cost: String(line.unit_cost),
-    lot_code: line.lot_code ?? "",
-    expires_at: line.expires_at ?? "",
-    options: [
-      {
-        id: line.nomenclature_id,
-        name: line.nomenclature_name ?? line.nomenclature_id,
-        sku: "",
-      },
-    ],
-  }));
-  obDrawerOpen.value = false;
-  obOpen.value = true;
-}
-
-function addOpeningBalanceLine(): void {
-  obLines.value = [...obLines.value, emptyOpeningBalanceLine()];
-}
-
-function removeOpeningBalanceLine(index: number): void {
-  obLines.value = obLines.value.filter((_, position) => position !== index);
-}
-
-function openingBalanceBody() {
-  return {
-    occurred_at: obForm.occurred_at.toISOString(),
-    comment: obForm.comment.trim() || null,
-    lines: obLines.value
-      .filter(isCompleteOpeningBalanceLine)
-      .map((line) => ({
-        nomenclature_id: line.nomenclature_id,
-        quantity: line.quantity,
-        unit_cost: line.unit_cost,
-        lot_code: line.lot_code.trim() || null,
-        expires_at: line.expires_at || null,
-      })),
-  };
-}
-
-async function saveOpeningBalance(postAfterCreate: boolean): Promise<void> {
-  if (obEditingId.value) {
-    await updateOpeningBalance();
-    return;
-  }
-
-  obSaving.value = true;
-  obError.value = "";
-  notice.value = "";
-
-  try {
-    const created = await api.POST("/api/inventory/opening-balances", {
-      body: {
-        org_unit_id: obForm.org_unit_id,
-        ...openingBalanceBody(),
-      },
-    });
-
-    if (!created.response.ok || !created.data) {
-      throw new Error(
-        serverMessage(
-          created.error,
-          `Не удалось сохранить: ${created.response.status}`,
-        ),
-      );
-    }
-
-    const openingBalanceId = (
-      created.data as unknown as { opening_balance_id: string }
-    ).opening_balance_id;
-
-    if (postAfterCreate) {
-      const posted = await api.POST(
-        "/api/inventory/opening-balances/{opening_balance_id}/post",
-        { params: { path: { opening_balance_id: openingBalanceId } } },
-      );
-
-      if (!posted.response.ok) {
-        obError.value = `Черновик создан, но не проведён: ${serverMessage(posted.error, String(posted.response.status))}`;
-        tab.value = "opening-balances";
-        await refresh();
-        return;
-      }
-
-      notice.value = "Начальные остатки проведены";
-    } else {
-      notice.value = "Черновик ввода остатков сохранён";
-    }
-
-    obOpen.value = false;
-    tab.value = "opening-balances";
-    await reload();
-  } catch (cause) {
-    obError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
-  } finally {
-    obSaving.value = false;
-  }
-}
-
-async function updateOpeningBalance(): Promise<void> {
-  obSaving.value = true;
-  obError.value = "";
-  notice.value = "";
-
-  try {
-    const updated = await api.PATCH(
-      "/api/inventory/opening-balances/{opening_balance_id}",
-      {
-        params: { path: { opening_balance_id: obEditingId.value ?? "" } },
-        body: openingBalanceBody(),
-      },
-    );
-
-    if (!updated.response.ok) {
-      throw new Error(
-        serverMessage(
-          updated.error,
-          `Не удалось сохранить: ${updated.response.status}`,
-        ),
-      );
-    }
-
-    const editedId = obEditingId.value;
-    obOpen.value = false;
-    obEditingId.value = null;
-    notice.value = "Изменения сохранены";
-    if (editedId) {
-      await openOpeningBalance({ id: editedId });
-    }
-    await refresh();
-  } catch (cause) {
-    obError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
-  } finally {
-    obSaving.value = false;
-  }
-}
-
-async function openOpeningBalance(row: { id: string }): Promise<void> {
-  obDetailError.value = "";
-
-  const { data, response } = await api.GET(
-    "/api/inventory/opening-balances/{opening_balance_id}",
-    { params: { path: { opening_balance_id: row.id } } },
-  );
-
-  if (!response.ok || !data) {
-    error.value = reasonOf(response.status, "Не удалось открыть ввод остатков");
-    return;
-  }
-
-  openingBalanceDetail.value = data;
-  obDrawerOpen.value = true;
-}
-
-async function postOpeningBalance(id: string): Promise<void> {
-  obPosting.value = true;
-  obDetailError.value = "";
-  error.value = "";
-  notice.value = "";
-
-  try {
-    const { response, error: failure } = await api.POST(
-      "/api/inventory/opening-balances/{opening_balance_id}/post",
-      { params: { path: { opening_balance_id: id } } },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        serverMessage(failure, `Не удалось провести: ${response.status}`),
-      );
-    }
-
-    notice.value = "Начальные остатки проведены";
-
-    if (obDrawerOpen.value) {
-      await openOpeningBalance({ id });
-    }
-    await refresh();
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "Ошибка проведения";
-    if (obDrawerOpen.value) {
-      obDetailError.value = message;
-    } else {
-      error.value = message;
-    }
-  } finally {
-    obPosting.value = false;
-  }
-}
-
-async function deleteOpeningBalance(id: string): Promise<void> {
-  busy.value = true;
-  error.value = "";
-  notice.value = "";
-
-  try {
-    const { response } = await api.DELETE(
-      "/api/inventory/opening-balances/{opening_balance_id}",
-      { params: { path: { opening_balance_id: id } } },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        deleteReasonOf(response.status, "Не удалось удалить ввод остатков"),
-      );
-    }
-
-    notice.value = "Черновик ввода остатков удалён";
-    openingBalanceDetail.value = null;
-    obDrawerOpen.value = false;
-    await refresh();
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
-  } finally {
-    busy.value = false;
-  }
-}
-
-
 function deleteReasonOf(status: number, fallback: string): string {
   if (status === 403) {
     return "Нет прав удалять документы склада";
@@ -3572,20 +2727,4 @@ async function deleteInventoryCount(id: string): Promise<void> {
   font-size: 13px;
 }
 
-.quick-matches {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0 0 12px;
-}
-
-.quick-match {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-}
 </style>

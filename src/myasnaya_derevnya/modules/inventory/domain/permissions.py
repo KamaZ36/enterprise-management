@@ -10,6 +10,11 @@ POST_DOCUMENT = Permission(
     description="Проведение складских документов",
 )
 
+MANAGE_OPENING_BALANCE = Permission(
+    code="inventory.opening_balance.manage",
+    description="Ввод начальных остатков",
+)
+
 
 READ_BALANCES = Permission(
     code="inventory.balance.read",
@@ -28,6 +33,7 @@ READ_DOCUMENTS = Permission(
 ALL: tuple[Permission, ...] = (
     CREATE_DOCUMENT,
     POST_DOCUMENT,
+    MANAGE_OPENING_BALANCE,
     READ_BALANCES,
     READ_COSTS,
     READ_DOCUMENTS,

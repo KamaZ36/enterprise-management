@@ -16,7 +16,9 @@ from myasnaya_derevnya.modules.inventory.domain.entities.opening_balance import 
     OpeningBalanceLine,
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
-from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
+from myasnaya_derevnya.modules.inventory.domain.permissions import (
+    MANAGE_OPENING_BALANCE,
+)
 from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
     DocumentType,
 )
@@ -74,7 +76,7 @@ class CreateOpeningBalanceInteractor:
 
         allowed = await self._staff_api.can(
             user_id=current_user_id,
-            permission=CREATE_DOCUMENT,
+            permission=MANAGE_OPENING_BALANCE,
             org_unit_id=location.id,
         )
         if not allowed:

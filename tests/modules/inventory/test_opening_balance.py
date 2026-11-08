@@ -490,6 +490,10 @@ async def test_create_and_post_require_permission(
         )
     )
 
+    assert {
+        code for code, _org_unit_id in allowed.staff_api.checked
+    } == {"inventory.opening_balance.manage"}
+
     with pytest.raises(ForbiddenError):
         await denied.post(
             PostOpeningBalanceCommand(opening_balance_id=document_id)

@@ -57,6 +57,12 @@ export const MODULES: ModuleDefinition[
         permissions: CAN.documentsOpen,
       },
       {
+        path: "/inventory/opening-balances",
+        title: "Ввод остатков",
+        icon: "Files",
+        permissions: CAN.openingBalancesOpen,
+      },
+      {
         path: "/inventory/balances",
         title: "Остатки",
         icon: "Box",
