@@ -9,6 +9,7 @@ PREFIX_BY_TYPE = {
     DocumentType.WRITE_OFF: "СП",
     DocumentType.TRANSFER: "ПМ",
     DocumentType.INVENTORY_COUNT: "ИНВ",
+    DocumentType.OPENING_BALANCE: "ВО",
 }
 
 

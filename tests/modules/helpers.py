@@ -25,6 +25,8 @@ INVENTORY_TABLES = (
     "inventory.stock_postings",
     "inventory.inventory_count_lines",
     "inventory.inventory_counts",
+    "inventory.opening_balance_lines",
+    "inventory.opening_balances",
     "inventory.document_number_counters",
     "inventory.transfer_lines",
     "inventory.transfers",

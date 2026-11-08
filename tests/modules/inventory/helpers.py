@@ -33,6 +33,18 @@ from myasnaya_derevnya.modules.edo.infrastructure.repositories.document.sqlalche
     SQLAlchemyEdoDocumentRepository,
 )
 from myasnaya_derevnya.modules.edo.presentation.edo_api import EdoAPI
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.create import (
+    CreateOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.delete import (
+    DeleteOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.post import (
+    PostOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.update import (
+    UpdateOpeningBalanceInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
     PostProductionInteractor,
 )
@@ -77,6 +89,9 @@ from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.sqlalchemy import (
     SQLAlchemyDocumentNumberRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.opening_balance.sqlalchemy import (
+    SQLAlchemyOpeningBalanceRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.sqlalchemy import (
     SQLAlchemyReceiptRepository,
@@ -278,6 +293,62 @@ def build_posting(
     )
 
     return preconditions, lot_resolver, ledger
+
+
+@dataclass(frozen=True, slots=True)
+class OpeningBalanceActors:
+    create: CreateOpeningBalanceInteractor
+    post: PostOpeningBalanceInteractor
+    update: UpdateOpeningBalanceInteractor
+    delete: DeleteOpeningBalanceInteractor
+    staff_api: FakeStaffAPI
+
+
+def build_opening_balance_actors(
+    session: AsyncSession, *, allowed: bool = True
+) -> OpeningBalanceActors:
+    identity = FakeIdentityProvider(uuid4())
+    staff_api = FakeStaffAPI(allowed=allowed)
+    transaction_manager = SQLAlchemyTransactionManager(session)
+    api = business_api(session)
+    repository = SQLAlchemyOpeningBalanceRepository(session)
+    document_numbers = SQLAlchemyDocumentNumberRepository(session)
+    preconditions, lot_resolver, ledger = build_posting(session)
+
+    return OpeningBalanceActors(
+        create=CreateOpeningBalanceInteractor(
+            identity_provider=identity,
+            business_api=api,
+            opening_balance_repository=repository,
+            document_number_repository=document_numbers,
+            staff_api=staff_api,
+            transaction_manager=transaction_manager,
+        ),
+        post=PostOpeningBalanceInteractor(
+            identity_provider=identity,
+            opening_balance_repository=repository,
+            staff_api=staff_api,
+            preconditions=preconditions,
+            lot_resolver=lot_resolver,
+            ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        update=UpdateOpeningBalanceInteractor(
+            identity_provider=identity,
+            business_api=api,
+            opening_balance_repository=repository,
+            staff_api=staff_api,
+            transaction_manager=transaction_manager,
+        ),
+        delete=DeleteOpeningBalanceInteractor(
+            identity_provider=identity,
+            business_api=api,
+            opening_balance_repository=repository,
+            staff_api=staff_api,
+            transaction_manager=transaction_manager,
+        ),
+        staff_api=staff_api,
+    )
 
 
 def build_production_interactor(session: AsyncSession) -> PostProductionInteractor:

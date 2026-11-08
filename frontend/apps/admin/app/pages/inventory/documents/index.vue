@@ -2,7 +2,8 @@
   <div class="page">
     <h1 class="page__title">Журнал склада</h1>
     <p class="page__subtitle">
-      Поступления и списания. Нажмите на строку, чтобы открыть документ.
+      Поступления, списания, перемещения, инвентаризации и ввод начальных
+      остатков. Нажмите на строку, чтобы открыть документ.
     </p>
 
     <div class="page__toolbar">
@@ -21,6 +22,9 @@
       </el-button>
       <el-button v-if="canCreateDocument" @click="openInventoryCountCreate">
         Новая инвентаризация
+      </el-button>
+      <el-button v-if="canCreateDocument" @click="openOpeningBalanceCreate">
+        Ввод начальных остатков
       </el-button>
       <el-input
         v-model="filter"
@@ -47,6 +51,7 @@
       <el-tab-pane label="Списания" name="write-offs" />
       <el-tab-pane label="Перемещения" name="transfers" />
       <el-tab-pane label="Инвентаризации" name="inventory-counts" />
+      <el-tab-pane label="Ввод остатков" name="opening-balances" />
     </el-tabs>
 
     <el-alert
@@ -234,6 +239,63 @@
       </el-table-column>
       <template #empty>
         <el-empty description="Инвентаризаций пока нет" />
+      </template>
+    </el-table>
+
+    <el-table
+      v-else-if="tab === 'opening-balances'"
+      v-loading="pending"
+      :data="openingBalances"
+      stripe
+      border
+      @row-click="openOpeningBalance"
+    >
+      <el-table-column label="Дата" width="120">
+        <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
+      </el-table-column>
+      <el-table-column label="Номер" width="150">
+        <template #default="{ row }">{{ row.number ?? "—" }}</template>
+      </el-table-column>
+      <el-table-column label="Подразделение" min-width="180">
+        <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
+      </el-table-column>
+      <el-table-column label="Комментарий" min-width="220">
+        <template #default="{ row }">{{ row.comment ?? "—" }}</template>
+      </el-table-column>
+      <el-table-column prop="line_count" label="Строк" width="90" align="right" />
+      <el-table-column label="Сумма" width="150" align="right">
+        <template #default="{ row }">{{ formatKopecks(row.total_kopecks) }}</template>
+      </el-table-column>
+      <el-table-column label="Статус" width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 'posted' ? 'success' : 'info'" effect="light">
+            {{ row.status === "posted" ? "проведён" : "черновик" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column width="230" align="right">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.status === 'draft' && can('inventory.document.post')"
+            text
+            :disabled="busy"
+            @click.stop="askDoc('opening-balance', 'post', row as OpeningBalanceListItem)"
+          >
+            Провести
+          </el-button>
+          <el-button
+            v-if="row.status === 'draft' && canCreateDocument"
+            text
+            type="danger"
+            :disabled="busy"
+            @click.stop="askDoc('opening-balance', 'delete', row as OpeningBalanceListItem)"
+          >
+            Удалить
+          </el-button>
+        </template>
+      </el-table-column>
+      <template #empty>
+        <el-empty description="Вводов остатков пока нет" />
       </template>
     </el-table>
 
@@ -1022,6 +1084,205 @@
         </div>
       </template>
     </el-drawer>
+
+    <el-dialog
+      v-model="obOpen"
+      :title="obEditingId ? 'Изменить ввод остатков' : 'Ввод начальных остатков'"
+      width="900"
+    >
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="Документ для перехода с бумажного учёта"
+        description="Укажите количество, себестоимость, партию и срок годности. После проведения остатки попадут в баланс и отчёты."
+        class="page__error"
+      />
+
+      <el-alert
+        v-if="obError"
+        :title="obError"
+        type="error"
+        :closable="false"
+        show-icon
+        class="page__error"
+      />
+
+      <el-form label-position="top" @submit.prevent>
+        <div class="form-grid">
+          <el-form-item label="Подразделение">
+            <el-select
+              v-model="obForm.org_unit_id"
+              style="width: 100%"
+              :disabled="Boolean(obEditingId)"
+            >
+              <LocationOptions :locations="locations" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="Дата и время">
+            <el-date-picker
+              v-model="obForm.occurred_at"
+              type="datetime"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </div>
+
+        <el-form-item label="Комментарий">
+          <el-input v-model="obForm.comment" placeholder="Например: перенос остатков на 01.11.2026" />
+        </el-form-item>
+
+        <div class="lines-head">
+          <span>Строки документа</span>
+          <el-button size="small" @click="addOpeningBalanceLine">Добавить строку</el-button>
+        </div>
+
+        <div class="line line--head">
+          <span class="line__name">Номенклатура</span>
+          <span class="line__qty">Количество</span>
+          <span class="line__qty">Цена, ₽</span>
+          <span class="line__lot">Партия</span>
+          <span class="line__date">Годен до</span>
+          <span class="line__action" />
+        </div>
+
+        <div v-for="(line, index) in obLines" :key="index" class="line">
+          <el-select
+            v-model="line.nomenclature_id"
+            filterable
+            remote
+            placeholder="Начните вводить название или артикул"
+            :remote-method="(query: string) => searchNomenclature(line, query)"
+            class="line__name"
+          >
+            <el-option
+              v-for="option in line.options"
+              :key="option.id"
+              :label="option.sku ? `${option.name} · ${option.sku}` : option.name"
+              :value="option.id"
+            />
+          </el-select>
+
+          <el-input v-model="line.quantity" class="line__qty" placeholder="например 12,5" />
+          <el-input v-model="line.unit_cost" class="line__qty" placeholder="например 450,50" />
+          <el-input v-model="line.lot_code" class="line__lot" placeholder="Партия" />
+          <el-date-picker
+            v-model="line.expires_at"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="Годен до"
+            class="line__date"
+          />
+          <el-button
+            text
+            type="danger"
+            :disabled="obLines.length === 1"
+            @click="removeOpeningBalanceLine(index)"
+          >
+            Убрать
+          </el-button>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="obOpen = false">Отмена</el-button>
+        <el-button :loading="obSaving" :disabled="!obCanSubmit" @click="saveOpeningBalance(false)">
+          {{ obEditingId ? "Сохранить" : "Сохранить черновик" }}
+        </el-button>
+        <el-button
+          v-if="!obEditingId"
+          type="primary"
+          :loading="obSaving"
+          :disabled="!obCanSubmit"
+          @click="saveOpeningBalance(true)"
+        >
+          Сохранить и провести
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-drawer v-model="obDrawerOpen" :title="obDrawerTitle" size="680px">
+      <template v-if="openingBalanceDetail">
+        <el-alert
+          v-if="obDetailError"
+          :title="obDetailError"
+          type="error"
+          :closable="false"
+          show-icon
+          class="page__error"
+        />
+
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="Номер">
+            {{ openingBalanceDetail.number ?? "—" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Дата">
+            {{ formatDate(openingBalanceDetail.occurred_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Подразделение">
+            {{ locationName(openingBalanceDetail.org_unit_id) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Статус">
+            <el-tag
+              :type="openingBalanceDetail.status === 'posted' ? 'success' : 'info'"
+              effect="light"
+            >
+              {{ openingBalanceDetail.status === "posted" ? "проведён" : "черновик" }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Проведён">
+            {{ openingBalanceDetail.posted_at ? formatDate(openingBalanceDetail.posted_at) : "нет" }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="openingBalanceDetail.comment" label="Комментарий" :span="2">
+            {{ openingBalanceDetail.comment }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-table :data="openingBalanceDetail.lines" border class="lines">
+          <el-table-column prop="nomenclature_name" label="Номенклатура" min-width="200" />
+          <el-table-column label="Количество" width="120" align="right">
+            <template #default="{ row }">{{ formatQuantity(row.quantity) }}</template>
+          </el-table-column>
+          <el-table-column label="Цена" width="110" align="right">
+            <template #default="{ row }">{{ formatQuantity(row.unit_cost, 2) }}</template>
+          </el-table-column>
+          <el-table-column label="Сумма" width="130" align="right">
+            <template #default="{ row }">{{ formatKopecks(row.total_kopecks) }}</template>
+          </el-table-column>
+          <el-table-column label="Партия" width="150">
+            <template #default="{ row }">
+              <span>{{ row.lot_code ?? "—" }}</span>
+              <div v-if="row.expires_at" class="muted hint">
+                до {{ formatDate(row.expires_at) }}
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div
+          v-if="openingBalanceDetail.status !== 'posted'"
+          style="display: flex; gap: 8px; margin-top: 16px"
+        >
+          <el-button @click="openOpeningBalanceEdit">Редактировать</el-button>
+          <el-button
+            type="primary"
+            :loading="obPosting"
+            @click="askDoc('opening-balance', 'post', openingBalanceDetail)"
+          >
+            Провести
+          </el-button>
+          <el-button
+            v-if="canCreateDocument"
+            type="danger"
+            text
+            :disabled="busy"
+            @click="askDoc('opening-balance', 'delete', openingBalanceDetail)"
+          >
+            Удалить
+          </el-button>
+        </div>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
@@ -1041,6 +1302,10 @@ type WriteOffDetail = components["schemas"]["WriteOffDetailSchema"];
 type InventoryCountListItem =
   components["schemas"]["InventoryCountListItemSchema"];
 type InventoryCountDetail = components["schemas"]["InventoryCountDetailSchema"];
+type OpeningBalanceListItem =
+  components["schemas"]["OpeningBalanceListItemSchema"];
+type OpeningBalanceDetail =
+  components["schemas"]["OpeningBalanceDetailSchema"];
 type TransferListItem = components["schemas"]["TransferListItemSchema"];
 type Location = components["schemas"]["LocationSchema"];
 type EdoDocument = components["schemas"]["EdoDocumentSchema"];
@@ -1053,16 +1318,22 @@ const { confirm } = useConfirm();
 
 const canCreateDocument = computed(() => canAll(CAN.documentsCreate));
 
-const tab = ref<"receipts" | "write-offs" | "transfers" | "inventory-counts">(
-  "receipts",
-);
+const tab = ref<
+  | "receipts"
+  | "write-offs"
+  | "transfers"
+  | "inventory-counts"
+  | "opening-balances"
+>("receipts");
 const transfers = ref<components["schemas"]["TransferListItemSchema"][]>([]);
 const receipts = ref<ReceiptListItem[]>([]);
 const writeOffs = ref<WriteOffListItem[]>([]);
 const inventoryCounts = ref<InventoryCountListItem[]>([]);
+const openingBalances = ref<OpeningBalanceListItem[]>([]);
 const receiptsTotal = ref(0);
 const writeOffsTotal = ref(0);
 const inventoryCountsTotal = ref(0);
+const openingBalancesTotal = ref(0);
 const locations = ref<Location[]>([]);
 const locationId = ref<string | null>(null);
 const page = ref(1);
@@ -1232,6 +1503,19 @@ async function load(): Promise<void> {
 
       receipts.value = data.items;
       receiptsTotal.value = data.total;
+    } else if (tab.value === "opening-balances") {
+      const { data, response } = await api.GET(
+        "/api/inventory/opening-balances",
+        { params: { query } },
+      );
+      if (!response.ok || !data) {
+        throw new Error(
+          reasonOf(response.status, "Не удалось загрузить ввод остатков"),
+        );
+      }
+
+      openingBalances.value = data.items;
+      openingBalancesTotal.value = data.total;
     } else {
       const { data, response } = await api.GET("/api/inventory/write-offs", {
         params: { query },
@@ -1284,6 +1568,9 @@ const pagerTotal = computed(() => {
   }
   if (tab.value === "write-offs") {
     return writeOffsTotal.value;
+  }
+  if (tab.value === "opening-balances") {
+    return openingBalancesTotal.value;
   }
 
   return inventoryCountsTotal.value;
@@ -1773,7 +2060,12 @@ async function postReceipt(row: { id: string }): Promise<void> {
 }
 
 
-type DocKind = "receipt" | "write-off" | "transfer" | "inventory-count";
+type DocKind =
+  | "receipt"
+  | "write-off"
+  | "transfer"
+  | "inventory-count"
+  | "opening-balance";
 
 /** Одно окно подтверждения для критичных команд: проведение и удаление черновиков. */
 async function askDoc(
@@ -1791,14 +2083,16 @@ async function askDoc(
     if (kind === "receipt") await postReceipt(doc);
     else if (kind === "write-off") await postWriteOff(doc);
     else if (kind === "transfer") await postTransfer();
-    else await postInventoryCount(doc.id);
+    else if (kind === "inventory-count") await postInventoryCount(doc.id);
+    else await postOpeningBalance(doc.id);
     return;
   }
 
   if (kind === "receipt") await deleteReceipt(doc);
   else if (kind === "write-off") await deleteWriteOff(doc);
   else if (kind === "transfer") await deleteTransfer(doc);
-  else await deleteInventoryCount(doc.id);
+  else if (kind === "inventory-count") await deleteInventoryCount(doc.id);
+  else await deleteOpeningBalance(doc.id);
 }
 
 
@@ -2376,6 +2670,308 @@ async function postInventoryCount(id: string): Promise<void> {
     }
   } finally {
     icPosting.value = false;
+  }
+}
+
+
+type OpeningBalanceLine = {
+  nomenclature_id: string;
+  options: NomenclatureOption[];
+  quantity: string;
+  unit_cost: string;
+  lot_code: string;
+  expires_at: string;
+};
+
+function emptyOpeningBalanceLine(): OpeningBalanceLine {
+  return {
+    nomenclature_id: "",
+    options: [],
+    quantity: "",
+    unit_cost: "",
+    lot_code: "",
+    expires_at: "",
+  };
+}
+
+function isCompleteOpeningBalanceLine(line: OpeningBalanceLine): boolean {
+  return (
+    Boolean(line.nomenclature_id) &&
+    Number(line.quantity) > 0 &&
+    line.unit_cost !== "" &&
+    Number(line.unit_cost) >= 0
+  );
+}
+
+const obOpen = ref(false);
+const obSaving = ref(false);
+const obError = ref("");
+const obEditingId = ref<string | null>(null);
+const obForm = reactive({
+  org_unit_id: "",
+  occurred_at: new Date(),
+  comment: "",
+});
+const obLines = ref<OpeningBalanceLine[]>([emptyOpeningBalanceLine()]);
+
+const obCanSubmit = computed(
+  () =>
+    Boolean(obForm.org_unit_id) &&
+    obLines.value.some(isCompleteOpeningBalanceLine),
+);
+
+const obDrawerOpen = ref(false);
+const openingBalanceDetail = ref<OpeningBalanceDetail | null>(null);
+const obDetailError = ref("");
+const obPosting = ref(false);
+
+const obDrawerTitle = computed(() =>
+  openingBalanceDetail.value
+    ? `Ввод остатков от ${formatDate(openingBalanceDetail.value.occurred_at)}`
+    : "Ввод остатков",
+);
+
+function openOpeningBalanceCreate(): void {
+  obEditingId.value = null;
+  obError.value = "";
+  notice.value = "";
+  obForm.org_unit_id = locations.value[0]?.id ?? "";
+  obForm.occurred_at = new Date();
+  obForm.comment = "";
+  obLines.value = [emptyOpeningBalanceLine()];
+  obOpen.value = true;
+}
+
+function openOpeningBalanceEdit(): void {
+  const detail = openingBalanceDetail.value;
+
+  if (!detail) {
+    return;
+  }
+
+  obError.value = "";
+  notice.value = "";
+  obEditingId.value = detail.id;
+  obForm.org_unit_id = detail.org_unit_id;
+  obForm.occurred_at = new Date(detail.occurred_at);
+  obForm.comment = detail.comment ?? "";
+  obLines.value = detail.lines.map((line) => ({
+    nomenclature_id: line.nomenclature_id,
+    quantity: String(line.quantity),
+    unit_cost: String(line.unit_cost),
+    lot_code: line.lot_code ?? "",
+    expires_at: line.expires_at ?? "",
+    options: [
+      {
+        id: line.nomenclature_id,
+        name: line.nomenclature_name ?? line.nomenclature_id,
+        sku: "",
+      },
+    ],
+  }));
+  obDrawerOpen.value = false;
+  obOpen.value = true;
+}
+
+function addOpeningBalanceLine(): void {
+  obLines.value = [...obLines.value, emptyOpeningBalanceLine()];
+}
+
+function removeOpeningBalanceLine(index: number): void {
+  obLines.value = obLines.value.filter((_, position) => position !== index);
+}
+
+function openingBalanceBody() {
+  return {
+    occurred_at: obForm.occurred_at.toISOString(),
+    comment: obForm.comment.trim() || null,
+    lines: obLines.value
+      .filter(isCompleteOpeningBalanceLine)
+      .map((line) => ({
+        nomenclature_id: line.nomenclature_id,
+        quantity: line.quantity,
+        unit_cost: line.unit_cost,
+        lot_code: line.lot_code.trim() || null,
+        expires_at: line.expires_at || null,
+      })),
+  };
+}
+
+async function saveOpeningBalance(postAfterCreate: boolean): Promise<void> {
+  if (obEditingId.value) {
+    await updateOpeningBalance();
+    return;
+  }
+
+  obSaving.value = true;
+  obError.value = "";
+  notice.value = "";
+
+  try {
+    const created = await api.POST("/api/inventory/opening-balances", {
+      body: {
+        org_unit_id: obForm.org_unit_id,
+        ...openingBalanceBody(),
+      },
+    });
+
+    if (!created.response.ok || !created.data) {
+      throw new Error(
+        serverMessage(
+          created.error,
+          `Не удалось сохранить: ${created.response.status}`,
+        ),
+      );
+    }
+
+    const openingBalanceId = (
+      created.data as unknown as { opening_balance_id: string }
+    ).opening_balance_id;
+
+    if (postAfterCreate) {
+      const posted = await api.POST(
+        "/api/inventory/opening-balances/{opening_balance_id}/post",
+        { params: { path: { opening_balance_id: openingBalanceId } } },
+      );
+
+      if (!posted.response.ok) {
+        obError.value = `Черновик создан, но не проведён: ${serverMessage(posted.error, String(posted.response.status))}`;
+        tab.value = "opening-balances";
+        await refresh();
+        return;
+      }
+
+      notice.value = "Начальные остатки проведены";
+    } else {
+      notice.value = "Черновик ввода остатков сохранён";
+    }
+
+    obOpen.value = false;
+    tab.value = "opening-balances";
+    await reload();
+  } catch (cause) {
+    obError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    obSaving.value = false;
+  }
+}
+
+async function updateOpeningBalance(): Promise<void> {
+  obSaving.value = true;
+  obError.value = "";
+  notice.value = "";
+
+  try {
+    const updated = await api.PATCH(
+      "/api/inventory/opening-balances/{opening_balance_id}",
+      {
+        params: { path: { opening_balance_id: obEditingId.value ?? "" } },
+        body: openingBalanceBody(),
+      },
+    );
+
+    if (!updated.response.ok) {
+      throw new Error(
+        serverMessage(
+          updated.error,
+          `Не удалось сохранить: ${updated.response.status}`,
+        ),
+      );
+    }
+
+    const editedId = obEditingId.value;
+    obOpen.value = false;
+    obEditingId.value = null;
+    notice.value = "Изменения сохранены";
+    if (editedId) {
+      await openOpeningBalance({ id: editedId });
+    }
+    await refresh();
+  } catch (cause) {
+    obError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    obSaving.value = false;
+  }
+}
+
+async function openOpeningBalance(row: { id: string }): Promise<void> {
+  obDetailError.value = "";
+
+  const { data, response } = await api.GET(
+    "/api/inventory/opening-balances/{opening_balance_id}",
+    { params: { path: { opening_balance_id: row.id } } },
+  );
+
+  if (!response.ok || !data) {
+    error.value = reasonOf(response.status, "Не удалось открыть ввод остатков");
+    return;
+  }
+
+  openingBalanceDetail.value = data;
+  obDrawerOpen.value = true;
+}
+
+async function postOpeningBalance(id: string): Promise<void> {
+  obPosting.value = true;
+  obDetailError.value = "";
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/opening-balances/{opening_balance_id}/post",
+      { params: { path: { opening_balance_id: id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось провести: ${response.status}`),
+      );
+    }
+
+    notice.value = "Начальные остатки проведены";
+
+    if (obDrawerOpen.value) {
+      await openOpeningBalance({ id });
+    }
+    await refresh();
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Ошибка проведения";
+    if (obDrawerOpen.value) {
+      obDetailError.value = message;
+    } else {
+      error.value = message;
+    }
+  } finally {
+    obPosting.value = false;
+  }
+}
+
+async function deleteOpeningBalance(id: string): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response } = await api.DELETE(
+      "/api/inventory/opening-balances/{opening_balance_id}",
+      { params: { path: { opening_balance_id: id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        deleteReasonOf(response.status, "Не удалось удалить ввод остатков"),
+      );
+    }
+
+    notice.value = "Черновик ввода остатков удалён";
+    openingBalanceDetail.value = null;
+    obDrawerOpen.value = false;
+    await refresh();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
+  } finally {
+    busy.value = false;
   }
 }
 

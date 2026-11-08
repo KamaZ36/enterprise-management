@@ -51,6 +51,32 @@ from myasnaya_derevnya.modules.inventory.application.interactors.movements.list 
     ListMovementsInteractor,
     ListMovementsQuery,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.create import (
+    CreateOpeningBalanceCommand,
+    CreateOpeningBalanceInteractor,
+    OpeningBalanceLineCommand,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.delete import (
+    DeleteOpeningBalanceCommand,
+    DeleteOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.get import (
+    GetOpeningBalanceInteractor,
+    GetOpeningBalanceQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.list import (
+    ListOpeningBalancesInteractor,
+    ListOpeningBalancesQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.post import (
+    PostOpeningBalanceCommand,
+    PostOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.update import (
+    UpdateOpeningBalanceCommand,
+    UpdateOpeningBalanceInteractor,
+    UpdateOpeningBalanceLineCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
     CreateReceiptInteractor,
@@ -133,6 +159,7 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     BalanceListSchema,
     BalanceSchema,
     CreateInventoryCountSchema,
+    CreateOpeningBalanceSchema,
     CreateReceiptSchema,
     CreateTransferSchema,
     CreateWriteOffSchema,
@@ -145,6 +172,10 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     LotBalanceSchema,
     MovementItemSchema,
     MovementListSchema,
+    OpeningBalanceDetailSchema,
+    OpeningBalanceLineSchema,
+    OpeningBalanceListItemSchema,
+    OpeningBalanceListSchema,
     ReceiptDetailSchema,
     ReceiptLineSchema,
     ReceiptListItemSchema,
@@ -154,6 +185,7 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     TransferListItemSchema,
     TransferListSchema,
     UpdateInventoryCountSchema,
+    UpdateOpeningBalanceSchema,
     UpdateReceiptSchema,
     UpdateTransferSchema,
     UpdateWriteOffSchema,
@@ -221,6 +253,36 @@ def _update_write_off_lines(
             nomenclature_id=line.nomenclature_id,
             quantity=line.quantity,
             lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
+def _opening_balance_lines(
+    lines: list[OpeningBalanceLineSchema],
+) -> list[OpeningBalanceLineCommand]:
+    return [
+        OpeningBalanceLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            unit_cost=line.unit_cost,
+            lot_code=line.lot_code,
+            expires_at=line.expires_at,
+        )
+        for line in lines
+    ]
+
+
+def _update_opening_balance_lines(
+    lines: list[OpeningBalanceLineSchema],
+) -> list[UpdateOpeningBalanceLineCommand]:
+    return [
+        UpdateOpeningBalanceLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            unit_cost=line.unit_cost,
+            lot_code=line.lot_code,
+            expires_at=line.expires_at,
         )
         for line in lines
     ]
@@ -351,6 +413,128 @@ async def delete_write_off(request: Request, write_off_id: UUID) -> JSONResponse
         await interactor(DeleteWriteOffCommand(write_off_id=write_off_id))
 
     return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/opening-balances",
+    description="Создать ввод начальных остатков (черновик)",
+    status_code=201,
+)
+async def create_opening_balance(
+    request: Request, data: CreateOpeningBalanceSchema
+) -> JSONResponse:
+    command = CreateOpeningBalanceCommand(
+        org_unit_id=data.org_unit_id,
+        occurred_at=data.occurred_at,
+        lines=_opening_balance_lines(data.lines),
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(CreateOpeningBalanceInteractor)
+        opening_balance_id = await interactor(command)
+
+    return JSONResponse(
+        status_code=201, content={"opening_balance_id": str(opening_balance_id)}
+    )
+
+
+@router.post(
+    "/opening-balances/{opening_balance_id}/post",
+    description="Провести ввод начальных остатков",
+)
+async def post_opening_balance(
+    request: Request, opening_balance_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(PostOpeningBalanceInteractor)
+        await interactor(
+            PostOpeningBalanceCommand(opening_balance_id=opening_balance_id)
+        )
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.patch(
+    "/opening-balances/{opening_balance_id}",
+    description="Изменить черновик ввода начальных остатков",
+)
+async def update_opening_balance(
+    request: Request, opening_balance_id: UUID, data: UpdateOpeningBalanceSchema
+) -> JSONResponse:
+    command = UpdateOpeningBalanceCommand(
+        opening_balance_id=opening_balance_id,
+        occurred_at=data.occurred_at,
+        lines=_update_opening_balance_lines(data.lines),
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateOpeningBalanceInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.delete(
+    "/opening-balances/{opening_balance_id}",
+    description="Удалить черновик ввода начальных остатков",
+)
+async def delete_opening_balance(
+    request: Request, opening_balance_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(DeleteOpeningBalanceInteractor)
+        await interactor(
+            DeleteOpeningBalanceCommand(opening_balance_id=opening_balance_id)
+        )
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.get(
+    "/opening-balances",
+    response_model=OpeningBalanceListSchema,
+    description="Журнал ввода начальных остатков",
+)
+async def list_opening_balances(
+    request: Request,
+    org_unit_id: UUID | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    search: str | None = None,
+) -> OpeningBalanceListSchema:
+    query = ListOpeningBalancesQuery(
+        org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListOpeningBalancesInteractor)
+        page = await interactor(query)
+
+    return OpeningBalanceListSchema(
+        items=[OpeningBalanceListItemSchema.from_dto(item) for item in page.items],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
+@router.get(
+    "/opening-balances/{opening_balance_id}",
+    response_model=OpeningBalanceDetailSchema,
+    description="Карточка ввода начальных остатков",
+)
+async def get_opening_balance(
+    request: Request, opening_balance_id: UUID
+) -> OpeningBalanceDetailSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetOpeningBalanceInteractor)
+        detail = await interactor(
+            GetOpeningBalanceQuery(opening_balance_id=opening_balance_id)
+        )
+
+    return OpeningBalanceDetailSchema.from_dto(detail)
 
 
 @router.get(

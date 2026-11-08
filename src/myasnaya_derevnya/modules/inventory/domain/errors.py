@@ -248,6 +248,14 @@ class InventoryCountNotFoundError(NotFoundError):
 
 
 @dataclass(slots=True, eq=False)
+class OpeningBalanceNotFoundError(NotFoundError):
+    opening_balance_id: UUID
+
+    def __str__(self) -> str:
+        return f"Ввод начальных остатков {self.opening_balance_id} не найден"
+
+
+@dataclass(slots=True, eq=False)
 class NegativeCountError(InventoryDomainError):
     def __str__(self) -> str:
         return "Фактическое количество не может быть отрицательным"

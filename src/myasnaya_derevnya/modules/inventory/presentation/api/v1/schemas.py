@@ -12,6 +12,8 @@ from myasnaya_derevnya.modules.inventory.application.dto import (
     LocationListItem,
     LotBalanceListItem,
     MovementListItem,
+    OpeningBalanceDetail,
+    OpeningBalanceListItem,
     ReceiptDetail,
     ReceiptListItem,
     TransferDetail,
@@ -576,6 +578,112 @@ class InventoryCountDetailSchema(BaseModel):
             comment=detail.comment,
             lines=[
                 InventoryCountLineViewSchema.from_dto(line) for line in detail.lines
+            ],
+            number=detail.number,
+        )
+
+
+class OpeningBalanceLineSchema(BaseModel):
+    nomenclature_id: UUID
+    quantity: Decimal = Field(gt=0)
+    unit_cost: Decimal = Field(ge=0)
+    lot_code: str | None = None
+    expires_at: date | None = None
+
+
+class CreateOpeningBalanceSchema(BaseModel):
+    org_unit_id: UUID
+    occurred_at: datetime
+    lines: list[OpeningBalanceLineSchema] = Field(min_length=1)
+    comment: str | None = None
+
+
+class UpdateOpeningBalanceSchema(BaseModel):
+    occurred_at: datetime
+    lines: list[OpeningBalanceLineSchema] = Field(min_length=1)
+    comment: str | None = None
+
+
+class OpeningBalanceListItemSchema(BaseModel):
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    line_count: int
+    total_kopecks: int
+    number: str | None = None
+
+    @classmethod
+    def from_dto(
+        cls, item: OpeningBalanceListItem
+    ) -> OpeningBalanceListItemSchema:
+        return cls(
+            id=item.id,
+            org_unit_id=item.org_unit_id,
+            status=item.status,
+            occurred_at=item.occurred_at,
+            posted_at=item.posted_at,
+            comment=item.comment,
+            line_count=item.line_count,
+            total_kopecks=item.total_kopecks,
+            number=item.number,
+        )
+
+
+class OpeningBalanceLineViewSchema(BaseModel):
+    id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None
+    quantity: Decimal
+    unit_cost: Decimal
+    total_kopecks: int
+    lot_code: str | None
+    expires_at: date | None
+
+    @classmethod
+    def from_dto(cls, item) -> OpeningBalanceLineViewSchema:
+        return cls(
+            id=item.id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            quantity=item.quantity,
+            unit_cost=item.unit_cost,
+            total_kopecks=item.total_kopecks,
+            lot_code=item.lot_code,
+            expires_at=item.expires_at,
+        )
+
+
+class OpeningBalanceListSchema(BaseModel):
+    items: list[OpeningBalanceListItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class OpeningBalanceDetailSchema(BaseModel):
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    lines: list[OpeningBalanceLineViewSchema]
+    number: str | None = None
+
+    @classmethod
+    def from_dto(cls, detail: OpeningBalanceDetail) -> OpeningBalanceDetailSchema:
+        return cls(
+            id=detail.id,
+            org_unit_id=detail.org_unit_id,
+            status=detail.status,
+            occurred_at=detail.occurred_at,
+            posted_at=detail.posted_at,
+            comment=detail.comment,
+            lines=[
+                OpeningBalanceLineViewSchema.from_dto(line) for line in detail.lines
             ],
             number=detail.number,
         )

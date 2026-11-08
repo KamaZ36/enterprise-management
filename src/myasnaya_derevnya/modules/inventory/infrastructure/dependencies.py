@@ -36,6 +36,24 @@ from myasnaya_derevnya.modules.inventory.application.interactors.lots.list impor
 from myasnaya_derevnya.modules.inventory.application.interactors.movements.list import (
     ListMovementsInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.create import (
+    CreateOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.delete import (
+    DeleteOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.get import (
+    GetOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.list import (
+    ListOpeningBalancesInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.post import (
+    PostOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.update import (
+    UpdateOpeningBalanceInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
     PostProductionInteractor,
 )
@@ -139,6 +157,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.movement.base im
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.movement.sqlalchemy import (
     SQLAlchemyMovementReader,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.opening_balance.base import (
+    OpeningBalanceReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.opening_balance.sqlalchemy import (
+    SQLAlchemyOpeningBalanceReader,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base import (
     ReceiptReader,
 )
@@ -168,6 +192,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_c
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.sqlalchemy import (
     SQLAlchemyInventoryCountRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.opening_balance.base import (
+    OpeningBalanceRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.opening_balance.sqlalchemy import (
+    SQLAlchemyOpeningBalanceRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.base import (
     ReceiptRepository,
@@ -252,6 +282,12 @@ class InventoryDepProvider(Provider):
         return SQLAlchemyInventoryCountRepository(session)
 
     @provide(scope=Scope.REQUEST)
+    def get_opening_balance_repository(
+        self, session: AsyncSession
+    ) -> OpeningBalanceRepository:
+        return SQLAlchemyOpeningBalanceRepository(session)
+
+    @provide(scope=Scope.REQUEST)
     def get_stock_movement_repository(
         self, session: AsyncSession
     ) -> StockMovementRepository:
@@ -295,6 +331,12 @@ class InventoryDepProvider(Provider):
         self, session: AsyncSession
     ) -> InventoryCountReader:
         return SQLAlchemyInventoryCountReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_opening_balance_reader(
+        self, session: AsyncSession
+    ) -> OpeningBalanceReader:
+        return SQLAlchemyOpeningBalanceReader(session)
 
 
     @provide(scope=Scope.REQUEST)
@@ -370,6 +412,24 @@ class InventoryDepProvider(Provider):
     )
     update_inventory_count_interactor = provide(
         UpdateInventoryCountInteractor, scope=Scope.REQUEST
+    )
+    create_opening_balance_interactor = provide(
+        CreateOpeningBalanceInteractor, scope=Scope.REQUEST
+    )
+    delete_opening_balance_interactor = provide(
+        DeleteOpeningBalanceInteractor, scope=Scope.REQUEST
+    )
+    update_opening_balance_interactor = provide(
+        UpdateOpeningBalanceInteractor, scope=Scope.REQUEST
+    )
+    post_opening_balance_interactor = provide(
+        PostOpeningBalanceInteractor, scope=Scope.REQUEST
+    )
+    list_opening_balances_interactor = provide(
+        ListOpeningBalancesInteractor, scope=Scope.REQUEST
+    )
+    get_opening_balance_interactor = provide(
+        GetOpeningBalanceInteractor, scope=Scope.REQUEST
     )
     get_balance_interactor = provide(GetBalanceInteractor, scope=Scope.REQUEST)
     list_balances_interactor = provide(ListBalancesInteractor, scope=Scope.REQUEST)

@@ -202,3 +202,40 @@ class InventoryCountDetail:
     comment: str | None
     lines: list[InventoryCountLineItem]
     number: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class OpeningBalanceListItem:
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    line_count: int
+    total_kopecks: int
+    number: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class OpeningBalanceLineItem:
+    id: UUID
+    nomenclature_id: UUID
+    quantity: Decimal
+    unit_cost: Decimal
+    total_kopecks: int
+    lot_code: str | None
+    expires_at: date | None
+    nomenclature_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class OpeningBalanceDetail:
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    comment: str | None
+    lines: list[OpeningBalanceLineItem]
+    number: str | None = None

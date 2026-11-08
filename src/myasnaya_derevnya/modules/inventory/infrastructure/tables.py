@@ -381,6 +381,61 @@ INVENTORY_COUNT_LINES_TABLE = Table(
 )
 
 
+OPENING_BALANCES_TABLE = Table(
+    "opening_balances",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("status", String(32), nullable=False),
+    Column("number", String(32), nullable=True),
+    Column("occurred_at", DateTime(timezone=True), nullable=False),
+    Column("org_unit_id", UUID, nullable=False),
+    Column("comment", String(512), nullable=True),
+    Column("created_by", UUID, nullable=True),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column("posted_at", DateTime(timezone=True), nullable=True),
+    UniqueConstraint("number", name="uq_opening_balances_number"),
+    Index(
+        "ix_opening_balances_org_unit_occurred_at",
+        "org_unit_id",
+        "occurred_at",
+    ),
+    Index("ix_opening_balances_status", "status"),
+    schema=DATABASE_SCHEMA,
+)
+
+
+OPENING_BALANCE_LINES_TABLE = Table(
+    "opening_balance_lines",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column(
+        "opening_balance_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.opening_balances.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("nomenclature_id", UUID, nullable=False),
+    Column(
+        "lot_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.stock_lots.id", ondelete="RESTRICT"),
+        nullable=True,
+    ),
+    Column("lot_code", String(64), nullable=True),
+    Column("expires_at", Date, nullable=True),
+    Column("quantity", QUANTITY, nullable=False),
+    Column("unit_cost", Numeric(18, 6), nullable=False, server_default="0"),
+    Column("total_cost", BigInteger, nullable=False, server_default="0"),
+    CheckConstraint("quantity > 0", name="quantity_positive"),
+    Index(
+        "ix_opening_balance_lines_opening_balance_id", "opening_balance_id"
+    ),
+    schema=DATABASE_SCHEMA,
+)
+
+
 DOCUMENT_NUMBER_COUNTERS_TABLE = Table(
     "document_number_counters",
     metadata,

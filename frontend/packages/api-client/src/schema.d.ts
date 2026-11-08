@@ -1068,6 +1068,78 @@ export interface paths {
         patch: operations["update_write_off_api_inventory_write_offs__write_off_id__patch"];
         trace?: never;
     };
+    "/api/inventory/opening-balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Opening Balances
+         * @description Журнал ввода начальных остатков
+         */
+        get: operations["list_opening_balances_api_inventory_opening_balances_get"];
+        put?: never;
+        /**
+         * Create Opening Balance
+         * @description Создать ввод начальных остатков (черновик)
+         */
+        post: operations["create_opening_balance_api_inventory_opening_balances_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/opening-balances/{opening_balance_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Opening Balance
+         * @description Провести ввод начальных остатков
+         */
+        post: operations["post_opening_balance_api_inventory_opening_balances__opening_balance_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/opening-balances/{opening_balance_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Opening Balance
+         * @description Карточка ввода начальных остатков
+         */
+        get: operations["get_opening_balance_api_inventory_opening_balances__opening_balance_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Opening Balance
+         * @description Удалить черновик ввода начальных остатков
+         */
+        delete: operations["delete_opening_balance_api_inventory_opening_balances__opening_balance_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Opening Balance
+         * @description Изменить черновик ввода начальных остатков
+         */
+        patch: operations["update_opening_balance_api_inventory_opening_balances__opening_balance_id__patch"];
+        trace?: never;
+    };
     "/api/inventory/locations/{org_unit_id}/balances": {
         parameters: {
             query?: never;
@@ -2715,6 +2787,23 @@ export interface components {
              */
             requires_vetis: boolean;
         };
+        /** CreateOpeningBalanceSchema */
+        CreateOpeningBalanceSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["OpeningBalanceLineSchema"][];
+            /** Comment */
+            comment?: string | null;
+        };
         /** CreateOrderSchema */
         CreateOrderSchema: {
             /**
@@ -3806,6 +3895,116 @@ export interface components {
             error: string | null;
             /** Posted At */
             posted_at: string | null;
+        };
+        /** OpeningBalanceDetailSchema */
+        OpeningBalanceDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Lines */
+            lines: components["schemas"]["OpeningBalanceLineViewSchema"][];
+            /** Number */
+            number?: string | null;
+        };
+        /** OpeningBalanceLineSchema */
+        OpeningBalanceLineSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Quantity */
+            quantity: number | string;
+            /** Unit Cost */
+            unit_cost: number | string;
+            /** Lot Code */
+            lot_code?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+        };
+        /** OpeningBalanceLineViewSchema */
+        OpeningBalanceLineViewSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Unit Cost */
+            unit_cost: string;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Lot Code */
+            lot_code: string | null;
+            /** Expires At */
+            expires_at: string | null;
+        };
+        /** OpeningBalanceListItemSchema */
+        OpeningBalanceListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Comment */
+            comment: string | null;
+            /** Line Count */
+            line_count: number;
+            /** Total Kopecks */
+            total_kopecks: number;
+            /** Number */
+            number?: string | null;
+        };
+        /** OpeningBalanceListSchema */
+        OpeningBalanceListSchema: {
+            /** Items */
+            items: components["schemas"]["OpeningBalanceListItemSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /**
          * OrderChannel
@@ -5254,6 +5453,18 @@ export interface components {
             image_url?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /** UpdateOpeningBalanceSchema */
+        UpdateOpeningBalanceSchema: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Lines */
+            lines: components["schemas"]["OpeningBalanceLineSchema"][];
+            /** Comment */
+            comment?: string | null;
         };
         /** UpdateOrderSchema */
         UpdateOrderSchema: {
@@ -7716,6 +7927,201 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateWriteOffSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_opening_balances_api_inventory_opening_balances_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+                limit?: number;
+                offset?: number;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningBalanceListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_opening_balance_api_inventory_opening_balances_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOpeningBalanceSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_opening_balance_api_inventory_opening_balances__opening_balance_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_balance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_opening_balance_api_inventory_opening_balances__opening_balance_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_balance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpeningBalanceDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_opening_balance_api_inventory_opening_balances__opening_balance_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_balance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_opening_balance_api_inventory_opening_balances__opening_balance_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_balance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOpeningBalanceSchema"];
             };
         };
         responses: {

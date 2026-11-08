@@ -44,6 +44,8 @@ from myasnaya_derevnya.modules.fiscal.infrastructure.tables import (  # noqa: F4
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (  # noqa: F401
     INVENTORY_COUNT_LINES_TABLE,
     INVENTORY_COUNTS_TABLE,
+    OPENING_BALANCE_LINES_TABLE,
+    OPENING_BALANCES_TABLE,
     RECEIPT_LINES_TABLE,
     RECEIPTS_TABLE,
     STOCK_BALANCES_TABLE,

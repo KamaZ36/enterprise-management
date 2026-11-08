@@ -70,6 +70,7 @@ EXPECTED = {
     ("catalog", "nomenclatures", "unit"): UnitOfMeasurement,
     ("customer", "customers", "status"): CustomerStatus,
     ("inventory", "receipts", "status"): DocumentStatus,
+    ("inventory", "opening_balances", "status"): DocumentStatus,
     ("inventory", "stock_movements", "movement_type"): MovementType,
     ("inventory", "stock_postings", "document_type"): DocumentType,
     ("inventory", "transfers", "status"): DocumentStatus,

@@ -6,5 +6,6 @@ class DocumentType(StrEnum):
     WRITE_OFF = "write_off"
     TRANSFER = "transfer"
     INVENTORY_COUNT = "inventory_count"
+    OPENING_BALANCE = "opening_balance"
     PRODUCTION = "production"
     SALE = "sale"
