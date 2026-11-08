@@ -66,6 +66,9 @@ from myasnaya_derevnya.modules.pos.presentation.api.v1 import (
 from myasnaya_derevnya.modules.production.presentation.api.v1 import (
     router as production_router,
 )
+from myasnaya_derevnya.modules.reports.presentation.api.v1 import (
+    router as reports_router,
+)
 from myasnaya_derevnya.modules.staff.presentation.api.v1 import (
     access_router,
 )
@@ -156,6 +159,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(pos_router)
     app.include_router(edo_router)
     app.include_router(veterinary_router)
+    app.include_router(reports_router)
 
 
 def include_media(app: FastAPI) -> None:

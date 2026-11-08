@@ -2108,6 +2108,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Summary
+         * @description Сводка: продажи, склад, производство и списания
+         */
+        get: operations["get_summary_api_reports_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sales
+         * @description Продажи по кассам: выручка, себестоимость и маржа
+         */
+        get: operations["list_sales_api_reports_sales_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Stock
+         * @description Остатки и стоимость склада по точкам
+         */
+        get: operations["get_stock_api_reports_stock_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/production": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Production
+         * @description Выпуск производства по техкартам
+         */
+        get: operations["list_production_api_reports_production_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/write-offs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Write Offs
+         * @description Списания по точкам и причинам
+         */
+        get: operations["list_write_offs_api_reports_write_offs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2861,6 +2961,8 @@ export interface components {
             id: string;
             /** Title */
             title: string;
+            /** Type */
+            type: string;
             /** Permissions */
             permissions: string[];
         };
@@ -4471,6 +4573,29 @@ export interface components {
             /** Batch Id */
             batch_id?: string | null;
         };
+        /** ProductionReportRowSchema */
+        ProductionReportRowSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Tech Card Code */
+            tech_card_code: string;
+            /** Orders Count */
+            orders_count: number;
+            /** Output Quantity */
+            output_quantity: string;
+            /** Cost Kopecks */
+            cost_kopecks: number;
+        };
+        /** ProductionReportSchema */
+        ProductionReportSchema: {
+            /** Items */
+            items: components["schemas"]["ProductionReportRowSchema"][];
+        };
         /** ReceiptDetailSchema */
         ReceiptDetailSchema: {
             /**
@@ -4613,6 +4738,25 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** ReportSummarySchema */
+        ReportSummarySchema: {
+            /** Revenue Kopecks */
+            revenue_kopecks: number;
+            /** Cost Kopecks */
+            cost_kopecks: number;
+            /** Margin Kopecks */
+            margin_kopecks: number;
+            /** Receipts Count */
+            receipts_count: number;
+            /** Stock Value Kopecks */
+            stock_value_kopecks: number;
+            /** Production Orders */
+            production_orders: number;
+            /** Write Off Cost Kopecks */
+            write_off_cost_kopecks: number;
+            /** Problem Receipts */
+            problem_receipts: number;
+        };
         /** RequestLoginCodeCommand */
         RequestLoginCodeCommand: {
             /** Phone */
@@ -4641,6 +4785,42 @@ export interface components {
             is_wildcard: boolean;
             /** Permission Codes */
             permission_codes: string[];
+        };
+        /** SalesReportRowSchema */
+        SalesReportRowSchema: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Revenue Kopecks */
+            revenue_kopecks: number;
+            /** Cost Kopecks */
+            cost_kopecks: number;
+            /** Margin Kopecks */
+            margin_kopecks: number;
+            /** Receipts Count */
+            receipts_count: number;
+        };
+        /** SalesReportSchema */
+        SalesReportSchema: {
+            /** Items */
+            items: components["schemas"]["SalesReportRowSchema"][];
+            /** Total Revenue Kopecks */
+            total_revenue_kopecks: number;
+            /** Total Cost Kopecks */
+            total_cost_kopecks: number;
+            /** Total Margin Kopecks */
+            total_margin_kopecks: number;
+            /** Total Receipts */
+            total_receipts: number;
         };
         /** SetPosAgentActiveSchema */
         SetPosAgentActiveSchema: {
@@ -4673,6 +4853,27 @@ export interface components {
             name: string;
             /** Is Active */
             is_active: boolean;
+        };
+        /** StockReportRowSchema */
+        StockReportRowSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Positions */
+            positions: number;
+            /** Value Kopecks */
+            value_kopecks: number;
+            /** Expiring Lots */
+            expiring_lots: number;
+        };
+        /** StockReportSchema */
+        StockReportSchema: {
+            /** Items */
+            items: components["schemas"]["StockReportRowSchema"][];
         };
         /** StopListItemSchema */
         StopListItemSchema: {
@@ -5314,6 +5515,34 @@ export interface components {
             limit: number;
             /** Offset */
             offset: number;
+        };
+        /** WriteOffReportRowSchema */
+        WriteOffReportRowSchema: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Documents Count */
+            documents_count: number;
+            /** Quantity */
+            quantity: string;
+            /** Cost Kopecks */
+            cost_kopecks: number;
+        };
+        /** WriteOffReportSchema */
+        WriteOffReportSchema: {
+            /** Items */
+            items: components["schemas"]["WriteOffReportRowSchema"][];
         };
     };
     responses: never;
@@ -9564,6 +9793,169 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VeterinaryDocumentListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_api_reports_summary_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                org_unit_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportSummarySchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sales_api_reports_sales_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                org_unit_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesReportSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stock_api_reports_stock_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockReportSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_production_api_reports_production_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                org_unit_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductionReportSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_write_offs_api_reports_write_offs_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                org_unit_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteOffReportSchema"];
                 };
             };
             /** @description Validation Error */

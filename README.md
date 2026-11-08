@@ -298,6 +298,7 @@ modules/<name>/
 | `catalog` | `/api/catalog` | категории, номенклатура, цены, фото, стоп-лист, витрина |
 | `inventory` | `/api/inventory` | склад, документы, остатки, движения |
 | `production` | `/api/production` | техкарты и производственные задания |
+| `reports` | `/api/reports` | продажи, склад, производство и списания |
 | `orders` | `/api/orders`, `/api/me` | заказы, корзина, статусы |
 | `customer` | `/api/customers` | профили и вход клиентов |
 | `fiscal` | `/api/fiscal` | кассы, привязки, чеки ОФД |

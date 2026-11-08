@@ -176,6 +176,19 @@ export const MODULES: ModuleDefinition[
     ],
   },
   {
+    code: "reports",
+    title: "Отчёты",
+    icon: "Document",
+    tabs: [
+      {
+        path: "/reports",
+        title: "Отчёты",
+        icon: "Document",
+        permissions: CAN.reportsOpen,
+      },
+    ],
+  },
+  {
     code: "orders",
     title: "Заказы",
     icon: "Document",
