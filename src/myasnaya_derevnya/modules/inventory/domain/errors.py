@@ -202,6 +202,25 @@ class DocumentAlreadyPostedError(ConflictError):
 
 
 @dataclass(slots=True, eq=False)
+class DocumentNotPostedError(ConflictError):
+    document_id: UUID
+
+    def __str__(self) -> str:
+        return f"Документ {self.document_id} не проведён"
+
+
+@dataclass(slots=True, eq=False)
+class DocumentCannotBeUnpostedError(ConflictError):
+    document_id: UUID
+
+    def __str__(self) -> str:
+        return (
+            f"Нельзя отменить проведение документа {self.document_id}: "
+            "после него уже были движения по этим позициям"
+        )
+
+
+@dataclass(slots=True, eq=False)
 class EmptyFieldError(InventoryDomainError):
     field: str
 

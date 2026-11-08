@@ -24,6 +24,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.inventory_count
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.post import (
     PostInventoryCountInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.unpost import (
+    UnpostInventoryCountInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.update import (
     UpdateInventoryCountInteractor,
 )
@@ -51,6 +54,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.opening_balance
 from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.post import (
     PostOpeningBalanceInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.unpost import (
+    UnpostOpeningBalanceInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.update import (
     UpdateOpeningBalanceInteractor,
 )
@@ -71,6 +77,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list i
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.unpost import (
+    UnpostReceiptInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update import (
     UpdateReceiptInteractor,
@@ -93,6 +102,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.list 
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.post import (
     PostTransferInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.unpost import (
+    UnpostTransferInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.update import (
     UpdateTransferInteractor,
 )
@@ -110,6 +122,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.unpost import (
+    UnpostWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.update import (
     UpdateWriteOffInteractor,
@@ -446,6 +461,22 @@ class InventoryDepProvider(Provider):
     delete_transfer_interactor = provide(DeleteTransferInteractor, scope=Scope.REQUEST)
     post_transfer_interactor = provide(PostTransferInteractor, scope=Scope.REQUEST)
     list_transfers_interactor = provide(ListTransfersInteractor, scope=Scope.REQUEST)
+
+    unpost_receipt_interactor = provide(
+        UnpostReceiptInteractor, scope=Scope.REQUEST
+    )
+    unpost_write_off_interactor = provide(
+        UnpostWriteOffInteractor, scope=Scope.REQUEST
+    )
+    unpost_inventory_count_interactor = provide(
+        UnpostInventoryCountInteractor, scope=Scope.REQUEST
+    )
+    unpost_opening_balance_interactor = provide(
+        UnpostOpeningBalanceInteractor, scope=Scope.REQUEST
+    )
+    unpost_transfer_interactor = provide(
+        UnpostTransferInteractor, scope=Scope.REQUEST
+    )
     get_transfer_interactor = provide(GetTransferInteractor, scope=Scope.REQUEST)
     update_transfer_interactor = provide(UpdateTransferInteractor, scope=Scope.REQUEST)
 

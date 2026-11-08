@@ -5,6 +5,7 @@ from uuid import UUID, uuid7
 
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
+    DocumentNotPostedError,
     EmptyDocumentError,
     EmptyMovementError,
     SameLocationTransferError,
@@ -180,3 +181,11 @@ class Transfer:
 
         self._status = DocumentStatus.POSTED
         self._posted_at = get_datetime_utc()
+
+    def unpost(self) -> None:
+        if self._status is not DocumentStatus.POSTED:
+            raise DocumentNotPostedError(self._id)
+
+        self._status = DocumentStatus.DRAFT
+        self._posted_at = None
+

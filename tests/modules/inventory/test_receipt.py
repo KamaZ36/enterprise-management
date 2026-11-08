@@ -10,6 +10,7 @@ from myasnaya_derevnya.modules.inventory.domain.entities.receipt import (
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
+    DocumentNotPostedError,
     EmptyDocumentError,
     EmptyMovementError,
     TimezoneRequiredError,
@@ -91,6 +92,24 @@ def test_second_post_is_rejected() -> None:
 
     with pytest.raises(DocumentAlreadyPostedError):
         receipt.post()
+
+
+def test_unpost_returns_receipt_to_draft() -> None:
+    receipt = make_receipt()
+    receipt.post()
+
+    receipt.unpost()
+
+    assert receipt.status is DocumentStatus.DRAFT
+    assert receipt.posted_at is None
+    assert receipt.is_draft is True
+
+
+def test_unpost_draft_is_rejected() -> None:
+    receipt = make_receipt()
+
+    with pytest.raises(DocumentNotPostedError):
+        receipt.unpost()
 
 
 def test_post_without_lines_is_rejected() -> None:

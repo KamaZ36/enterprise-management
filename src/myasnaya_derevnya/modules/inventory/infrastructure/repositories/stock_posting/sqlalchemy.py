@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import insert, select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_posting import (
@@ -38,3 +38,33 @@ class SQLAlchemyStockPostingRepository(StockPostingRepository):
             )
         )
         return result.scalar_one_or_none() is not None
+
+    async def get_by_document(
+        self, *, document_type: str, document_id: UUID
+    ) -> StockPosting | None:
+        result = await self._session.execute(
+            select(STOCK_POSTINGS_TABLE).where(
+                STOCK_POSTINGS_TABLE.c.document_type == document_type,
+                STOCK_POSTINGS_TABLE.c.document_id == document_id,
+            )
+        )
+        row = result.mappings().one_or_none()
+
+        if row is None:
+            return None
+
+        return StockPosting(
+            id=row["id"],
+            document_type=row["document_type"],
+            document_id=row["document_id"],
+            org_unit_id=row["org_unit_id"],
+            posted_at=row["posted_at"],
+            posted_by=row["posted_by"],
+        )
+
+    async def delete(self, posting_id: UUID) -> None:
+        await self._session.execute(
+            delete(STOCK_POSTINGS_TABLE).where(
+                STOCK_POSTINGS_TABLE.c.id == posting_id
+            )
+        )

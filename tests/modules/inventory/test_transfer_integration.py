@@ -45,6 +45,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.post 
     PostTransferCommand,
     PostTransferInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.unpost import (
+    UnpostTransferCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.services.lot_resolver import (
     LotResolver,
 )
@@ -89,6 +92,7 @@ from tests.modules.inventory.helpers import (
     FakeIdentityProvider,
     FakeStaffAPI,
     build_interactors,
+    build_unpost_actors,
 )
 
 pytestmark = pytest.mark.db
@@ -304,3 +308,44 @@ async def test_transfer_cannot_be_posted_twice(
 
     with pytest.raises(DocumentAlreadyPostedError):
         await post(PostTransferCommand(transfer_id=transfer_id))
+
+async def test_unpost_transfer_returns_stock_to_source(
+    db_session: AsyncSession, make_location, make_nomenclature
+) -> None:
+    source = await make_location()
+    target = await make_location()
+    nomenclature = await make_nomenclature()
+
+    await receive(db_session, source.id, nomenclature.id, "10", "450")
+    create, post, _ = build_transfer_interactors(db_session)
+    transfer_id = await create(
+        CreateTransferCommand(
+            from_org_unit_id=source.id,
+            to_org_unit_id=target.id,
+            occurred_at=OCCURRED_AT,
+            lines=[
+                TransferLineCommand(
+                    nomenclature_id=nomenclature.id,
+                    quantity=Decimal(4),
+                )
+            ],
+        )
+    )
+    await post(PostTransferCommand(transfer_id=transfer_id))
+
+    unpost = build_unpost_actors(db_session)
+    await unpost.transfer(
+        UnpostTransferCommand(transfer_id=transfer_id)
+    )
+
+    _, _, balances = build_transfer_interactors(db_session)
+    source_balance = await balances.get(source.id, nomenclature.id)
+    target_balance = await balances.get(target.id, nomenclature.id)
+
+    assert source_balance is not None
+    assert target_balance is not None
+    assert source_balance.quantity == Decimal(10)
+    assert target_balance.quantity == Decimal(0)
+    assert source_balance.total_value.kopecks == 450000
+    assert target_balance.total_value.kopecks == 0
+

@@ -35,6 +35,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.inventory_count
     PostInventoryCountCommand,
     PostInventoryCountInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.unpost import (
+    UnpostInventoryCountCommand,
+    UnpostInventoryCountInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.update import (
     UpdateInventoryCountCommand,
     UpdateInventoryCountInteractor,
@@ -72,6 +76,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.opening_balance
     PostOpeningBalanceCommand,
     PostOpeningBalanceInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.unpost import (
+    UnpostOpeningBalanceCommand,
+    UnpostOpeningBalanceInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.update import (
     UpdateOpeningBalanceCommand,
     UpdateOpeningBalanceInteractor,
@@ -97,6 +105,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.list i
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptCommand,
     PostReceiptInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.unpost import (
+    UnpostReceiptCommand,
+    UnpostReceiptInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update import (
     UpdateReceiptCommand,
@@ -124,6 +136,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.transfers.post 
     PostTransferCommand,
     PostTransferInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.unpost import (
+    UnpostTransferCommand,
+    UnpostTransferInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.update import (
     UpdateTransferCommand,
     UpdateTransferInteractor,
@@ -149,6 +165,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.list
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffCommand,
     PostWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.unpost import (
+    UnpostWriteOffCommand,
+    UnpostWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.update import (
     UpdateWriteOffCommand,
@@ -329,6 +349,18 @@ async def post_receipt(request: Request, receipt_id: UUID) -> JSONResponse:
     return JSONResponse(content={"message": "ok"})
 
 
+@router.post(
+    "/receipts/{receipt_id}/unpost",
+    description="Отменить проведение поступления",
+)
+async def unpost_receipt(request: Request, receipt_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostReceiptInteractor)
+        await interactor(UnpostReceiptCommand(receipt_id=receipt_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
 @router.post("/write-offs", description="Создать списание (черновик)", status_code=201)
 async def create_write_off(
     request: Request, data: CreateWriteOffSchema
@@ -353,6 +385,20 @@ async def post_write_off(request: Request, write_off_id: UUID) -> JSONResponse:
     async with container(context={Request: request}) as context:
         interactor = await context.get(PostWriteOffInteractor)
         await interactor(PostWriteOffCommand(write_off_id=write_off_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/write-offs/{write_off_id}/unpost",
+    description="Отменить проведение списания",
+)
+async def unpost_write_off(
+    request: Request, write_off_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostWriteOffInteractor)
+        await interactor(UnpostWriteOffCommand(write_off_id=write_off_id))
 
     return JSONResponse(content={"message": "ok"})
 
@@ -450,6 +496,24 @@ async def post_opening_balance(
         interactor = await context.get(PostOpeningBalanceInteractor)
         await interactor(
             PostOpeningBalanceCommand(opening_balance_id=opening_balance_id)
+        )
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/opening-balances/{opening_balance_id}/unpost",
+    description="Отменить проведение ввода начальных остатков",
+)
+async def unpost_opening_balance(
+    request: Request, opening_balance_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostOpeningBalanceInteractor)
+        await interactor(
+            UnpostOpeningBalanceCommand(
+                opening_balance_id=opening_balance_id
+            )
         )
 
     return JSONResponse(content={"message": "ok"})
@@ -799,6 +863,18 @@ async def post_transfer(request: Request, transfer_id: UUID) -> JSONResponse:
     return JSONResponse(content={"message": "ok"})
 
 
+@router.post(
+    "/transfers/{transfer_id}/unpost",
+    description="Отменить проведение перемещения",
+)
+async def unpost_transfer(request: Request, transfer_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostTransferInteractor)
+        await interactor(UnpostTransferCommand(transfer_id=transfer_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
 @router.get(
     "/transfers",
     response_model=TransferListSchema,
@@ -952,6 +1028,24 @@ async def post_inventory_count(
         interactor = await context.get(PostInventoryCountInteractor)
         await interactor(
             PostInventoryCountCommand(inventory_count_id=inventory_count_id)
+        )
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/inventory-counts/{inventory_count_id}/unpost",
+    description="Отменить проведение инвентаризации",
+)
+async def unpost_inventory_count(
+    request: Request, inventory_count_id: UUID
+) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostInventoryCountInteractor)
+        await interactor(
+            UnpostInventoryCountCommand(
+                inventory_count_id=inventory_count_id
+            )
         )
 
     return JSONResponse(content={"message": "ok"})

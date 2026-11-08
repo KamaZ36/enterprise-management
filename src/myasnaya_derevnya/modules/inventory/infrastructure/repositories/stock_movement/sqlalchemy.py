@@ -1,12 +1,15 @@
 from collections.abc import Sequence
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, insert, select
+from sqlalchemy import delete, exists, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.inventory.domain.entities.stock_movement import (
+    MovementType,
     StockMovement,
 )
+from myasnaya_derevnya.modules.inventory.domain.value_objects.money import Money
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movement.base import (
     StockMovementRepository,
 )
@@ -51,4 +54,53 @@ class SQLAlchemyStockMovementRepository(StockMovementRepository):
                     for movement in movements
                 ]
             )
+        )
+
+    async def list_by_posting(self, posting_id: UUID) -> list[StockMovement]:
+        stmt = select(STOCK_MOVEMENTS_TABLE).where(
+            STOCK_MOVEMENTS_TABLE.c.posting_id == posting_id
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+
+        return [self._to_entity(row) for row in rows]
+
+    async def delete_by_posting(self, posting_id: UUID) -> None:
+        await self._session.execute(
+            delete(STOCK_MOVEMENTS_TABLE).where(
+                STOCK_MOVEMENTS_TABLE.c.posting_id == posting_id
+            )
+        )
+
+    async def has_later_movements(
+        self,
+        *,
+        posting_id: UUID,
+        since: datetime,
+        org_unit_id: UUID,
+        nomenclature_id: UUID,
+    ) -> bool:
+        stmt = select(
+            exists().where(
+                STOCK_MOVEMENTS_TABLE.c.org_unit_id == org_unit_id,
+                STOCK_MOVEMENTS_TABLE.c.nomenclature_id == nomenclature_id,
+                STOCK_MOVEMENTS_TABLE.c.posting_id != posting_id,
+                STOCK_MOVEMENTS_TABLE.c.recorded_at > since,
+            )
+        )
+
+        return bool(await self._session.scalar(stmt))
+
+    def _to_entity(self, row) -> StockMovement:
+        return StockMovement(
+            id=row["id"],
+            occurred_at=row["occurred_at"],
+            recorded_at=row["recorded_at"],
+            org_unit_id=row["org_unit_id"],
+            nomenclature_id=row["nomenclature_id"],
+            lot_id=row["lot_id"],
+            movement_type=MovementType(row["movement_type"]),
+            quantity=row["quantity"],
+            total_cost=Money(kopecks=row["total_cost"]),
+            posting_id=row["posting_id"],
+            created_by=row["created_by"],
         )

@@ -43,6 +43,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.inventory_count
     PostInventoryCountCommand,
     PostInventoryCountInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.unpost import (
+    UnpostInventoryCountCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.update import (
     UpdateInventoryCountCommand,
     UpdateInventoryCountInteractor,
@@ -81,6 +84,9 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_nu
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.sqlalchemy import (
     SQLAlchemyInventoryCountRepository,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_balance.sqlalchemy import (
+    SQLAlchemyStockBalanceRepository,
+)
 from myasnaya_derevnya.modules.staff.domain.value_objects.access_scope import (
     AccessScope,
 )
@@ -90,6 +96,7 @@ from tests.modules.inventory.helpers import (
     FakeStaffAPI,
     build_interactors,
     build_posting,
+    build_unpost_actors,
     business_api,
 )
 
@@ -566,3 +573,44 @@ async def test_list_respects_scope(
     page = await list_interactor(ListInventoryCountsQuery())
 
     assert page.items == []
+
+async def test_unpost_inventory_count_restores_book_quantity(
+    db_session: AsyncSession, make_location, make_nomenclature
+) -> None:
+    location = await make_location()
+    nomenclature = await make_nomenclature()
+    await receive(db_session, location.id, nomenclature.id, "10", "100")
+
+    create, post, *_ = build_inventory_count_interactors(db_session)
+    document_id = await create(
+        CreateInventoryCountCommand(
+            org_unit_id=location.id,
+            occurred_at=OCCURRED_AT,
+            lines=[
+                InventoryCountLineCommand(
+                    nomenclature_id=nomenclature.id,
+                    counted_quantity=Decimal(7),
+                )
+            ],
+        )
+    )
+    await post(PostInventoryCountCommand(inventory_count_id=document_id))
+
+    unpost = build_unpost_actors(db_session)
+    await unpost.inventory_count(
+        UnpostInventoryCountCommand(inventory_count_id=document_id)
+    )
+
+    stored = await SQLAlchemyInventoryCountRepository(db_session).get_by_id(
+        document_id
+    )
+    assert stored is not None
+    assert stored.status is DocumentStatus.DRAFT
+
+    balance = await SQLAlchemyStockBalanceRepository(db_session).get(
+        location.id, nomenclature.id
+    )
+    assert balance is not None
+    assert balance.quantity == Decimal(10)
+    assert balance.total_value.kopecks == 100000
+

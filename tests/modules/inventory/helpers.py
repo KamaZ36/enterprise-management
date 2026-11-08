@@ -33,6 +33,9 @@ from myasnaya_derevnya.modules.edo.infrastructure.repositories.document.sqlalche
     SQLAlchemyEdoDocumentRepository,
 )
 from myasnaya_derevnya.modules.edo.presentation.edo_api import EdoAPI
+from myasnaya_derevnya.modules.inventory.application.interactors.inventory_counts.unpost import (
+    UnpostInventoryCountInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.create import (
     CreateOpeningBalanceInteractor,
 )
@@ -41,6 +44,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.opening_balance
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.post import (
     PostOpeningBalanceInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.unpost import (
+    UnpostOpeningBalanceInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.opening_balances.update import (
     UpdateOpeningBalanceInteractor,
@@ -57,11 +63,17 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.delete
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.post import (
     PostReceiptInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.receipts.unpost import (
+    UnpostReceiptInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update import (
     UpdateReceiptInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
     PostSaleInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.transfers.unpost import (
+    UnpostTransferInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.create import (
     CreateWriteOffInteractor,
@@ -71,6 +83,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.dele
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.post import (
     PostWriteOffInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.unpost import (
+    UnpostWriteOffInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.write_offs.update import (
     UpdateWriteOffInteractor,
@@ -89,6 +104,9 @@ from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.sqlalchemy import (
     SQLAlchemyDocumentNumberRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.sqlalchemy import (
+    SQLAlchemyInventoryCountRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.opening_balance.sqlalchemy import (
     SQLAlchemyOpeningBalanceRepository,
@@ -110,6 +128,9 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_movem
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_posting.sqlalchemy import (
     SQLAlchemyStockPostingRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.sqlalchemy import (
+    SQLAlchemyTransferRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.sqlalchemy import (
     SQLAlchemyWriteOffRepository,
@@ -384,3 +405,67 @@ async def movement_totals(
     ).one()
 
     return row.quantity, row.total_cost
+
+@dataclass(frozen=True, slots=True)
+class UnpostActors:
+    receipt: UnpostReceiptInteractor
+    write_off: UnpostWriteOffInteractor
+    transfer: UnpostTransferInteractor
+    inventory_count: UnpostInventoryCountInteractor
+    opening_balance: UnpostOpeningBalanceInteractor
+    staff_api: FakeStaffAPI
+
+
+def build_unpost_actors(
+    session: AsyncSession, *, allowed: bool = True
+) -> UnpostActors:
+    identity = FakeIdentityProvider(uuid4())
+    staff_api = FakeStaffAPI(allowed=allowed)
+    transaction_manager = SQLAlchemyTransactionManager(session)
+    api = business_api(session)
+    _preconditions, _lot_resolver, ledger = build_posting(session)
+
+    return UnpostActors(
+        receipt=UnpostReceiptInteractor(
+            identity_provider=identity,
+            receipt_repository=SQLAlchemyReceiptRepository(session),
+            business_api=api,
+            staff_api=staff_api,
+            ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        write_off=UnpostWriteOffInteractor(
+            identity_provider=identity,
+            write_off_repository=SQLAlchemyWriteOffRepository(session),
+            business_api=api,
+            staff_api=staff_api,
+            ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        transfer=UnpostTransferInteractor(
+            identity_provider=identity,
+            transfer_repository=SQLAlchemyTransferRepository(session),
+            business_api=api,
+            staff_api=staff_api,
+            ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        inventory_count=UnpostInventoryCountInteractor(
+            identity_provider=identity,
+            inventory_count_repository=SQLAlchemyInventoryCountRepository(session),
+            business_api=api,
+            staff_api=staff_api,
+            ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        opening_balance=UnpostOpeningBalanceInteractor(
+            identity_provider=identity,
+            opening_balance_repository=SQLAlchemyOpeningBalanceRepository(session),
+            business_api=api,
+            staff_api=staff_api,
+            ledger=ledger,
+            transaction_manager=transaction_manager,
+        ),
+        staff_api=staff_api,
+    )
+

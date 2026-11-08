@@ -968,6 +968,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory/receipts/{receipt_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Receipt
+         * @description Отменить проведение поступления
+         */
+        post: operations["unpost_receipt_api_inventory_receipts__receipt_id__unpost_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/inventory/write-offs": {
         parameters: {
             query?: never;
@@ -1006,6 +1026,26 @@ export interface paths {
          * @description Провести списание
          */
         post: operations["post_write_off_api_inventory_write_offs__write_off_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/write-offs/{write_off_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Write Off
+         * @description Отменить проведение списания
+         */
+        post: operations["unpost_write_off_api_inventory_write_offs__write_off_id__unpost_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1106,6 +1146,26 @@ export interface paths {
          * @description Провести ввод начальных остатков
          */
         post: operations["post_opening_balance_api_inventory_opening_balances__opening_balance_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/opening-balances/{opening_balance_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Opening Balance
+         * @description Отменить проведение ввода начальных остатков
+         */
+        post: operations["unpost_opening_balance_api_inventory_opening_balances__opening_balance_id__unpost_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1264,6 +1324,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory/transfers/{transfer_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Transfer
+         * @description Отменить проведение перемещения
+         */
+        post: operations["unpost_transfer_api_inventory_transfers__transfer_id__unpost_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/inventory/transfers/{transfer_id}": {
         parameters: {
             query?: never;
@@ -1358,6 +1438,26 @@ export interface paths {
          * @description Провести инвентаризацию
          */
         post: operations["post_inventory_count_api_inventory_inventory_counts__inventory_count_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/inventory-counts/{inventory_count_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Inventory Count
+         * @description Отменить проведение инвентаризации
+         */
+        post: operations["unpost_inventory_count_api_inventory_inventory_counts__inventory_count_id__unpost_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7664,6 +7764,37 @@ export interface operations {
             };
         };
     };
+    unpost_receipt_api_inventory_receipts__receipt_id__unpost_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receipt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_write_offs_api_inventory_write_offs_get: {
         parameters: {
             query?: {
@@ -7732,6 +7863,37 @@ export interface operations {
         };
     };
     post_write_off_api_inventory_write_offs__write_off_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                write_off_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unpost_write_off_api_inventory_write_offs__write_off_id__unpost_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -8024,6 +8186,37 @@ export interface operations {
         };
     };
     post_opening_balance_api_inventory_opening_balances__opening_balance_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opening_balance_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unpost_opening_balance_api_inventory_opening_balances__opening_balance_id__unpost_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -8391,6 +8584,37 @@ export interface operations {
             };
         };
     };
+    unpost_transfer_api_inventory_transfers__transfer_id__unpost_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transfer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_transfer_api_inventory_transfers__transfer_id__get: {
         parameters: {
             query?: never;
@@ -8653,6 +8877,37 @@ export interface operations {
         };
     };
     post_inventory_count_api_inventory_inventory_counts__inventory_count_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unpost_inventory_count_api_inventory_inventory_counts__inventory_count_id__unpost_post: {
         parameters: {
             query?: never;
             header?: never;

@@ -740,6 +740,15 @@
             Удалить
           </el-button>
         </div>
+
+        <div v-else style="display: flex; gap: 8px; margin-top: 16px">
+          <el-button
+            :loading="busy"
+            @click="askDoc('transfer', 'unpost', transferDetail)"
+          >
+            Отменить проведение
+          </el-button>
+        </div>
       </template>
     </el-drawer>
 
@@ -826,6 +835,15 @@
             Удалить
           </el-button>
         </div>
+
+        <div v-else style="display: flex; gap: 8px; margin-top: 16px">
+          <el-button
+            :loading="busy"
+            @click="askDoc('receipt', 'unpost', receiptDetail)"
+          >
+            Отменить проведение
+          </el-button>
+        </div>
       </template>
 
       <template v-else-if="writeOffDetail">
@@ -889,6 +907,15 @@
             @click="askDoc('write-off', 'delete', writeOffDetail)"
           >
             Удалить
+          </el-button>
+        </div>
+
+        <div v-else style="display: flex; gap: 8px; margin-top: 16px">
+          <el-button
+            :loading="busy"
+            @click="askDoc('write-off', 'unpost', writeOffDetail)"
+          >
+            Отменить проведение
           </el-button>
         </div>
       </template>
@@ -1091,6 +1118,15 @@
             @click="askDoc('inventory-count', 'delete', inventoryCountDetail)"
           >
             Удалить
+          </el-button>
+        </div>
+
+        <div v-else style="display: flex; gap: 8px; margin-top: 16px">
+          <el-button
+            :loading="busy"
+            @click="askDoc('inventory-count', 'unpost', inventoryCountDetail)"
+          >
+            Отменить проведение
           </el-button>
         </div>
       </template>
@@ -1893,14 +1929,20 @@ async function postReceipt(row: { id: string }): Promise<void> {
 
 
 type DocKind = "receipt" | "write-off" | "transfer" | "inventory-count";
+type DocMode = "post" | "delete" | "unpost";
 
-/** Одно окно подтверждения для критичных команд: проведение и удаление черновиков. */
+/** Одно окно подтверждения для критичных команд: проведение, отмена и удаление. */
 async function askDoc(
   kind: DocKind,
-  mode: "post" | "delete",
+  mode: DocMode,
   doc: { id: string },
 ): Promise<void> {
-  const title = mode === "post" ? "Провести документ?" : "Удалить черновик?";
+  const title =
+    mode === "post"
+      ? "Провести документ?"
+      : mode === "unpost"
+        ? "Отменить проведение?"
+        : "Удалить черновик?";
 
   if (!(await confirm({ title, danger: mode === "delete" }))) {
     return;
@@ -1911,6 +1953,14 @@ async function askDoc(
     else if (kind === "write-off") await postWriteOff(doc);
     else if (kind === "transfer") await postTransfer();
     else await postInventoryCount(doc.id);
+    return;
+  }
+
+  if (mode === "unpost") {
+    if (kind === "receipt") await unpostReceipt(doc);
+    else if (kind === "write-off") await unpostWriteOff(doc);
+    else if (kind === "transfer") await unpostTransfer(doc);
+    else await unpostInventoryCount(doc.id);
     return;
   }
 
@@ -2513,6 +2563,139 @@ function deleteReasonOf(status: number, fallback: string): string {
   }
 
   return `${fallback}: ${status}`;
+}
+
+
+async function unpostReceipt(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/receipts/{receipt_id}/unpost",
+      { params: { path: { receipt_id: row.id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось отменить проведение: ${response.status}`),
+      );
+    }
+
+    notice.value = "Проведение поступления отменено";
+    if (drawerOpen.value && receiptDetail.value?.id === row.id) {
+      await openReceipt({ id: row.id });
+    }
+    await load();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка отмены";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
+async function unpostWriteOff(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/write-offs/{write_off_id}/unpost",
+      { params: { path: { write_off_id: row.id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось отменить проведение: ${response.status}`),
+      );
+    }
+
+    notice.value = "Проведение списания отменено";
+    if (drawerOpen.value && writeOffDetail.value?.id === row.id) {
+      await openWriteOff({ id: row.id });
+    }
+    await load();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка отмены";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
+async function unpostTransfer(row: { id: string }): Promise<void> {
+  trPosting.value = true;
+  trDetailError.value = "";
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/transfers/{transfer_id}/unpost",
+      { params: { path: { transfer_id: row.id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось отменить проведение: ${response.status}`),
+      );
+    }
+
+    notice.value = "Проведение перемещения отменено";
+    if (drawerOpen.value && transferDetail.value?.id === row.id) {
+      await openTransfer({ id: row.id });
+    }
+    await reload();
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Ошибка отмены";
+    if (transferDetail.value?.id === row.id) {
+      trDetailError.value = message;
+    } else {
+      error.value = message;
+    }
+  } finally {
+    trPosting.value = false;
+  }
+}
+
+
+async function unpostInventoryCount(id: string): Promise<void> {
+  icPosting.value = true;
+  icDetailError.value = "";
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/inventory-counts/{inventory_count_id}/unpost",
+      { params: { path: { inventory_count_id: id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось отменить проведение: ${response.status}`),
+      );
+    }
+
+    notice.value = "Проведение инвентаризации отменено";
+
+    if (icDrawerOpen.value) {
+      await openInventoryCount({ id });
+    }
+    await refresh();
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Ошибка отмены";
+    if (icDrawerOpen.value) {
+      icDetailError.value = message;
+    } else {
+      error.value = message;
+    }
+  } finally {
+    icPosting.value = false;
+  }
 }
 
 

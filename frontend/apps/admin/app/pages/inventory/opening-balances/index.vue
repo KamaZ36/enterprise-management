@@ -325,6 +325,12 @@
             Удалить
           </el-button>
         </div>
+
+        <div v-else-if="canManage" class="drawer-actions">
+          <el-button :loading="posting" @click="askUnpost(detail)">
+            Отменить проведение
+          </el-button>
+        </div>
       </template>
     </el-drawer>
 
@@ -799,6 +805,50 @@ async function askPost(row: { id: string }): Promise<void> {
   }
 
   await post(row.id);
+}
+
+async function unpost(id: string): Promise<void> {
+  posting.value = true;
+  detailError.value = "";
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/opening-balances/{opening_balance_id}/unpost",
+      { params: { path: { opening_balance_id: id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось отменить проведение: ${response.status}`),
+      );
+    }
+
+    notice.value = "Проведение ввода остатков отменено";
+
+    if (drawerOpen.value) {
+      await openDetail({ id });
+    }
+    await load();
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Ошибка отмены";
+    if (drawerOpen.value) {
+      detailError.value = message;
+    } else {
+      error.value = message;
+    }
+  } finally {
+    posting.value = false;
+  }
+}
+
+async function askUnpost(row: { id: string }): Promise<void> {
+  if (!(await confirm({ title: "Отменить проведение?" }))) {
+    return;
+  }
+
+  await unpost(row.id);
 }
 
 async function askDelete(row: { id: string }): Promise<void> {

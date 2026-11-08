@@ -95,3 +95,22 @@ class StockLotBalance:
             self._total_value = Money.zero()
 
         return cost
+
+    def release(self, quantity: Decimal, cost: Money) -> None:
+        """Снимает количество и точную стоимость при отмене прихода."""
+        if quantity <= 0:
+            raise EmptyMovementError()
+        if quantity > self._quantity:
+            raise InsufficientLotStockError(
+                lot_id=self._lot_id,
+                available=self._quantity,
+                requested=quantity,
+            )
+        if cost.is_negative:
+            raise NegativeCostError()
+
+        self._quantity -= quantity
+        self._total_value = self._total_value - cost
+
+        if self._quantity == 0:
+            self._total_value = Money.zero()

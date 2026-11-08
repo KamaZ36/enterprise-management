@@ -21,7 +21,10 @@ from myasnaya_derevnya.modules.inventory.domain.entities.stock_posting import (
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import (
     DocumentAlreadyPostedError,
+    DocumentCannotBeUnpostedError,
+    DocumentNotPostedError,
     EmptyMovementError,
+    InsufficientLotStockError,
     InsufficientStockError,
 )
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import CostPolicy
@@ -90,6 +93,87 @@ class StockLedger:
         yield handle
 
         await handle.flush()
+
+    async def unpost(self, *, document_type: str, document_id: UUID) -> None:
+        """Отменяет проведение: снимает движения и возвращает остатки.
+
+        Сторно выполняется по точным суммам движений, поэтому средняя
+        себестоимость восстанавливается без пересчёта. Если приход уже
+        частично израсходован, отмена блокируется.
+        """
+
+        posting = await self._posting_repository.get_by_document(
+            document_type=document_type,
+            document_id=document_id,
+        )
+        if posting is None:
+            raise DocumentNotPostedError(document_id)
+
+        movements = await self._movement_repository.list_by_posting(posting.id)
+
+        balance_keys = {
+            (movement.org_unit_id, movement.nomenclature_id)
+            for movement in movements
+        }
+        lot_keys = {
+            (movement.org_unit_id, movement.nomenclature_id, movement.lot_id)
+            for movement in movements
+            if movement.lot_id is not None
+        }
+
+        for org_unit_id, nomenclature_id in balance_keys:
+            if await self._movement_repository.has_later_movements(
+                posting_id=posting.id,
+                since=posting.posted_at,
+                org_unit_id=org_unit_id,
+                nomenclature_id=nomenclature_id,
+            ):
+                raise DocumentCannotBeUnpostedError(document_id)
+
+        balances = await self._balance_repository.lock_many(balance_keys)
+        lot_balances = await self._lot_balance_repository.lock_many(lot_keys)
+
+        try:
+            for movement in movements:
+                balance = balances[
+                    (movement.org_unit_id, movement.nomenclature_id)
+                ]
+
+                if movement.quantity > 0:
+                    cost = Money(kopecks=movement.total_cost.kopecks)
+                    balance.release(movement.quantity, cost)
+
+                    if movement.lot_id is not None:
+                        lot_balances[
+                            (
+                                movement.org_unit_id,
+                                movement.nomenclature_id,
+                                movement.lot_id,
+                            )
+                        ].release(movement.quantity, cost)
+                else:
+                    quantity = -movement.quantity
+                    cost = Money(kopecks=-movement.total_cost.kopecks)
+                    balance.receive(quantity, cost)
+
+                    if movement.lot_id is not None:
+                        lot_balances[
+                            (
+                                movement.org_unit_id,
+                                movement.nomenclature_id,
+                                movement.lot_id,
+                            )
+                        ].receive(quantity, cost)
+        except (InsufficientStockError, InsufficientLotStockError) as exc:
+            raise DocumentCannotBeUnpostedError(document_id) from exc
+
+        await self._balance_repository.save_many(list(balances.values()))
+        if lot_balances:
+            await self._lot_balance_repository.save_many(
+                list(lot_balances.values())
+            )
+        await self._movement_repository.delete_by_posting(posting.id)
+        await self._posting_repository.delete(posting.id)
 
 
 class StockPostingHandle:
