@@ -1,10 +1,12 @@
 from datetime import date
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from myasnaya_derevnya.modules.reports.application.dto import (
     ReportSummary,
     SalesReportRow,
     StockReportRow,
+    TurnoverReportRow,
 )
 from myasnaya_derevnya.modules.reports.application.interactors.get_stock import (
     GetStockReportInteractor,
@@ -13,6 +15,10 @@ from myasnaya_derevnya.modules.reports.application.interactors.get_stock import 
 from myasnaya_derevnya.modules.reports.application.interactors.get_summary import (
     GetSummaryInteractor,
     SummaryQuery,
+)
+from myasnaya_derevnya.modules.reports.application.interactors.get_turnover import (
+    GetTurnoverReportInteractor,
+    TurnoverReportQuery,
 )
 from myasnaya_derevnya.modules.reports.application.interactors.list_sales import (
     ListSalesReportInteractor,
@@ -62,6 +68,28 @@ class FakeReportsReader:
                 cost_kopecks=300000,
                 margin_kopecks=200000,
                 receipts_count=4,
+            )
+        ]
+
+    async def turnover(
+        self, *, date_from, date_to, org_unit_ids, search=None
+    ):
+        return [
+            TurnoverReportRow(
+                org_unit_id=ORG_UNIT_ID,
+                org_unit_name=None,
+                nomenclature_id=uuid4(),
+                nomenclature_name="Говядина",
+                sku="BEEF",
+                unit="kg",
+                opening_quantity=Decimal(10),
+                inbound_quantity=Decimal(5),
+                outbound_quantity=Decimal(3),
+                closing_quantity=Decimal(12),
+                opening_value_kopecks=100000,
+                inbound_value_kopecks=100000,
+                outbound_value_kopecks=40000,
+                closing_value_kopecks=160000,
             )
         ]
 
@@ -137,3 +165,22 @@ async def test_summary_hides_money_values_without_permission() -> None:
     assert summary.stock_value_kopecks is None
     assert summary.write_off_cost_kopecks is None
     assert summary.production_orders == 2
+
+
+async def test_turnover_hides_values_without_permission() -> None:
+    interactor = GetTurnoverReportInteractor(
+        report_scope=FakeReportScope(include_costs=False),  # type: ignore[arg-type]
+        reader=FakeReportsReader(),  # type: ignore[arg-type]
+        business_api=FakeBusinessAPI(),  # type: ignore[arg-type]
+    )
+
+    rows = await interactor(
+        TurnoverReportQuery(
+            date_from=date(2026, 11, 1), date_to=date(2026, 11, 8)
+        )
+    )
+
+    assert rows[0].opening_quantity == Decimal(10)
+    assert rows[0].closing_quantity == Decimal(12)
+    assert rows[0].opening_value_kopecks is None
+    assert rows[0].closing_value_kopecks is None

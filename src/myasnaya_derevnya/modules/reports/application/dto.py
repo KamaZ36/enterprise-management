@@ -25,6 +25,24 @@ class StockReportRow:
 
 
 @dataclass(frozen=True, slots=True)
+class TurnoverReportRow:
+    org_unit_id: UUID
+    org_unit_name: str | None
+    nomenclature_id: UUID
+    nomenclature_name: str
+    sku: str
+    unit: str
+    opening_quantity: Decimal
+    inbound_quantity: Decimal
+    outbound_quantity: Decimal
+    closing_quantity: Decimal
+    opening_value_kopecks: int | None = None
+    inbound_value_kopecks: int | None = None
+    outbound_value_kopecks: int | None = None
+    closing_value_kopecks: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ProductionReportRow:
     org_unit_id: UUID
     org_unit_name: str | None

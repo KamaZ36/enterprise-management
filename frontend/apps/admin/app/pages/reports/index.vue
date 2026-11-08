@@ -195,6 +195,111 @@
         </el-table>
       </el-tab-pane>
 
+      <el-tab-pane label="Обороты" name="turnover">
+        <div class="turnover-tools">
+          <el-input
+            v-model="turnoverSearch"
+            placeholder="Название, артикул или штрихкод"
+            clearable
+            style="max-width: 320px"
+            @keyup.enter="load"
+            @clear="load"
+          />
+          <el-button :loading="pending" @click="load">Найти</el-button>
+        </div>
+
+        <el-table
+          v-loading="pending"
+          :data="turnover?.items ?? []"
+          stripe
+          border
+          empty-text="Оборотов за период нет"
+        >
+          <el-table-column prop="org_unit_name" label="Точка" min-width="180" />
+          <el-table-column label="Номенклатура" min-width="260">
+            <template #default="{ row }">
+              {{ row.nomenclature_name }}
+              <div class="hint">{{ row.sku }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="Ед." width="80">
+            <template #default="{ row }">{{ label(UNITS, row.unit) }}</template>
+          </el-table-column>
+
+          <el-table-column label="Остаток на начало" align="center">
+            <el-table-column label="Кол-во" width="120" align="right">
+              <template #default="{ row }">
+                {{ formatQuantity(row.opening_quantity) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="canSeeCosts"
+              label="Сумма"
+              width="140"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatKopecks(row.opening_value_kopecks) }}
+              </template>
+            </el-table-column>
+          </el-table-column>
+
+          <el-table-column label="Приход" align="center">
+            <el-table-column label="Кол-во" width="120" align="right">
+              <template #default="{ row }">
+                {{ formatQuantity(row.inbound_quantity) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="canSeeCosts"
+              label="Сумма"
+              width="140"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatKopecks(row.inbound_value_kopecks) }}
+              </template>
+            </el-table-column>
+          </el-table-column>
+
+          <el-table-column label="Расход" align="center">
+            <el-table-column label="Кол-во" width="120" align="right">
+              <template #default="{ row }">
+                {{ formatQuantity(row.outbound_quantity) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="canSeeCosts"
+              label="Сумма"
+              width="140"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatKopecks(row.outbound_value_kopecks) }}
+              </template>
+            </el-table-column>
+          </el-table-column>
+
+          <el-table-column label="Остаток на конец" align="center">
+            <el-table-column label="Кол-во" width="120" align="right">
+              <template #default="{ row }">
+                {{ formatQuantity(row.closing_quantity) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="canSeeCosts"
+              label="Сумма"
+              width="140"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatKopecks(row.closing_value_kopecks) }}
+              </template>
+            </el-table-column>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+
       <el-tab-pane label="Производство" name="production">
         <el-table
           v-loading="pending"
@@ -270,6 +375,7 @@ import type { components } from "@md/api-client";
 import { formatKopecks } from "@md/money";
 
 import { formatDate } from "~/utils/format";
+import { UNITS, label } from "~/utils/labels";
 import type { WorkspacePoint } from "~/utils/workspace";
 
 definePageMeta({ permissions: ["report.read"] });
@@ -277,6 +383,7 @@ definePageMeta({ permissions: ["report.read"] });
 type Summary = components["schemas"]["ReportSummarySchema"];
 type Sales = components["schemas"]["SalesReportSchema"];
 type Stock = components["schemas"]["StockReportSchema"];
+type Turnover = components["schemas"]["TurnoverReportSchema"];
 type Production = components["schemas"]["ProductionReportSchema"];
 type WriteOffs = components["schemas"]["WriteOffReportSchema"];
 type OrgUnit = components["schemas"]["OrgUnitSchema"];
@@ -295,6 +402,8 @@ const error = ref("");
 const summary = ref<Summary | null>(null);
 const sales = ref<Sales | null>(null);
 const stock = ref<Stock | null>(null);
+const turnover = ref<Turnover | null>(null);
+const turnoverSearch = ref("");
 const production = ref<Production | null>(null);
 const writeOffs = ref<WriteOffs | null>(null);
 
@@ -382,12 +491,20 @@ async function load(): Promise<void> {
   };
 
   try {
-    const [summaryResponse, salesResponse, stockResponse, productionResponse, writeOffsResponse] =
+    const [summaryResponse, salesResponse, stockResponse, turnoverResponse, productionResponse, writeOffsResponse] =
       await Promise.all([
         api.GET("/api/reports/summary", { params: { query } }),
         api.GET("/api/reports/sales", { params: { query } }),
         api.GET("/api/reports/stock", {
           params: { query: { org_unit_id: selectedPoint.value?.id } },
+        }),
+        api.GET("/api/reports/turnover", {
+          params: {
+            query: {
+              ...query,
+              search: turnoverSearch.value.trim() || undefined,
+            },
+          },
         }),
         api.GET("/api/reports/production", { params: { query } }),
         api.GET("/api/reports/write-offs", { params: { query } }),
@@ -402,6 +519,9 @@ async function load(): Promise<void> {
     if (!stockResponse.response.ok || !stockResponse.data) {
       throw new Error("Не удалось загрузить склад");
     }
+    if (!turnoverResponse.response.ok || !turnoverResponse.data) {
+      throw new Error("Не удалось загрузить обороты");
+    }
     if (!productionResponse.response.ok || !productionResponse.data) {
       throw new Error("Не удалось загрузить производство");
     }
@@ -412,6 +532,7 @@ async function load(): Promise<void> {
     summary.value = summaryResponse.data;
     sales.value = salesResponse.data;
     stock.value = stockResponse.data;
+    turnover.value = turnoverResponse.data;
     production.value = productionResponse.data;
     writeOffs.value = writeOffsResponse.data;
   } catch (cause) {
@@ -439,6 +560,19 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+}
+
+.turnover-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.hint {
+  color: #909399;
+  font-size: 12px;
 }
 
 .reports-filters {

@@ -2340,6 +2340,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/turnover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Turnover
+         * @description Обороты склада за период: начало, приход, расход, конец
+         */
+        get: operations["get_turnover_api_reports_turnover_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/production": {
         parameters: {
             query?: never;
@@ -5451,6 +5471,48 @@ export interface components {
             limit: number;
             /** Offset */
             offset: number;
+        };
+        /** TurnoverReportRowSchema */
+        TurnoverReportRowSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Org Unit Name */
+            org_unit_name: string | null;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string;
+            /** Sku */
+            sku: string;
+            /** Unit */
+            unit: string;
+            /** Opening Quantity */
+            opening_quantity: string;
+            /** Inbound Quantity */
+            inbound_quantity: string;
+            /** Outbound Quantity */
+            outbound_quantity: string;
+            /** Closing Quantity */
+            closing_quantity: string;
+            /** Opening Value Kopecks */
+            opening_value_kopecks?: number | null;
+            /** Inbound Value Kopecks */
+            inbound_value_kopecks?: number | null;
+            /** Outbound Value Kopecks */
+            outbound_value_kopecks?: number | null;
+            /** Closing Value Kopecks */
+            closing_value_kopecks?: number | null;
+        };
+        /** TurnoverReportSchema */
+        TurnoverReportSchema: {
+            /** Items */
+            items: components["schemas"]["TurnoverReportRowSchema"][];
         };
         /** UnbindCashRegisterSchema */
         UnbindCashRegisterSchema: {
@@ -10573,6 +10635,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StockReportSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_turnover_api_reports_turnover_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                org_unit_id?: string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TurnoverReportSchema"];
                 };
             };
             /** @description Validation Error */

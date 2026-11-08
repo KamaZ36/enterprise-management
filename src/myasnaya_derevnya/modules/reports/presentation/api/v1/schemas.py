@@ -10,6 +10,7 @@ from myasnaya_derevnya.modules.reports.application.dto import (
     SalesReport,
     SalesReportRow,
     StockReportRow,
+    TurnoverReportRow,
     WriteOffReportRow,
 )
 
@@ -98,6 +99,48 @@ class StockReportRowSchema(BaseModel):
 
 class StockReportSchema(BaseModel):
     items: list[StockReportRowSchema]
+
+
+class TurnoverReportRowSchema(BaseModel):
+    org_unit_id: UUID
+    org_unit_name: str | None
+    nomenclature_id: UUID
+    nomenclature_name: str
+    sku: str
+    unit: str
+    opening_quantity: Decimal
+    inbound_quantity: Decimal
+    outbound_quantity: Decimal
+    closing_quantity: Decimal
+    opening_value_kopecks: int | None = None
+    inbound_value_kopecks: int | None = None
+    outbound_value_kopecks: int | None = None
+    closing_value_kopecks: int | None = None
+
+    @classmethod
+    def from_dto(
+        cls, item: TurnoverReportRow
+    ) -> TurnoverReportRowSchema:
+        return cls(
+            org_unit_id=item.org_unit_id,
+            org_unit_name=item.org_unit_name,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            sku=item.sku,
+            unit=item.unit,
+            opening_quantity=item.opening_quantity,
+            inbound_quantity=item.inbound_quantity,
+            outbound_quantity=item.outbound_quantity,
+            closing_quantity=item.closing_quantity,
+            opening_value_kopecks=item.opening_value_kopecks,
+            inbound_value_kopecks=item.inbound_value_kopecks,
+            outbound_value_kopecks=item.outbound_value_kopecks,
+            closing_value_kopecks=item.closing_value_kopecks,
+        )
+
+
+class TurnoverReportSchema(BaseModel):
+    items: list[TurnoverReportRowSchema]
 
 
 class ProductionReportRowSchema(BaseModel):

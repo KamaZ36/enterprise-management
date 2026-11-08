@@ -17,6 +17,10 @@ from myasnaya_derevnya.modules.reports.application.interactors.get_summary impor
     GetSummaryInteractor,
     SummaryQuery,
 )
+from myasnaya_derevnya.modules.reports.application.interactors.get_turnover import (
+    GetTurnoverReportInteractor,
+    TurnoverReportQuery,
+)
 from myasnaya_derevnya.modules.reports.application.interactors.list_production import (
     ListProductionReportInteractor,
     ProductionReportQuery,
@@ -36,6 +40,8 @@ from myasnaya_derevnya.modules.reports.presentation.api.v1.schemas import (
     SalesReportSchema,
     StockReportRowSchema,
     StockReportSchema,
+    TurnoverReportRowSchema,
+    TurnoverReportSchema,
     WriteOffReportRowSchema,
     WriteOffReportSchema,
 )
@@ -119,6 +125,36 @@ async def get_stock(
 
     return StockReportSchema(
         items=[StockReportRowSchema.from_dto(item) for item in items]
+    )
+
+
+@router.get(
+    "/turnover",
+    response_model=TurnoverReportSchema,
+    description="Обороты склада за период: начало, приход, расход, конец",
+)
+async def get_turnover(
+    request: Request,
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
+    org_unit_id: Annotated[UUID | None, Query()] = None,
+    search: Annotated[str | None, Query(max_length=100)] = None,
+) -> TurnoverReportSchema:
+    start, end = _period(date_from, date_to)
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetTurnoverReportInteractor)
+        items = await interactor(
+            TurnoverReportQuery(
+                date_from=start,
+                date_to=end,
+                org_unit_id=org_unit_id,
+                search=search,
+            )
+        )
+
+    return TurnoverReportSchema(
+        items=[TurnoverReportRowSchema.from_dto(item) for item in items]
     )
 
 

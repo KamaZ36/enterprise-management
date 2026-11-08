@@ -1,11 +1,16 @@
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Select, distinct, func, select
+from sqlalchemy import Select, and_, case, distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.database.search import like_pattern
 from myasnaya_derevnya.core.settings import settings
 from myasnaya_derevnya.core.timezone import company_timezone, company_today
+from myasnaya_derevnya.modules.catalog.infrastructure.tables import (
+    NOMENCLATURES_TABLE,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     STOCK_BALANCES_TABLE,
     STOCK_LOT_BALANCES_TABLE,
@@ -25,6 +30,7 @@ from myasnaya_derevnya.modules.reports.application.dto import (
     ReportSummary,
     SalesReportRow,
     StockReportRow,
+    TurnoverReportRow,
     WriteOffReportRow,
 )
 from myasnaya_derevnya.modules.reports.infrastructure.readers.base import (
@@ -153,6 +159,190 @@ class SQLAlchemyReportsReader(ReportsReader):
                 positions=int(row["positions"] or 0),
                 value_kopecks=int(row["value_kopecks"] or 0),
                 expiring_lots=int(row["expiring_lots"] or 0),
+            )
+            for row in rows
+        ]
+
+
+    async def turnover(
+        self,
+        date_from: date,
+        date_to: date,
+        org_unit_ids: list[UUID] | None,
+        search: str | None = None,
+    ) -> list[TurnoverReportRow]:
+        if org_unit_ids is not None and not org_unit_ids:
+            return []
+
+        start, end = _period(date_from, date_to)
+        movements = STOCK_MOVEMENTS_TABLE
+        nomenclatures = NOMENCLATURES_TABLE
+
+        aggregated = (
+            select(
+                movements.c.org_unit_id,
+                movements.c.nomenclature_id,
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (movements.c.occurred_at < start, movements.c.quantity),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("opening_quantity"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                and_(
+                                    movements.c.occurred_at >= start,
+                                    movements.c.quantity > 0,
+                                ),
+                                movements.c.quantity,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("inbound_quantity"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                and_(
+                                    movements.c.occurred_at >= start,
+                                    movements.c.quantity < 0,
+                                ),
+                                -movements.c.quantity,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("outbound_quantity"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                movements.c.occurred_at < start,
+                                movements.c.total_cost,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("opening_value"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                and_(
+                                    movements.c.occurred_at >= start,
+                                    movements.c.quantity > 0,
+                                ),
+                                movements.c.total_cost,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("inbound_value"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                and_(
+                                    movements.c.occurred_at >= start,
+                                    movements.c.quantity < 0,
+                                ),
+                                -movements.c.total_cost,
+                            ),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("outbound_value"),
+            )
+            .where(movements.c.occurred_at < end)
+            .group_by(movements.c.org_unit_id, movements.c.nomenclature_id)
+            .subquery()
+        )
+
+        opening = aggregated.c.opening_quantity
+        inbound = aggregated.c.inbound_quantity
+        outbound = aggregated.c.outbound_quantity
+
+        stmt = (
+            select(
+                aggregated.c.org_unit_id,
+                aggregated.c.nomenclature_id,
+                nomenclatures.c.name.label("nomenclature_name"),
+                nomenclatures.c.sku,
+                nomenclatures.c.unit,
+                opening.label("opening_quantity"),
+                inbound.label("inbound_quantity"),
+                outbound.label("outbound_quantity"),
+                (opening + inbound - outbound).label("closing_quantity"),
+                aggregated.c.opening_value.label("opening_value"),
+                aggregated.c.inbound_value.label("inbound_value"),
+                aggregated.c.outbound_value.label("outbound_value"),
+                (
+                    aggregated.c.opening_value
+                    + aggregated.c.inbound_value
+                    - aggregated.c.outbound_value
+                ).label("closing_value"),
+            )
+            .select_from(
+                aggregated.join(
+                    nomenclatures,
+                    nomenclatures.c.id == aggregated.c.nomenclature_id,
+                )
+            )
+            .where(or_(opening != 0, inbound != 0, outbound != 0))
+            .order_by(
+                aggregated.c.org_unit_id,
+                nomenclatures.c.name.asc(),
+                nomenclatures.c.sku.asc(),
+            )
+        )
+
+        if search:
+            for token in search.split():
+                stmt = stmt.where(
+                    or_(
+                        nomenclatures.c.name.ilike(
+                            like_pattern(token), escape="\\"
+                        ),
+                        nomenclatures.c.sku.ilike(
+                            like_pattern(token), escape="\\"
+                        ),
+                        nomenclatures.c.gtin == token,
+                    )
+                )
+
+        rows = (
+            await self._session.execute(
+                self._filter(stmt, aggregated.c.org_unit_id, org_unit_ids)
+            )
+        ).mappings().all()
+
+        return [
+            TurnoverReportRow(
+                org_unit_id=row["org_unit_id"],
+                org_unit_name=None,
+                nomenclature_id=row["nomenclature_id"],
+                nomenclature_name=row["nomenclature_name"],
+                sku=row["sku"],
+                unit=row["unit"],
+                opening_quantity=row["opening_quantity"] or Decimal(0),
+                inbound_quantity=row["inbound_quantity"] or Decimal(0),
+                outbound_quantity=row["outbound_quantity"] or Decimal(0),
+                closing_quantity=row["closing_quantity"] or Decimal(0),
+                opening_value_kopecks=int(row["opening_value"] or 0),
+                inbound_value_kopecks=int(row["inbound_value"] or 0),
+                outbound_value_kopecks=int(row["outbound_value"] or 0),
+                closing_value_kopecks=int(row["closing_value"] or 0),
             )
             for row in rows
         ]

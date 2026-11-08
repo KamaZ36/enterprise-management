@@ -7,6 +7,9 @@ from myasnaya_derevnya.modules.reports.application.interactors.get_stock import 
 from myasnaya_derevnya.modules.reports.application.interactors.get_summary import (
     GetSummaryInteractor,
 )
+from myasnaya_derevnya.modules.reports.application.interactors.get_turnover import (
+    GetTurnoverReportInteractor,
+)
 from myasnaya_derevnya.modules.reports.application.interactors.list_production import (
     ListProductionReportInteractor,
 )
@@ -40,6 +43,9 @@ class ReportsDepProvider(Provider):
     )
     stock_report_interactor = provide(
         GetStockReportInteractor, scope=Scope.REQUEST
+    )
+    turnover_report_interactor = provide(
+        GetTurnoverReportInteractor, scope=Scope.REQUEST
     )
     production_report_interactor = provide(
         ListProductionReportInteractor, scope=Scope.REQUEST

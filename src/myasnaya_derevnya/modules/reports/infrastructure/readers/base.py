@@ -7,6 +7,7 @@ from myasnaya_derevnya.modules.reports.application.dto import (
     ReportSummary,
     SalesReportRow,
     StockReportRow,
+    TurnoverReportRow,
     WriteOffReportRow,
 )
 
@@ -25,6 +26,16 @@ class ReportsReader(ABC):
     async def stock(
         self, org_unit_ids: list[UUID] | None
     ) -> list[StockReportRow]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def turnover(
+        self,
+        date_from: date,
+        date_to: date,
+        org_unit_ids: list[UUID] | None,
+        search: str | None = None,
+    ) -> list[TurnoverReportRow]:
         raise NotImplementedError
 
     @abstractmethod
