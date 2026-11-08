@@ -28,6 +28,7 @@ class SQLAlchemyTransferRepository(TransferRepository):
             insert(TRANSFERS_TABLE).values(
                 id=transfer.id,
                 status=transfer.status.value,
+                number=transfer.number,
                 occurred_at=transfer.occurred_at,
                 from_org_unit_id=transfer.from_org_unit_id,
                 to_org_unit_id=transfer.to_org_unit_id,
@@ -117,6 +118,7 @@ class SQLAlchemyTransferRepository(TransferRepository):
         return Transfer(
             id=row["id"],
             status=DocumentStatus(row["status"]),
+            number=row["number"],
             occurred_at=row["occurred_at"],
             from_org_unit_id=row["from_org_unit_id"],
             to_org_unit_id=row["to_org_unit_id"],

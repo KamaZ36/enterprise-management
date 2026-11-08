@@ -30,6 +30,7 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
             insert(RECEIPTS_TABLE).values(
                 id=receipt.id,
                 status=receipt.status.value,
+                number=receipt.number,
                 occurred_at=receipt.occurred_at,
                 org_unit_id=receipt.org_unit_id,
                 supplier_name=receipt.supplier_name,
@@ -135,6 +136,7 @@ class SQLAlchemyReceiptRepository(ReceiptRepository):
         return Receipt(
             id=row["id"],
             status=DocumentStatus(row["status"]),
+            number=row["number"],
             occurred_at=row["occurred_at"],
             org_unit_id=row["org_unit_id"],
             supplier_name=row["supplier_name"],

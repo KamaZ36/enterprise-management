@@ -16,6 +16,7 @@ class ReceiptListItem:
     line_count: int
     total_kopecks: int
     edo_document_number: str | None = None
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +49,7 @@ class ReceiptDetail:
     lines: list[ReceiptLineItem]
     edo_document_id: UUID | None = None
     edo_document_number: str | None = None
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +61,7 @@ class WriteOffListItem:
     posted_at: datetime | None
     reason: str | None
     line_count: int
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +83,7 @@ class WriteOffDetail:
     reason: str | None
     comment: str | None
     lines: list[WriteOffLineItem]
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +146,7 @@ class TransferListItem:
     posted_at: datetime | None
     comment: str | None
     line_count: int
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +168,7 @@ class TransferDetail:
     posted_at: datetime | None
     comment: str | None
     lines: list[TransferLineItem]
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +180,7 @@ class InventoryCountListItem:
     posted_at: datetime | None
     comment: str | None
     line_count: int
+    number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,3 +201,4 @@ class InventoryCountDetail:
     posted_at: datetime | None
     comment: str | None
     lines: list[InventoryCountLineItem]
+    number: str | None = None

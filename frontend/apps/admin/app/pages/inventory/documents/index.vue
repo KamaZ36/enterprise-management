@@ -77,6 +77,9 @@
       <el-table-column label="Дата" width="120">
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
       </el-table-column>
+      <el-table-column label="Номер" width="140">
+        <template #default="{ row }">{{ row.number ?? "—" }}</template>
+      </el-table-column>
       <el-table-column label="Подразделение" min-width="180">
         <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
       </el-table-column>
@@ -137,6 +140,9 @@
       <el-table-column label="Дата" width="120">
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
       </el-table-column>
+      <el-table-column label="Номер" width="140">
+        <template #default="{ row }">{{ row.number ?? "—" }}</template>
+      </el-table-column>
       <el-table-column label="Подразделение" min-width="180">
         <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
       </el-table-column>
@@ -187,6 +193,9 @@
     >
       <el-table-column label="Дата" width="120">
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
+      </el-table-column>
+      <el-table-column label="Номер" width="140">
+        <template #default="{ row }">{{ row.number ?? "—" }}</template>
       </el-table-column>
       <el-table-column label="Подразделение" min-width="180">
         <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
@@ -250,6 +259,9 @@
     >
       <el-table-column label="Дата" width="120">
         <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
+      </el-table-column>
+      <el-table-column label="Номер" width="140">
+        <template #default="{ row }">{{ row.number ?? "—" }}</template>
       </el-table-column>
       <el-table-column label="Откуда" min-width="180">
         <template #default="{ row }">{{ locationName(row.from_org_unit_id) }}</template>
@@ -624,6 +636,9 @@
         />
 
         <el-descriptions :column="1" border>
+          <el-descriptions-item label="Номер">
+            {{ transferDetail.number ?? "—" }}
+          </el-descriptions-item>
           <el-descriptions-item label="Откуда">
             {{ locationName(transferDetail.from_org_unit_id) }}
           </el-descriptions-item>
@@ -676,6 +691,9 @@
     <el-drawer v-model="drawerOpen" :title="drawerTitle" size="640px">
       <template v-if="receiptDetail">
         <el-descriptions :column="2" border>
+          <el-descriptions-item label="Номер">
+            {{ receiptDetail.number ?? "—" }}
+          </el-descriptions-item>
           <el-descriptions-item label="Дата">
             {{ formatDate(receiptDetail.occurred_at) }}
           </el-descriptions-item>
@@ -757,6 +775,9 @@
 
       <template v-else-if="writeOffDetail">
         <el-descriptions :column="2" border>
+          <el-descriptions-item label="Номер">
+            {{ writeOffDetail.number ?? "—" }}
+          </el-descriptions-item>
           <el-descriptions-item label="Дата">
             {{ formatDate(writeOffDetail.occurred_at) }}
           </el-descriptions-item>
@@ -877,6 +898,7 @@
             placeholder="Начните вводить название или артикул"
             :remote-method="(query: string) => searchNomenclature(line, query)"
             class="line__name"
+            @change="onInventoryCountNomenclatureChange"
           >
             <el-option
               v-for="option in line.options"
@@ -941,6 +963,9 @@
         />
 
         <el-descriptions :column="2" border>
+          <el-descriptions-item label="Номер">
+            {{ inventoryCountDetail.number ?? "—" }}
+          </el-descriptions-item>
           <el-descriptions-item label="Дата">
             {{ formatDate(inventoryCountDetail.occurred_at) }}
           </el-descriptions-item>
@@ -2092,36 +2117,52 @@ function bookQuantity(nomenclatureId: string): string {
   return value === undefined ? "—" : formatQuantity(value);
 }
 
-async function loadBookQuantities(): Promise<void> {
-  bookQuantities.value = {};
-
-  if (!icForm.org_unit_id || !can("inventory.balance.read")) {
+async function loadBookQuantity(nomenclatureId: string): Promise<void> {
+  if (
+    !nomenclatureId ||
+    !icForm.org_unit_id ||
+    !can("inventory.balance.read") ||
+    bookQuantities.value[nomenclatureId] !== undefined
+  ) {
     return;
   }
 
   const { data, response } = await api.GET(
-    "/api/inventory/locations/{org_unit_id}/balances",
+    "/api/inventory/locations/{org_unit_id}/balances/{nomenclature_id}",
     {
       params: {
-        path: { org_unit_id: icForm.org_unit_id },
-        query: { limit: 200 },
+        path: {
+          org_unit_id: icForm.org_unit_id,
+          nomenclature_id: nomenclatureId,
+        },
       },
     },
   );
 
   if (response.ok && data) {
-    const map: Record<string, string> = {};
-    for (const item of data.items) {
-      map[item.nomenclature_id] = item.quantity;
-    }
-    bookQuantities.value = map;
+    bookQuantities.value = {
+      ...bookQuantities.value,
+      [nomenclatureId]: data.quantity,
+    };
+  }
+}
+
+function onInventoryCountNomenclatureChange(nomenclatureId: string): void {
+  void loadBookQuantity(nomenclatureId);
+}
+
+function reloadBookQuantities(): void {
+  bookQuantities.value = {};
+
+  for (const line of icLines.value) {
+    void loadBookQuantity(line.nomenclature_id);
   }
 }
 
 watch(
   () => icForm.org_unit_id,
   () => {
-    void loadBookQuantities();
+    reloadBookQuantities();
   },
 );
 
@@ -2135,7 +2176,6 @@ function openInventoryCountCreate(): void {
   icLines.value = [emptyInventoryCountLine()];
   bookQuantities.value = {};
   icOpen.value = true;
-  void loadBookQuantities();
 }
 
 function addInventoryCountLine(): void {
@@ -2300,7 +2340,7 @@ function openInventoryCountEdit(): void {
   }));
   icDrawerOpen.value = false;
   icOpen.value = true;
-  void loadBookQuantities();
+  reloadBookQuantities();
 }
 
 async function postInventoryCount(id: string): Promise<void> {

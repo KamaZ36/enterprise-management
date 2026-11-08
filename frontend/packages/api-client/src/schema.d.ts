@@ -3251,6 +3251,8 @@ export interface components {
             comment: string | null;
             /** Lines */
             lines: components["schemas"]["InventoryCountLineViewSchema"][];
+            /** Number */
+            number?: string | null;
         };
         /** InventoryCountLineSchema */
         InventoryCountLineSchema: {
@@ -3308,6 +3310,8 @@ export interface components {
             comment: string | null;
             /** Line Count */
             line_count: number;
+            /** Number */
+            number?: string | null;
         };
         /** InventoryCountListSchema */
         InventoryCountListSchema: {
@@ -4629,6 +4633,8 @@ export interface components {
             edo_document_id?: string | null;
             /** Edo Document Number */
             edo_document_number?: string | null;
+            /** Number */
+            number?: string | null;
         };
         /** ReceiptLineSchema */
         ReceiptLineSchema: {
@@ -4726,6 +4732,8 @@ export interface components {
             total_kopecks: number;
             /** Edo Document Number */
             edo_document_number?: string | null;
+            /** Number */
+            number?: string | null;
         };
         /** ReceiptListSchema */
         ReceiptListSchema: {
@@ -5063,6 +5071,8 @@ export interface components {
             comment: string | null;
             /** Lines */
             lines: components["schemas"]["TransferLineViewSchema"][];
+            /** Number */
+            number?: string | null;
         };
         /** TransferLineSchema */
         TransferLineSchema: {
@@ -5125,6 +5135,8 @@ export interface components {
             comment: string | null;
             /** Line Count */
             line_count: number;
+            /** Number */
+            number?: string | null;
         };
         /** TransferListSchema */
         TransferListSchema: {
@@ -5447,6 +5459,8 @@ export interface components {
             comment: string | null;
             /** Lines */
             lines: components["schemas"]["WriteOffLineViewSchema"][];
+            /** Number */
+            number?: string | null;
         };
         /** WriteOffLineSchema */
         WriteOffLineSchema: {
@@ -5504,6 +5518,8 @@ export interface components {
             reason: string | null;
             /** Line Count */
             line_count: number;
+            /** Number */
+            number?: string | null;
         };
         /** WriteOffListSchema */
         WriteOffListSchema: {

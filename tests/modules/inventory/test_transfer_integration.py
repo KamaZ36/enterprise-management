@@ -64,6 +64,9 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
     MovingAverageCostPolicy,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.sqlalchemy import (
+    SQLAlchemyDocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_balance.sqlalchemy import (
     SQLAlchemyStockBalanceRepository,
 )
@@ -132,6 +135,7 @@ def build_transfer_interactors(session: AsyncSession):
                 org_unit_repository=SQLAlchemyOrgUnitRepository(session)
             ),
             transfer_repository=transfers,
+            document_number_repository=SQLAlchemyDocumentNumberRepository(session),
             staff_api=staff_api,
             transaction_manager=transaction_manager,
         ),

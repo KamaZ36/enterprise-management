@@ -75,6 +75,9 @@ from myasnaya_derevnya.modules.inventory.domain.value_objects.document_status im
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.inventory_count.sqlalchemy import (
     SQLAlchemyInventoryCountReader,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.sqlalchemy import (
+    SQLAlchemyDocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.sqlalchemy import (
     SQLAlchemyInventoryCountRepository,
 )
@@ -123,6 +126,7 @@ def build_inventory_count_interactors(
         identity_provider=identity,
         business_api=api,
         inventory_count_repository=repository,
+        document_number_repository=SQLAlchemyDocumentNumberRepository(session),
         staff_api=staff_api,
         transaction_manager=transaction_manager,
     )

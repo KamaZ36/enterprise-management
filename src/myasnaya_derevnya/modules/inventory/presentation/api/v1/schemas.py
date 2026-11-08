@@ -221,6 +221,7 @@ class ReceiptListItemSchema(BaseModel):
     line_count: int
     total_kopecks: int
     edo_document_number: str | None = None
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, item: ReceiptListItem) -> ReceiptListItemSchema:
@@ -235,6 +236,7 @@ class ReceiptListItemSchema(BaseModel):
             line_count=item.line_count,
             total_kopecks=item.total_kopecks,
             edo_document_number=item.edo_document_number,
+            number=item.number,
         )
 
 
@@ -291,6 +293,7 @@ class ReceiptDetailSchema(BaseModel):
     lines: list[ReceiptLineViewSchema]
     edo_document_id: UUID | None = None
     edo_document_number: str | None = None
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, detail: ReceiptDetail) -> ReceiptDetailSchema:
@@ -306,6 +309,7 @@ class ReceiptDetailSchema(BaseModel):
             lines=[ReceiptLineViewSchema.from_dto(line) for line in detail.lines],
             edo_document_id=detail.edo_document_id,
             edo_document_number=detail.edo_document_number,
+            number=detail.number,
         )
 
 
@@ -317,6 +321,7 @@ class WriteOffListItemSchema(BaseModel):
     posted_at: datetime | None
     reason: str | None
     line_count: int
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, item: WriteOffListItem) -> WriteOffListItemSchema:
@@ -328,6 +333,7 @@ class WriteOffListItemSchema(BaseModel):
             posted_at=item.posted_at,
             reason=item.reason,
             line_count=item.line_count,
+            number=item.number,
         )
 
 
@@ -365,6 +371,7 @@ class WriteOffDetailSchema(BaseModel):
     reason: str | None
     comment: str | None
     lines: list[WriteOffLineViewSchema]
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, detail: WriteOffDetail) -> WriteOffDetailSchema:
@@ -377,6 +384,7 @@ class WriteOffDetailSchema(BaseModel):
             reason=detail.reason,
             comment=detail.comment,
             lines=[WriteOffLineViewSchema.from_dto(line) for line in detail.lines],
+            number=detail.number,
         )
 
 
@@ -403,6 +411,7 @@ class TransferListItemSchema(BaseModel):
     posted_at: datetime | None
     comment: str | None
     line_count: int
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, item: TransferListItem) -> TransferListItemSchema:
@@ -415,6 +424,7 @@ class TransferListItemSchema(BaseModel):
             posted_at=item.posted_at,
             comment=item.comment,
             line_count=item.line_count,
+            number=item.number,
         )
 
 
@@ -452,6 +462,7 @@ class TransferDetailSchema(BaseModel):
     posted_at: datetime | None
     comment: str | None
     lines: list[TransferLineViewSchema]
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, detail: TransferDetail) -> TransferDetailSchema:
@@ -464,6 +475,7 @@ class TransferDetailSchema(BaseModel):
             posted_at=detail.posted_at,
             comment=detail.comment,
             lines=[TransferLineViewSchema.from_dto(line) for line in detail.lines],
+            number=detail.number,
         )
 
 
@@ -500,6 +512,7 @@ class InventoryCountListItemSchema(BaseModel):
     posted_at: datetime | None
     comment: str | None
     line_count: int
+    number: str | None = None
 
     @classmethod
     def from_dto(
@@ -513,6 +526,7 @@ class InventoryCountListItemSchema(BaseModel):
             posted_at=item.posted_at,
             comment=item.comment,
             line_count=item.line_count,
+            number=item.number,
         )
 
 
@@ -549,6 +563,7 @@ class InventoryCountDetailSchema(BaseModel):
     posted_at: datetime | None
     comment: str | None
     lines: list[InventoryCountLineViewSchema]
+    number: str | None = None
 
     @classmethod
     def from_dto(cls, detail: InventoryCountDetail) -> InventoryCountDetailSchema:
@@ -562,4 +577,5 @@ class InventoryCountDetailSchema(BaseModel):
             lines=[
                 InventoryCountLineViewSchema.from_dto(line) for line in detail.lines
             ],
+            number=detail.number,
         )

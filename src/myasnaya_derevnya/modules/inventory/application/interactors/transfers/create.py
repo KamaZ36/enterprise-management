@@ -11,12 +11,21 @@ from myasnaya_derevnya.modules.business.presentation.business_api import (
     BusinessAPI,
     StockLocation,
 )
+from myasnaya_derevnya.modules.inventory.application.services.document_numbering import (
+    next_document_number,
+)
 from myasnaya_derevnya.modules.inventory.domain.entities.transfer import (
     Transfer,
     TransferLine,
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
+from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
+    DocumentType,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.base import (
+    DocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.transfer.base import (
     TransferRepository,
 )
@@ -47,12 +56,14 @@ class CreateTransferInteractor:
         identity_provider: IdentityProvider,
         business_api: BusinessAPI,
         transfer_repository: TransferRepository,
+        document_number_repository: DocumentNumberRepository,
         staff_api: StaffAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
         self._business_api = business_api
         self._transfer_repository = transfer_repository
+        self._document_number_repository = document_number_repository
         self._staff_api = staff_api
         self._transaction_manager = transaction_manager
 
@@ -71,11 +82,18 @@ class CreateTransferInteractor:
 
         await self._ensure_allowed(current_user_id, (from_location, to_location))
 
+        number = await next_document_number(
+            self._document_number_repository,
+            DocumentType.TRANSFER,
+            command.occurred_at,
+        )
+
         transfer = Transfer.create(
             from_org_unit_id=command.from_org_unit_id,
             to_org_unit_id=command.to_org_unit_id,
             occurred_at=command.occurred_at,
             created_by=current_user_id,
+            number=number,
             comment=command.comment,
             lines=[
                 TransferLine.create(

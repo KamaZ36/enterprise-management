@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     Table,
@@ -82,6 +83,7 @@ RECEIPTS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
+    Column("number", String(32), nullable=True),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
     Column("org_unit_id", UUID, nullable=False),
     Column("supplier_name", String(255), nullable=True),
@@ -94,6 +96,7 @@ RECEIPTS_TABLE = Table(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
+    UniqueConstraint("number", name="uq_receipts_number"),
     Index("ix_receipts_org_unit_occurred_at", "org_unit_id", "occurred_at"),
     Index("ix_receipts_status", "status"),
     Index("ix_receipts_edo_document_id", "edo_document_id"),
@@ -138,6 +141,7 @@ WRITE_OFFS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
+    Column("number", String(32), nullable=True),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
     Column("org_unit_id", UUID, nullable=False),
     Column("reason", String(255), nullable=True),
@@ -147,6 +151,7 @@ WRITE_OFFS_TABLE = Table(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
+    UniqueConstraint("number", name="uq_write_offs_number"),
     Index("ix_write_offs_org_unit_occurred_at", "org_unit_id", "occurred_at"),
     Index("ix_write_offs_status", "status"),
     schema=DATABASE_SCHEMA,
@@ -279,6 +284,7 @@ TRANSFERS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
+    Column("number", String(32), nullable=True),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
     Column("from_org_unit_id", UUID, nullable=False),
     Column("to_org_unit_id", UUID, nullable=False),
@@ -288,6 +294,7 @@ TRANSFERS_TABLE = Table(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
+    UniqueConstraint("number", name="uq_transfers_number"),
     Index("ix_transfers_from_occurred_at", "from_org_unit_id", "occurred_at"),
     Index("ix_transfers_to_occurred_at", "to_org_unit_id", "occurred_at"),
     Index("ix_transfers_status", "status"),
@@ -325,6 +332,7 @@ INVENTORY_COUNTS_TABLE = Table(
     metadata,
     Column("id", UUID, primary_key=True),
     Column("status", String(32), nullable=False),
+    Column("number", String(32), nullable=True),
     Column("occurred_at", DateTime(timezone=True), nullable=False),
     Column("org_unit_id", UUID, nullable=False),
     Column("comment", String(512), nullable=True),
@@ -333,6 +341,7 @@ INVENTORY_COUNTS_TABLE = Table(
         "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     ),
     Column("posted_at", DateTime(timezone=True), nullable=True),
+    UniqueConstraint("number", name="uq_inventory_counts_number"),
     Index(
         "ix_inventory_counts_org_unit_occurred_at",
         "org_unit_id",
@@ -368,5 +377,15 @@ INVENTORY_COUNT_LINES_TABLE = Table(
     Index(
         "ix_inventory_count_lines_inventory_count_id", "inventory_count_id"
     ),
+    schema=DATABASE_SCHEMA,
+)
+
+
+DOCUMENT_NUMBER_COUNTERS_TABLE = Table(
+    "document_number_counters",
+    metadata,
+    Column("document_type", String(32), primary_key=True),
+    Column("number_year", Integer, primary_key=True),
+    Column("last_number", Integer, nullable=False),
     schema=DATABASE_SCHEMA,
 )

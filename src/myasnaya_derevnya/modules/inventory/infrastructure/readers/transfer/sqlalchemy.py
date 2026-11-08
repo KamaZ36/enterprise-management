@@ -43,6 +43,9 @@ class SQLAlchemyTransferReader(TransferReader):
         if search:
             conditions.extend(
                 or_(
+                    TRANSFERS_TABLE.c.number.ilike(
+                        like_pattern(token), escape="\\"
+                    ),
                     TRANSFERS_TABLE.c.comment.ilike(like_pattern(token), escape="\\"),
                 )
                 for token in search.split()
@@ -55,6 +58,7 @@ class SQLAlchemyTransferReader(TransferReader):
         stmt = (
             select(
                 TRANSFERS_TABLE.c.id,
+                TRANSFERS_TABLE.c.number,
                 TRANSFERS_TABLE.c.from_org_unit_id,
                 TRANSFERS_TABLE.c.to_org_unit_id,
                 TRANSFERS_TABLE.c.status,
@@ -100,12 +104,14 @@ class SQLAlchemyTransferReader(TransferReader):
             posted_at=row["posted_at"],
             comment=row["comment"],
             lines=[self._to_line(line) for line in line_rows],
+            number=row["number"],
         )
 
     def _to_list_item(self, row: RowMapping) -> TransferListItem:
         return TransferListItem(
             id=row["id"],
             from_org_unit_id=row["from_org_unit_id"],
+            number=row["number"],
             to_org_unit_id=row["to_org_unit_id"],
             status=row["status"],
             occurred_at=row["occurred_at"],

@@ -38,6 +38,9 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
         if search:
             conditions.extend(
                 or_(
+                    WRITE_OFFS_TABLE.c.number.ilike(
+                        like_pattern(token), escape="\\"
+                    ),
                     WRITE_OFFS_TABLE.c.reason.ilike(like_pattern(token), escape="\\"),
                 )
                 for token in search.split()
@@ -50,6 +53,7 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
         stmt = (
             select(
                 WRITE_OFFS_TABLE.c.id,
+                WRITE_OFFS_TABLE.c.number,
                 WRITE_OFFS_TABLE.c.org_unit_id,
                 WRITE_OFFS_TABLE.c.status,
                 WRITE_OFFS_TABLE.c.occurred_at,
@@ -110,12 +114,14 @@ class SQLAlchemyWriteOffReader(WriteOffReader):
             reason=header["reason"],
             comment=header["comment"],
             lines=[self._to_line_item(row) for row in lines],
+            number=header["number"],
         )
 
     def _to_list_item(self, row: RowMapping) -> WriteOffListItem:
         return WriteOffListItem(
             id=row["id"],
             org_unit_id=row["org_unit_id"],
+            number=row["number"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],

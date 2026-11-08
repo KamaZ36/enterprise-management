@@ -38,6 +38,9 @@ class SQLAlchemyInventoryCountReader(InventoryCountReader):
         if search:
             conditions.extend(
                 or_(
+                    INVENTORY_COUNTS_TABLE.c.number.ilike(
+                        like_pattern(token), escape="\\"
+                    ),
                     INVENTORY_COUNTS_TABLE.c.comment.ilike(
                         like_pattern(token), escape="\\"
                     ),
@@ -54,6 +57,7 @@ class SQLAlchemyInventoryCountReader(InventoryCountReader):
         stmt = (
             select(
                 INVENTORY_COUNTS_TABLE.c.id,
+                INVENTORY_COUNTS_TABLE.c.number,
                 INVENTORY_COUNTS_TABLE.c.org_unit_id,
                 INVENTORY_COUNTS_TABLE.c.status,
                 INVENTORY_COUNTS_TABLE.c.occurred_at,
@@ -106,12 +110,14 @@ class SQLAlchemyInventoryCountReader(InventoryCountReader):
             posted_at=row["posted_at"],
             comment=row["comment"],
             lines=[self._to_line(line) for line in line_rows],
+            number=row["number"],
         )
 
     def _to_list_item(self, row: RowMapping) -> InventoryCountListItem:
         return InventoryCountListItem(
             id=row["id"],
             org_unit_id=row["org_unit_id"],
+            number=row["number"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],

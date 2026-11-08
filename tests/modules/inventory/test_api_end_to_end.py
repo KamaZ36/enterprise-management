@@ -199,9 +199,14 @@ async def test_full_receipt_flow_through_api(
     assert journal.json()["total"] == 1
     assert journal.json()["items"][0]["id"] == receipt_id
 
+    journal_number = journal.json()["items"][0]["number"]
+    assert journal_number.startswith("ПН-2026-")
+    assert len(journal_number.rsplit("-", 1)[-1]) == 6
+
     card = await client.get(f"/api/inventory/receipts/{receipt_id}")
     assert card.status_code == 200, card.text
     assert card.json()["supplier_name"] == "Мясокомбинат"
+    assert card.json()["number"] == journal_number
 
     transfers = await client.get(
         "/api/inventory/transfers", params={"org_unit_id": org_unit_id}
@@ -555,3 +560,110 @@ async def test_delete_drafts_through_api(
     )
     assert rejected_count.status_code == 409
     assert rejected_count.json()["error"] == "DocumentAlreadyPostedError"
+
+
+async def test_document_numbers_are_assigned_on_draft_creation(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    org_unit_id = await _create_location(client, db_session)
+    other_org_unit_id = await _create_location(client, db_session)
+    nomenclature_id = await _create_nomenclature(client)
+
+    async def create_receipt(occurred_at: str) -> str:
+        created = await client.post(
+            "/api/inventory/receipts",
+            json={
+                "org_unit_id": org_unit_id,
+                "occurred_at": occurred_at,
+                "lines": [
+                    {
+                        "nomenclature_id": nomenclature_id,
+                        "quantity": "1",
+                        "unit_cost": "100",
+                    }
+                ],
+            },
+        )
+        assert created.status_code == 201, created.text
+
+        return created.json()["receipt_id"]
+
+    async def receipt_number(receipt_id: str) -> str:
+        card = await client.get(f"/api/inventory/receipts/{receipt_id}")
+        assert card.status_code == 200, card.text
+
+        return card.json()["number"]
+
+    # 31.12.2025 22:30 UTC — уже 2026 год в московском часовом поясе.
+    boundary_id = await create_receipt("2025-12-31T22:30:00+00:00")
+    boundary_number = await receipt_number(boundary_id)
+    assert boundary_number.startswith("ПН-2026-")
+
+    first_number = await receipt_number(
+        await create_receipt("2026-03-01T12:00:00+00:00")
+    )
+    second_number = await receipt_number(
+        await create_receipt("2026-03-02T12:00:00+00:00")
+    )
+
+    assert first_number.startswith("ПН-2026-")
+    assert int(second_number.rsplit("-", 1)[-1]) == int(
+        first_number.rsplit("-", 1)[-1]
+    ) + 1
+
+    write_off = await client.post(
+        "/api/inventory/write-offs",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-04-01T12:00:00+00:00",
+            "reason": "Просрочка",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "1"}],
+        },
+    )
+    assert write_off.status_code == 201, write_off.text
+    write_off_card = await client.get(
+        f"/api/inventory/write-offs/{write_off.json()['write_off_id']}"
+    )
+    assert write_off_card.status_code == 200, write_off_card.text
+    assert write_off_card.json()["number"].startswith("СП-2026-")
+
+    transfer = await client.post(
+        "/api/inventory/transfers",
+        json={
+            "from_org_unit_id": org_unit_id,
+            "to_org_unit_id": other_org_unit_id,
+            "occurred_at": "2026-05-01T12:00:00+00:00",
+            "lines": [{"nomenclature_id": nomenclature_id, "quantity": "1"}],
+        },
+    )
+    assert transfer.status_code == 201, transfer.text
+    transfer_card = await client.get(
+        f"/api/inventory/transfers/{transfer.json()['transfer_id']}"
+    )
+    assert transfer_card.status_code == 200, transfer_card.text
+    assert transfer_card.json()["number"].startswith("ПМ-2026-")
+
+    inventory_count = await client.post(
+        "/api/inventory/inventory-counts",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": "2026-06-01T12:00:00+00:00",
+            "lines": [
+                {"nomenclature_id": nomenclature_id, "counted_quantity": "1"}
+            ],
+        },
+    )
+    assert inventory_count.status_code == 201, inventory_count.text
+    inventory_count_card = await client.get(
+        "/api/inventory/inventory-counts/"
+        f"{inventory_count.json()['inventory_count_id']}"
+    )
+    assert inventory_count_card.status_code == 200, inventory_count_card.text
+    assert inventory_count_card.json()["number"].startswith("ИНВ-2026-")
+
+    # Номера попали и в списки документов.
+    receipts = await client.get(
+        "/api/inventory/receipts", params={"org_unit_id": org_unit_id}
+    )
+    assert receipts.status_code == 200, receipts.text
+    assert all(item["number"].startswith("ПН-2026-") for item in receipts.json()["items"])

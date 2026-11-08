@@ -6,6 +6,7 @@ from myasnaya_derevnya.core.settings.media import MediaSettings
 from myasnaya_derevnya.core.settings.ofd import OfdSettings
 from myasnaya_derevnya.core.settings.password_login import PasswordLoginSettings
 from myasnaya_derevnya.core.settings.seed import InitSeedSettings
+from myasnaya_derevnya.core.settings.timezone import TimezoneSettings
 
 
 class AppSettings(
@@ -17,6 +18,7 @@ class AppSettings(
     MediaSettings,
     OfdSettings,
     PasswordLoginSettings,
+    TimezoneSettings,
 ):
     pass
 

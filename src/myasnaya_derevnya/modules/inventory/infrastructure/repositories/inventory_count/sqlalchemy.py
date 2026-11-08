@@ -28,6 +28,7 @@ class SQLAlchemyInventoryCountRepository(InventoryCountRepository):
             insert(INVENTORY_COUNTS_TABLE).values(
                 id=inventory_count.id,
                 status=inventory_count.status.value,
+                number=inventory_count.number,
                 occurred_at=inventory_count.occurred_at,
                 org_unit_id=inventory_count.org_unit_id,
                 comment=inventory_count.comment,
@@ -115,6 +116,7 @@ class SQLAlchemyInventoryCountRepository(InventoryCountRepository):
         return InventoryCount(
             id=row["id"],
             status=DocumentStatus(row["status"]),
+            number=row["number"],
             occurred_at=row["occurred_at"],
             org_unit_id=row["org_unit_id"],
             comment=row["comment"],

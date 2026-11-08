@@ -28,6 +28,7 @@ class SQLAlchemyWriteOffRepository(WriteOffRepository):
             insert(WRITE_OFFS_TABLE).values(
                 id=write_off.id,
                 status=write_off.status.value,
+                number=write_off.number,
                 occurred_at=write_off.occurred_at,
                 org_unit_id=write_off.org_unit_id,
                 reason=write_off.reason,
@@ -107,6 +108,7 @@ class SQLAlchemyWriteOffRepository(WriteOffRepository):
         return WriteOff(
             id=row["id"],
             status=DocumentStatus(row["status"]),
+            number=row["number"],
             occurred_at=row["occurred_at"],
             org_unit_id=row["org_unit_id"],
             reason=row["reason"],

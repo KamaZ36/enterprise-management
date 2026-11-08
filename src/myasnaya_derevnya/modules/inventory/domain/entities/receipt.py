@@ -80,9 +80,11 @@ class Receipt:
         lines: list[ReceiptLine],
         edo_document_id: UUID | None = None,
         edo_document_number: str | None = None,
+        number: str | None = None,
     ) -> None:
         self._id = id
         self._status = status
+        self._number = number
         self._occurred_at = occurred_at
         self._org_unit_id = org_unit_id
         self._supplier_name = supplier_name
@@ -107,6 +109,7 @@ class Receipt:
         comment: str | None = None,
         edo_document_id: UUID | None = None,
         edo_document_number: str | None = None,
+        number: str | None = None,
     ) -> Receipt:
         if occurred_at.tzinfo is None:
             raise TimezoneRequiredError(field="occurred_at")
@@ -125,11 +128,16 @@ class Receipt:
             lines=list(lines or []),
             edo_document_id=edo_document_id,
             edo_document_number=edo_document_number,
+            number=number,
         )
 
     @property
     def id(self) -> UUID:
         return self._id
+
+    @property
+    def number(self) -> str | None:
+        return self._number
 
     @property
     def status(self) -> DocumentStatus:

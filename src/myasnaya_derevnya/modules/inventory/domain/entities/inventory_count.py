@@ -55,9 +55,11 @@ class InventoryCount:
         created_at: datetime,
         posted_at: datetime | None,
         lines: list[InventoryCountLine],
+        number: str | None = None,
     ) -> None:
         self._id = id
         self._status = status
+        self._number = number
         self._occurred_at = occurred_at
         self._org_unit_id = org_unit_id
         self._comment = comment
@@ -74,6 +76,7 @@ class InventoryCount:
         lines: list[InventoryCountLine] | None = None,
         created_by: UUID | None = None,
         comment: str | None = None,
+        number: str | None = None,
     ) -> InventoryCount:
         if occurred_at.tzinfo is None:
             raise TimezoneRequiredError(field="occurred_at")
@@ -88,11 +91,16 @@ class InventoryCount:
             created_at=get_datetime_utc(),
             posted_at=None,
             lines=list(lines or []),
+            number=number,
         )
 
     @property
     def id(self) -> UUID:
         return self._id
+
+    @property
+    def number(self) -> str | None:
+        return self._number
 
     @property
     def status(self) -> DocumentStatus:

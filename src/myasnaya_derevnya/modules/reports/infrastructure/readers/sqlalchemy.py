@@ -1,9 +1,11 @@
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from uuid import UUID
 
 from sqlalchemy import Select, distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from myasnaya_derevnya.core.settings import settings
+from myasnaya_derevnya.core.timezone import company_timezone, company_today
 from myasnaya_derevnya.modules.inventory.infrastructure.tables import (
     STOCK_BALANCES_TABLE,
     STOCK_LOT_BALANCES_TABLE,
@@ -55,7 +57,7 @@ class SQLAlchemyReportsReader(ReportsReader):
 
         start, end = _period(date_from, date_to)
         cost = _sale_cost_subquery().subquery()
-        day = func.date_trunc("day", POS_RECEIPTS_TABLE.c.occurred_at).label("day")
+        day = _local_day(POS_RECEIPTS_TABLE.c.occurred_at).label("day")
 
         stmt = (
             select(
@@ -100,7 +102,7 @@ class SQLAlchemyReportsReader(ReportsReader):
         if org_unit_ids is not None and not org_unit_ids:
             return []
 
-        today = datetime.now(UTC).date()
+        today = company_today()
         expiring = (
             select(
                 STOCK_LOT_BALANCES_TABLE.c.org_unit_id,
@@ -232,7 +234,7 @@ class SQLAlchemyReportsReader(ReportsReader):
             .subquery()
         )
         cost = _write_off_cost_subquery().subquery()
-        day = func.date_trunc("day", WRITE_OFFS_TABLE.c.occurred_at).label("day")
+        day = _local_day(WRITE_OFFS_TABLE.c.occurred_at).label("day")
 
         stmt = (
             select(
@@ -321,9 +323,18 @@ class SQLAlchemyReportsReader(ReportsReader):
         return stmt.where(column.in_(org_unit_ids))
 
 
+def _local_day(column):
+    """Начало суток в часовом поясе компании для группировки отчётов."""
+
+    return func.date_trunc(
+        "day", func.timezone(settings.timezone, column)
+    )
+
+
 def _period(date_from: date, date_to: date) -> tuple[datetime, datetime]:
-    start = datetime.combine(date_from, time.min, tzinfo=UTC)
-    end = datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=UTC)
+    tz = company_timezone()
+    start = datetime.combine(date_from, time.min, tzinfo=tz)
+    end = datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=tz)
 
     return start, end
 

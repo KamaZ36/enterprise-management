@@ -1,10 +1,11 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 
 from myasnaya_derevnya.core.dependencies import container
+from myasnaya_derevnya.core.timezone import company_today
 from myasnaya_derevnya.modules.reports.application.errors import (
     InvalidReportPeriodError,
 )
@@ -47,7 +48,7 @@ DEFAULT_PERIOD_DAYS = 7
 def _period(
     date_from: date | None, date_to: date | None
 ) -> tuple[date, date]:
-    today = datetime.now(UTC).date()
+    today = company_today()
     start = date_from or today - timedelta(days=DEFAULT_PERIOD_DAYS - 1)
     end = date_to or today
 

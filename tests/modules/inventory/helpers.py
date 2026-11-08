@@ -75,6 +75,9 @@ from myasnaya_derevnya.modules.inventory.application.services.stock_ledger impor
 from myasnaya_derevnya.modules.inventory.domain.services.cost_policy import (
     MovingAverageCostPolicy,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.sqlalchemy import (
+    SQLAlchemyDocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.sqlalchemy import (
     SQLAlchemyReceiptRepository,
 )
@@ -169,6 +172,7 @@ def build_interactors(
 
     receipts = SQLAlchemyReceiptRepository(session)
     write_offs = SQLAlchemyWriteOffRepository(session)
+    document_numbers = SQLAlchemyDocumentNumberRepository(session)
     veterinary_api = VeterinaryAPI(
         document_repository=SQLAlchemyVeterinaryDocumentRepository(session)
     )
@@ -183,6 +187,7 @@ def build_interactors(
             identity_provider=identity,
             business_api=api,
             receipt_repository=receipts,
+            document_number_repository=document_numbers,
             staff_api=staff_api,
             edo_api=edo_api,
             transaction_manager=transaction_manager,
@@ -216,6 +221,7 @@ def build_interactors(
             identity_provider=identity,
             business_api=api,
             write_off_repository=write_offs,
+            document_number_repository=document_numbers,
             staff_api=staff_api,
             transaction_manager=transaction_manager,
         ),

@@ -38,6 +38,9 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         if search:
             conditions.extend(
                 or_(
+                    RECEIPTS_TABLE.c.number.ilike(
+                        like_pattern(token), escape="\\"
+                    ),
                     RECEIPTS_TABLE.c.supplier_name.ilike(
                         like_pattern(token), escape="\\"
                     ),
@@ -55,6 +58,7 @@ class SQLAlchemyReceiptReader(ReceiptReader):
         stmt = (
             select(
                 RECEIPTS_TABLE.c.id,
+                RECEIPTS_TABLE.c.number,
                 RECEIPTS_TABLE.c.org_unit_id,
                 RECEIPTS_TABLE.c.status,
                 RECEIPTS_TABLE.c.occurred_at,
@@ -122,12 +126,14 @@ class SQLAlchemyReceiptReader(ReceiptReader):
             lines=[self._to_line_item(row) for row in lines],
             edo_document_id=header["edo_document_id"],
             edo_document_number=header["edo_document_number"],
+            number=header["number"],
         )
 
     def _to_list_item(self, row: RowMapping) -> ReceiptListItem:
         return ReceiptListItem(
             id=row["id"],
             org_unit_id=row["org_unit_id"],
+            number=row["number"],
             status=row["status"],
             occurred_at=row["occurred_at"],
             posted_at=row["posted_at"],

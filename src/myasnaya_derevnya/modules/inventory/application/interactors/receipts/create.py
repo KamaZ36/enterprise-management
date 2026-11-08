@@ -9,6 +9,9 @@ from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.edo.presentation.edo_api import EdoAPI
+from myasnaya_derevnya.modules.inventory.application.services.document_numbering import (
+    next_document_number,
+)
 from myasnaya_derevnya.modules.inventory.domain.entities.receipt import (
     Receipt,
     ReceiptLine,
@@ -19,6 +22,12 @@ from myasnaya_derevnya.modules.inventory.domain.errors import (
     LocationNotFoundError,
 )
 from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
+from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
+    DocumentType,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.base import (
+    DocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.base import (
     ReceiptRepository,
 )
@@ -57,6 +66,7 @@ class CreateReceiptInteractor:
         identity_provider: IdentityProvider,
         business_api: BusinessAPI,
         receipt_repository: ReceiptRepository,
+        document_number_repository: DocumentNumberRepository,
         staff_api: StaffAPI,
         edo_api: EdoAPI,
         transaction_manager: TransactionManager,
@@ -64,6 +74,7 @@ class CreateReceiptInteractor:
         self._identity_provider = identity_provider
         self._business_api = business_api
         self._receipt_repository = receipt_repository
+        self._document_number_repository = document_number_repository
         self._staff_api = staff_api
         self._edo_api = edo_api
         self._transaction_manager = transaction_manager
@@ -97,10 +108,17 @@ class CreateReceiptInteractor:
                 )
             edo_document_number = edo_document.number
 
+        number = await next_document_number(
+            self._document_number_repository,
+            DocumentType.RECEIPT,
+            command.occurred_at,
+        )
+
         receipt = Receipt.create(
             org_unit_id=command.org_unit_id,
             occurred_at=command.occurred_at,
             created_by=current_user_id,
+            number=number,
             supplier_name=command.supplier_name,
             supplier_document_number=command.supplier_document_number,
             comment=command.comment,

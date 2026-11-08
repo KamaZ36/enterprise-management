@@ -57,9 +57,11 @@ class Transfer:
         created_at: datetime,
         posted_at: datetime | None,
         lines: list[TransferLine],
+        number: str | None = None,
     ) -> None:
         self._id = id
         self._status = status
+        self._number = number
         self._occurred_at = occurred_at
         self._from_org_unit_id = from_org_unit_id
         self._to_org_unit_id = to_org_unit_id
@@ -78,6 +80,7 @@ class Transfer:
         lines: list[TransferLine] | None = None,
         created_by: UUID | None = None,
         comment: str | None = None,
+        number: str | None = None,
     ) -> Transfer:
         if occurred_at.tzinfo is None:
             raise TimezoneRequiredError(field="occurred_at")
@@ -96,11 +99,16 @@ class Transfer:
             created_at=get_datetime_utc(),
             posted_at=None,
             lines=list(lines or []),
+            number=number,
         )
 
     @property
     def id(self) -> UUID:
         return self._id
+
+    @property
+    def number(self) -> str | None:
+        return self._number
 
     @property
     def status(self) -> DocumentStatus:

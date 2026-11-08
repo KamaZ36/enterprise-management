@@ -157,6 +157,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.base i
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.write_off.sqlalchemy import (
     SQLAlchemyWriteOffReader,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.base import (
+    DocumentNumberRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.sqlalchemy import (
+    SQLAlchemyDocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.inventory_count.base import (
     InventoryCountRepository,
 )
@@ -224,6 +230,12 @@ class InventoryDepProvider(Provider):
         self, session: AsyncSession
     ) -> StockPostingRepository:
         return SQLAlchemyStockPostingRepository(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_document_number_repository(
+        self, session: AsyncSession
+    ) -> DocumentNumberRepository:
+        return SQLAlchemyDocumentNumberRepository(session)
 
     @provide(scope=Scope.REQUEST)
     def get_receipt_repository(self, session: AsyncSession) -> ReceiptRepository:

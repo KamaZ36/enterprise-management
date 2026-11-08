@@ -8,12 +8,21 @@ from myasnaya_derevnya.core.database.transaction_manager.base import Transaction
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
+from myasnaya_derevnya.modules.inventory.application.services.document_numbering import (
+    next_document_number,
+)
 from myasnaya_derevnya.modules.inventory.domain.entities.write_off import (
     WriteOff,
     WriteOffLine,
 )
 from myasnaya_derevnya.modules.inventory.domain.errors import LocationNotFoundError
 from myasnaya_derevnya.modules.inventory.domain.permissions import CREATE_DOCUMENT
+from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type import (
+    DocumentType,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.document_number.base import (
+    DocumentNumberRepository,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.write_off.base import (
     WriteOffRepository,
 )
@@ -44,12 +53,14 @@ class CreateWriteOffInteractor:
         identity_provider: IdentityProvider,
         business_api: BusinessAPI,
         write_off_repository: WriteOffRepository,
+        document_number_repository: DocumentNumberRepository,
         staff_api: StaffAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._identity_provider = identity_provider
         self._business_api = business_api
         self._write_off_repository = write_off_repository
+        self._document_number_repository = document_number_repository
         self._staff_api = staff_api
         self._transaction_manager = transaction_manager
 
@@ -68,10 +79,17 @@ class CreateWriteOffInteractor:
         if not allowed:
             raise ForbiddenError()
 
+        number = await next_document_number(
+            self._document_number_repository,
+            DocumentType.WRITE_OFF,
+            command.occurred_at,
+        )
+
         write_off = WriteOff.create(
             org_unit_id=command.org_unit_id,
             occurred_at=command.occurred_at,
             created_by=current_user_id,
+            number=number,
             reason=command.reason,
             comment=command.comment,
             lines=[
