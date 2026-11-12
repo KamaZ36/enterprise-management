@@ -2,8 +2,8 @@
   <div class="page">
     <h1 class="page__title">Журнал склада</h1>
     <p class="page__subtitle">
-      Поступления, списания, перемещения, инвентаризации и ввод начальных
-      остатков. Нажмите на строку, чтобы открыть документ.
+      Поступления, списания, отгрузки, перемещения, инвентаризации и ввод
+      начальных остатков. Нажмите на строку, чтобы открыть документ.
     </p>
 
     <div class="page__toolbar">
@@ -19,6 +19,9 @@
       </el-button>
       <el-button v-if="canCreateDocument" @click="openWriteOffCreate">
         Новое списание
+      </el-button>
+      <el-button v-if="canCreateDocument" @click="openShipmentCreate">
+        Новая отгрузка
       </el-button>
       <el-button v-if="canCreateDocument" @click="openInventoryCountCreate">
         Новая инвентаризация
@@ -46,6 +49,7 @@
     <el-tabs v-model="tab" @tab-change="reload">
       <el-tab-pane label="Поступления" name="receipts" />
       <el-tab-pane label="Списания" name="write-offs" />
+      <el-tab-pane label="Отгрузки" name="shipments" />
       <el-tab-pane label="Перемещения" name="transfers" />
       <el-tab-pane label="Инвентаризации" name="inventory-counts" />
     </el-tabs>
@@ -181,6 +185,60 @@
       </el-table-column>
       <template #empty>
         <el-empty description="Списаний пока нет" />
+      </template>
+    </el-table>
+
+    <el-table
+      v-else-if="tab === 'shipments'"
+      v-loading="pending"
+      :data="shipments"
+      stripe
+      border
+      @row-click="openShipment"
+    >
+      <el-table-column label="Дата" width="120">
+        <template #default="{ row }">{{ formatDate(row.occurred_at) }}</template>
+      </el-table-column>
+      <el-table-column label="Номер" width="140">
+        <template #default="{ row }">{{ row.number ?? "—" }}</template>
+      </el-table-column>
+      <el-table-column label="Откуда" min-width="180">
+        <template #default="{ row }">{{ locationName(row.org_unit_id) }}</template>
+      </el-table-column>
+      <el-table-column label="Получатель" min-width="220">
+        <template #default="{ row }">{{ row.recipient }}</template>
+      </el-table-column>
+      <el-table-column prop="line_count" label="Строк" width="90" align="right" />
+      <el-table-column label="Статус" width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 'posted' ? 'success' : 'info'" effect="light">
+            {{ row.status === "posted" ? "проведена" : "черновик" }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column width="230" align="right">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.status === 'draft' && can('inventory.document.post')"
+            text
+            :disabled="busy"
+            @click.stop="askDoc('shipment', 'post', row as ShipmentListItem)"
+          >
+            Провести
+          </el-button>
+          <el-button
+            v-if="row.status === 'draft' && canCreateDocument"
+            text
+            type="danger"
+            :disabled="busy"
+            @click.stop="askDoc('shipment', 'delete', row as ShipmentListItem)"
+          >
+            Удалить
+          </el-button>
+        </template>
+      </el-table-column>
+      <template #empty>
+        <el-empty description="Отгрузок пока нет" />
       </template>
     </el-table>
 
@@ -403,6 +461,129 @@
           :loading="woSaving"
           :disabled="!woCanSubmit"
           @click="createWriteOff(true)"
+        >
+          Сохранить и провести
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="shipmentOpen"
+      :title="editingShipmentId ? 'Изменить отгрузку' : 'Новая отгрузка'"
+      width="760"
+    >
+      <el-form label-position="top" @submit.prevent>
+        <div class="form-grid">
+          <el-form-item label="Откуда">
+            <el-select
+              v-model="shForm.org_unit_id"
+              style="width: 100%"
+              :disabled="Boolean(editingShipmentId)"
+            >
+              <LocationOptions :locations="locations" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="Дата и время">
+            <el-date-picker
+              v-model="shForm.occurred_at"
+              type="datetime"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </div>
+
+        <el-form-item label="Получатель">
+          <el-input
+            v-model="shForm.recipient"
+            placeholder="Магазин, кафе или контрагент"
+          />
+        </el-form-item>
+
+        <div class="lines-head">
+          <span>Строки документа</span>
+          <el-button size="small" @click="addShipmentLine">Добавить строку</el-button>
+        </div>
+
+        <div class="line line--head line--write-off">
+          <span class="line__name">Номенклатура</span>
+          <span class="line__qty">Количество</span>
+          <span class="line__lot">Партия</span>
+          <span class="line__action" />
+        </div>
+
+        <div v-for="(line, index) in shLines" :key="index" class="line line--write-off">
+          <el-select
+            v-model="line.nomenclature_id"
+            filterable
+            remote
+            placeholder="Начните вводить название или артикул"
+            :remote-method="(query: string) => searchNomenclature(line, query)"
+            @focus="line.query = ''"
+            class="line__name"
+          >
+            <el-option
+              v-for="option in line.options"
+              :key="option.id"
+              :label="`${option.name} · ${option.sku}`"
+              :value="option.id"
+            />
+            <template #empty>
+              <div class="nomenclature-empty">
+                <template v-if="line.query">
+                  <span>Ничего не найдено</span>
+                  <el-button
+                    v-if="can('nomenclature.create')"
+                    text
+                    type="primary"
+                    size="small"
+                    @click.stop="openQuickNomenclature(line)"
+                  >
+                    Создать «{{ line.query }}»
+                  </el-button>
+                </template>
+                <span v-else>Начните вводить название или артикул</span>
+              </div>
+            </template>
+          </el-select>
+
+          <el-input v-model="line.quantity" class="line__qty" placeholder="например 2,5" />
+          <el-input v-model="line.lot_code" class="line__lot" placeholder="если нужна" />
+          <el-button
+            text
+            type="danger"
+            :disabled="shLines.length === 1"
+            @click="removeShipmentLine(index)"
+          >
+            Убрать
+          </el-button>
+        </div>
+
+        <el-form-item label="Комментарий">
+          <el-input v-model="shForm.comment" placeholder="Необязательно" />
+        </el-form-item>
+
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="Получатель не ведётся как склад"
+          description="Товар списывается с выбранного подразделения и нигде не приходуется. Себестоимость определится при проведении по средней."
+        />
+
+        <el-alert v-if="shError" :title="shError" type="error" :closable="false" show-icon />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="shipmentOpen = false">Отмена</el-button>
+        <el-button :loading="shSaving" :disabled="!shCanSubmit" @click="createShipment(false)">
+          {{ editingShipmentId ? "Сохранить" : "Сохранить черновик" }}
+        </el-button>
+        <el-button
+          v-if="!editingShipmentId"
+          type="primary"
+          :loading="shSaving"
+          :disabled="!shCanSubmit"
+          @click="createShipment(true)"
         >
           Сохранить и провести
         </el-button>
@@ -919,6 +1100,80 @@
           </el-button>
         </div>
       </template>
+
+      <template v-else-if="shipmentDetail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="Номер">
+            {{ shipmentDetail.number ?? "—" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Дата">
+            {{ formatDate(shipmentDetail.occurred_at) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Откуда">
+            {{ locationName(shipmentDetail.org_unit_id) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Получатель">
+            {{ shipmentDetail.recipient }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Проведена">
+            {{ shipmentDetail.posted_at ? formatDate(shipmentDetail.posted_at) : "нет" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Комментарий" :span="2">
+            {{ shipmentDetail.comment ?? "—" }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-table :data="shipmentDetail.lines" border class="lines">
+          <el-table-column prop="nomenclature_name" label="Номенклатура" min-width="220" />
+          <el-table-column label="Количество" width="140" align="right">
+            <template #default="{ row }">{{ formatQuantity(row.quantity) }}</template>
+          </el-table-column>
+          <el-table-column label="Партия" width="150">
+            <template #default="{ row }">{{ row.lot_code ?? "—" }}</template>
+          </el-table-column>
+        </el-table>
+
+        <el-alert
+          class="lines"
+          type="info"
+          :closable="false"
+          show-icon
+          title="Себестоимость отгрузки"
+          description="В документе цены нет: стоимость определяется при проведении по средней. Показывать её будет карточка движений."
+        />
+
+        <div
+          v-if="shipmentDetail.status !== 'posted'"
+          style="display: flex; gap: 8px; margin-top: 16px"
+        >
+          <el-button @click="openShipmentEdit">Редактировать</el-button>
+          <el-button
+            type="primary"
+            :loading="busy"
+            @click="askDoc('shipment', 'post', shipmentDetail)"
+          >
+            Провести
+          </el-button>
+          <el-button
+            v-if="canCreateDocument"
+            type="danger"
+            text
+            :disabled="busy"
+            @click="askDoc('shipment', 'delete', shipmentDetail)"
+          >
+            Удалить
+          </el-button>
+        </div>
+
+        <div v-else style="display: flex; gap: 8px; margin-top: 16px">
+          <el-button
+            :loading="busy"
+            @click="askDoc('shipment', 'unpost', shipmentDetail)"
+          >
+            Отменить проведение
+          </el-button>
+        </div>
+      </template>
     </el-drawer>
 
     <el-dialog
@@ -1150,6 +1405,8 @@ type ReceiptListItem = components["schemas"]["ReceiptListItemSchema"];
 type ReceiptDetail = components["schemas"]["ReceiptDetailSchema"];
 type WriteOffListItem = components["schemas"]["WriteOffListItemSchema"];
 type WriteOffDetail = components["schemas"]["WriteOffDetailSchema"];
+type ShipmentListItem = components["schemas"]["ShipmentListItemSchema"];
+type ShipmentDetail = components["schemas"]["ShipmentDetailSchema"];
 type InventoryCountListItem =
   components["schemas"]["InventoryCountListItemSchema"];
 type InventoryCountDetail = components["schemas"]["InventoryCountDetailSchema"];
@@ -1168,15 +1425,18 @@ const canCreateDocument = computed(() => canAll(CAN.documentsCreate));
 const tab = ref<
   | "receipts"
   | "write-offs"
+  | "shipments"
   | "transfers"
   | "inventory-counts"
 >("receipts");
 const transfers = ref<components["schemas"]["TransferListItemSchema"][]>([]);
 const receipts = ref<ReceiptListItem[]>([]);
 const writeOffs = ref<WriteOffListItem[]>([]);
+const shipments = ref<ShipmentListItem[]>([]);
 const inventoryCounts = ref<InventoryCountListItem[]>([]);
 const receiptsTotal = ref(0);
 const writeOffsTotal = ref(0);
+const shipmentsTotal = ref(0);
 const inventoryCountsTotal = ref(0);
 const locations = ref<Location[]>([]);
 const locationId = ref<string | null>(null);
@@ -1287,11 +1547,47 @@ const woCanSubmit = computed(
   () => Boolean(woForm.org_unit_id) && woLines.value.some(isCompleteWriteOffLine),
 );
 
+type ShipmentLine = {
+  nomenclature_id: string;
+  options: NomenclatureOption[];
+  query?: string;
+  quantity: string;
+  lot_code: string;
+};
+
+function emptyShipmentLine(): ShipmentLine {
+  return { nomenclature_id: "", options: [], quantity: "", lot_code: "" };
+}
+
+const shipmentOpen = ref(false);
+const shSaving = ref(false);
+const shError = ref("");
+const editingShipmentId = ref<string | null>(null);
+const shForm = reactive({
+  org_unit_id: "",
+  occurred_at: new Date(),
+  recipient: "",
+  comment: "",
+});
+const shLines = ref<ShipmentLine[]>([emptyShipmentLine()]);
+
+function isCompleteShipmentLine(line: ShipmentLine): boolean {
+  return Boolean(line.nomenclature_id) && Number(line.quantity) > 0;
+}
+
+const shCanSubmit = computed(
+  () =>
+    Boolean(shForm.org_unit_id) &&
+    Boolean(shForm.recipient.trim()) &&
+    shLines.value.some(isCompleteShipmentLine),
+);
+
 const canSubmit = computed(
   () => Boolean(form.org_unit_id) && lines.value.some(isCompleteLine),
 );
 const receiptDetail = ref<ReceiptDetail | null>(null);
 const writeOffDetail = ref<WriteOffDetail | null>(null);
+const shipmentDetail = ref<ShipmentDetail | null>(null);
 
 const drawerTitle = computed(() => {
   if (receiptDetail.value) {
@@ -1299,6 +1595,9 @@ const drawerTitle = computed(() => {
   }
   if (writeOffDetail.value) {
     return `Списание от ${formatDate(writeOffDetail.value.occurred_at)}`;
+  }
+  if (shipmentDetail.value) {
+    return `Отгрузка от ${formatDate(shipmentDetail.value.occurred_at)}`;
   }
 
   return "Документ";
@@ -1354,6 +1653,16 @@ async function load(): Promise<void> {
 
       receipts.value = data.items;
       receiptsTotal.value = data.total;
+    } else if (tab.value === "shipments") {
+      const { data, response } = await api.GET("/api/inventory/shipments", {
+        params: { query },
+      });
+      if (!response.ok || !data) {
+        throw new Error(reasonOf(response.status, "Не удалось загрузить отгрузки"));
+      }
+
+      shipments.value = data.items;
+      shipmentsTotal.value = data.total;
     } else {
       const { data, response } = await api.GET("/api/inventory/write-offs", {
         params: { query },
@@ -1407,6 +1716,9 @@ const pagerTotal = computed(() => {
   if (tab.value === "write-offs") {
     return writeOffsTotal.value;
   }
+  if (tab.value === "shipments") {
+    return shipmentsTotal.value;
+  }
 
   return inventoryCountsTotal.value;
 });
@@ -1441,6 +1753,7 @@ async function onPageChange(): Promise<void> {
 async function openReceipt(row: { id: string }): Promise<void> {
   receiptDetail.value = null;
   writeOffDetail.value = null;
+  shipmentDetail.value = null;
 
   const { data, response } = await api.GET("/api/inventory/receipts/{receipt_id}", {
     params: { path: { receipt_id: row.id } },
@@ -1457,6 +1770,7 @@ async function openReceipt(row: { id: string }): Promise<void> {
 async function openWriteOff(row: { id: string }): Promise<void> {
   receiptDetail.value = null;
   writeOffDetail.value = null;
+  shipmentDetail.value = null;
 
   const { data, response } = await api.GET("/api/inventory/write-offs/{write_off_id}", {
     params: { path: { write_off_id: row.id } },
@@ -1464,6 +1778,23 @@ async function openWriteOff(row: { id: string }): Promise<void> {
 
   if (response.ok && data) {
     writeOffDetail.value = data;
+    drawerOpen.value = true;
+  } else {
+    error.value = reasonOf(response.status, "Не удалось открыть документ");
+  }
+}
+
+async function openShipment(row: { id: string }): Promise<void> {
+  receiptDetail.value = null;
+  writeOffDetail.value = null;
+  shipmentDetail.value = null;
+
+  const { data, response } = await api.GET("/api/inventory/shipments/{shipment_id}", {
+    params: { path: { shipment_id: row.id } },
+  });
+
+  if (response.ok && data) {
+    shipmentDetail.value = data;
     drawerOpen.value = true;
   } else {
     error.value = reasonOf(response.status, "Не удалось открыть документ");
@@ -1900,6 +2231,166 @@ async function postWriteOff(row: { id: string }): Promise<void> {
 }
 
 
+function openShipmentCreate(): void {
+  shError.value = "";
+  notice.value = "";
+  editingShipmentId.value = null;
+  shForm.org_unit_id = locations.value[0]?.id ?? "";
+  shForm.occurred_at = new Date();
+  shForm.recipient = "";
+  shForm.comment = "";
+  shLines.value = [emptyShipmentLine()];
+  shipmentOpen.value = true;
+}
+
+
+function openShipmentEdit(): void {
+  const detail = shipmentDetail.value;
+
+  if (!detail) {
+    return;
+  }
+
+  shError.value = "";
+  notice.value = "";
+  editingShipmentId.value = detail.id;
+  shForm.org_unit_id = detail.org_unit_id;
+  shForm.occurred_at = new Date(detail.occurred_at);
+  shForm.recipient = detail.recipient;
+  shForm.comment = detail.comment ?? "";
+  shLines.value = detail.lines.map((line) => ({
+    nomenclature_id: line.nomenclature_id,
+    quantity: String(line.quantity),
+    lot_code: line.lot_code ?? "",
+    options: [
+      {
+        id: line.nomenclature_id,
+        name: line.nomenclature_name ?? line.nomenclature_id,
+        sku: "",
+      },
+    ],
+  }));
+  drawerOpen.value = false;
+  shipmentOpen.value = true;
+}
+
+
+function addShipmentLine(): void {
+  shLines.value = [...shLines.value, emptyShipmentLine()];
+}
+
+
+function removeShipmentLine(index: number): void {
+  shLines.value = shLines.value.filter((_, position) => position !== index);
+}
+
+
+async function createShipment(postAfterCreate: boolean): Promise<void> {
+  shSaving.value = true;
+  shError.value = "";
+  notice.value = "";
+
+  try {
+    const body = {
+      occurred_at: shForm.occurred_at.toISOString(),
+      recipient: shForm.recipient.trim(),
+      comment: shForm.comment.trim() || null,
+      lines: shLines.value
+        .filter(isCompleteShipmentLine)
+        .map((line) => ({
+          nomenclature_id: line.nomenclature_id,
+          quantity: line.quantity,
+          lot_code: line.lot_code.trim() || null,
+        })),
+    };
+
+    if (editingShipmentId.value) {
+      const editedId = editingShipmentId.value;
+      const updated = await api.PATCH("/api/inventory/shipments/{shipment_id}", {
+        params: { path: { shipment_id: editedId } },
+        body,
+      });
+
+      if (!updated.response.ok) {
+        throw new Error(
+          serverMessage(updated.error, `Не удалось сохранить: ${updated.response.status}`),
+        );
+      }
+
+      shipmentOpen.value = false;
+      editingShipmentId.value = null;
+      notice.value = "Изменения сохранены";
+      await openShipment({ id: editedId });
+      await load();
+      return;
+    }
+
+    const created = await api.POST("/api/inventory/shipments", {
+      body: { org_unit_id: shForm.org_unit_id, ...body },
+    });
+
+    if (!created.response.ok || !created.data) {
+      throw new Error(serverMessage(created.error, `Не удалось сохранить: ${created.response.status}`));
+    }
+
+    const shipmentId = (created.data as unknown as { shipment_id: string }).shipment_id;
+
+    if (postAfterCreate) {
+      const posted = await api.POST("/api/inventory/shipments/{shipment_id}/post", {
+        params: { path: { shipment_id: shipmentId } },
+      });
+
+      if (!posted.response.ok) {
+        shError.value = `Черновик создан, но не проведён: ${serverMessage(posted.error, String(posted.response.status))}`;
+        tab.value = "shipments";
+        await load();
+        return;
+      }
+
+      notice.value = "Отгрузка проведена";
+    } else {
+      notice.value = "Черновик отгрузки сохранён";
+    }
+
+    shipmentOpen.value = false;
+    tab.value = "shipments";
+    await load();
+  } catch (cause) {
+    shError.value = cause instanceof Error ? cause.message : "Ошибка сохранения";
+  } finally {
+    shSaving.value = false;
+  }
+}
+
+
+async function postShipment(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/shipments/{shipment_id}/post",
+      { params: { path: { shipment_id: row.id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(serverMessage(failure, `Не удалось провести: ${response.status}`));
+    }
+
+    notice.value = "Отгрузка проведена";
+    if (drawerOpen.value && shipmentDetail.value?.id === row.id) {
+      await openShipment({ id: row.id });
+    }
+    await load();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка проведения";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
 async function postReceipt(row: { id: string }): Promise<void> {
   busy.value = true;
   error.value = "";
@@ -1928,7 +2419,12 @@ async function postReceipt(row: { id: string }): Promise<void> {
 }
 
 
-type DocKind = "receipt" | "write-off" | "transfer" | "inventory-count";
+type DocKind =
+  | "receipt"
+  | "write-off"
+  | "shipment"
+  | "transfer"
+  | "inventory-count";
 type DocMode = "post" | "delete" | "unpost";
 
 /** Одно окно подтверждения для критичных команд: проведение, отмена и удаление. */
@@ -1951,6 +2447,7 @@ async function askDoc(
   if (mode === "post") {
     if (kind === "receipt") await postReceipt(doc);
     else if (kind === "write-off") await postWriteOff(doc);
+    else if (kind === "shipment") await postShipment(doc);
     else if (kind === "transfer") await postTransfer();
     else await postInventoryCount(doc.id);
     return;
@@ -1959,6 +2456,7 @@ async function askDoc(
   if (mode === "unpost") {
     if (kind === "receipt") await unpostReceipt(doc);
     else if (kind === "write-off") await unpostWriteOff(doc);
+    else if (kind === "shipment") await unpostShipment(doc);
     else if (kind === "transfer") await unpostTransfer(doc);
     else await unpostInventoryCount(doc.id);
     return;
@@ -1966,6 +2464,7 @@ async function askDoc(
 
   if (kind === "receipt") await deleteReceipt(doc);
   else if (kind === "write-off") await deleteWriteOff(doc);
+  else if (kind === "shipment") await deleteShipment(doc);
   else if (kind === "transfer") await deleteTransfer(doc);
   else await deleteInventoryCount(doc.id);
 }
@@ -2626,6 +3125,36 @@ async function unpostWriteOff(row: { id: string }): Promise<void> {
 }
 
 
+async function unpostShipment(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/inventory/shipments/{shipment_id}/unpost",
+      { params: { path: { shipment_id: row.id } } },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        serverMessage(failure, `Не удалось отменить проведение: ${response.status}`),
+      );
+    }
+
+    notice.value = "Проведение отгрузки отменено";
+    if (drawerOpen.value && shipmentDetail.value?.id === row.id) {
+      await openShipment({ id: row.id });
+    }
+    await load();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка отмены";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
 async function unpostTransfer(row: { id: string }): Promise<void> {
   trPosting.value = true;
   trDetailError.value = "";
@@ -2745,6 +3274,34 @@ async function deleteWriteOff(row: { id: string }): Promise<void> {
 
     notice.value = "Черновик списания удалён";
     writeOffDetail.value = null;
+    drawerOpen.value = false;
+    await refresh();
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "Ошибка удаления";
+  } finally {
+    busy.value = false;
+  }
+}
+
+
+async function deleteShipment(row: { id: string }): Promise<void> {
+  busy.value = true;
+  error.value = "";
+  notice.value = "";
+
+  try {
+    const { response } = await api.DELETE("/api/inventory/shipments/{shipment_id}", {
+      params: { path: { shipment_id: row.id } },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        deleteReasonOf(response.status, "Не удалось удалить отгрузку"),
+      );
+    }
+
+    notice.value = "Черновик отгрузки удалён";
+    shipmentDetail.value = null;
     drawerOpen.value = false;
     await refresh();
   } catch (cause) {

@@ -183,6 +183,53 @@ WRITE_OFF_LINES_TABLE = Table(
 )
 
 
+SHIPMENTS_TABLE = Table(
+    "shipments",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column("status", String(32), nullable=False),
+    Column("number", String(32), nullable=True),
+    Column("occurred_at", DateTime(timezone=True), nullable=False),
+    Column("org_unit_id", UUID, nullable=False),
+    Column("recipient", String(255), nullable=False),
+    Column("comment", String(512), nullable=True),
+    Column("created_by", UUID, nullable=True),
+    Column(
+        "created_at", DateTime(timezone=True), nullable=False, server_default=func.now()
+    ),
+    Column("posted_at", DateTime(timezone=True), nullable=True),
+    UniqueConstraint("number", name="uq_shipments_number"),
+    Index("ix_shipments_org_unit_occurred_at", "org_unit_id", "occurred_at"),
+    Index("ix_shipments_status", "status"),
+    schema=DATABASE_SCHEMA,
+)
+
+
+SHIPMENT_LINES_TABLE = Table(
+    "shipment_lines",
+    metadata,
+    Column("id", UUID, primary_key=True),
+    Column(
+        "shipment_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.shipments.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("nomenclature_id", UUID, nullable=False),
+    Column(
+        "lot_id",
+        UUID,
+        ForeignKey(f"{DATABASE_SCHEMA}.stock_lots.id", ondelete="RESTRICT"),
+        nullable=True,
+    ),
+    Column("lot_code", String(64), nullable=True),
+    Column("quantity", QUANTITY, nullable=False),
+    CheckConstraint("quantity > 0", name="quantity_positive"),
+    Index("ix_shipment_lines_shipment_id", "shipment_id"),
+    schema=DATABASE_SCHEMA,
+)
+
+
 STOCK_MOVEMENTS_TABLE = Table(
     "stock_movements",
     metadata,

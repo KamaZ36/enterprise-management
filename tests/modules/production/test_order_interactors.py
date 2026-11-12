@@ -39,6 +39,10 @@ from myasnaya_derevnya.modules.production.application.interactors.set_production
     SetProductionOrderVetisCommand,
     SetProductionOrderVetisInteractor,
 )
+from myasnaya_derevnya.modules.production.application.interactors.unpost_production_order import (
+    UnpostProductionOrderCommand,
+    UnpostProductionOrderInteractor,
+)
 from myasnaya_derevnya.modules.production.application.interactors.update_production_order import (
     ProductionOrderActualCommand,
     UpdateProductionOrderCommand,
@@ -55,6 +59,7 @@ from myasnaya_derevnya.modules.production.domain.errors import (
     ProductionLocationNotFoundError,
     ProductionOrderNotDraftError,
     ProductionOrderNotFoundError,
+    ProductionOrderNotPostedError,
     TechCardNotFoundError,
 )
 from myasnaya_derevnya.modules.production.domain.permissions import (
@@ -94,6 +99,7 @@ class FakeInventoryAPI:
         self.locations_list: list[LocationInfo] = []
         self.posted: PostedProduction | None = None
         self.post_calls: list[dict] = []
+        self.unpost_calls: list[UUID] = []
         self.available: tuple[LotOption, ...] = ()
         self.lot_codes_map: dict[UUID, str] = {}
         self.lot_vetis_calls: list[dict] = []
@@ -108,6 +114,9 @@ class FakeInventoryAPI:
         self.post_calls.append(kwargs)
         assert self.posted is not None
         return self.posted
+
+    async def unpost_production(self, *, document_id: UUID) -> None:
+        self.unpost_calls.append(document_id)
 
     async def available_lots(self, **kwargs) -> tuple[LotOption, ...]:
         return self.available
@@ -580,6 +589,82 @@ async def test_post_rejects_posted_order() -> None:
 
     with pytest.raises(ProductionOrderNotDraftError):
         await interactor(order.id)
+
+
+def build_unpost(*, order: ProductionOrder | None, allowed: bool = True, loc=None):
+    inventory, repository, staff_api, transactions = build_on_order(
+        order=order, allowed=allowed, loc=loc
+    )
+    interactor = UnpostProductionOrderInteractor(
+        identity_provider=FakeIdentityProvider(uuid4()),
+        staff_api=staff_api,
+        inventory_api=inventory,
+        order_repository=repository,
+        transaction_manager=transactions,
+    )
+
+    return interactor, repository, inventory, staff_api, transactions
+
+
+async def test_unpost_unknown_order_is_reported() -> None:
+    interactor, repository, inventory, _, _ = build_unpost(order=None)
+
+    with pytest.raises(ProductionOrderNotFoundError):
+        await interactor(UnpostProductionOrderCommand(order_id=uuid4()))
+
+    assert inventory.unpost_calls == []
+    assert repository.saved == []
+
+
+async def test_unpost_rejects_draft_order() -> None:
+    point = location()
+    order = make_order(org_unit_id=point.id)
+    interactor, repository, inventory, _, _ = build_unpost(order=order, loc=point)
+
+    with pytest.raises(ProductionOrderNotPostedError):
+        await interactor(UnpostProductionOrderCommand(order_id=order.id))
+
+    assert inventory.unpost_calls == []
+    assert repository.saved == []
+
+
+async def test_unpost_requires_post_permission() -> None:
+    point = location()
+    order = make_order(org_unit_id=point.id)
+    order.post()
+    interactor, repository, inventory, staff_api, _ = build_unpost(
+        order=order, allowed=False, loc=point
+    )
+
+    with pytest.raises(ForbiddenError):
+        await interactor(UnpostProductionOrderCommand(order_id=order.id))
+
+    assert staff_api.checked == [(POST_ORDER.code, point.id)]
+    assert inventory.unpost_calls == []
+    assert repository.saved == []
+
+
+async def test_unpost_stornoes_inventory_and_returns_draft() -> None:
+    point = location()
+    order = make_order(org_unit_id=point.id)
+    order.post()
+    output_line = order.outputs[0]
+    order.apply_costs({output_line.id: 12345})
+    order.apply_output_lots({output_line.id: uuid4()})
+    interactor, repository, inventory, staff_api, transactions = build_unpost(
+        order=order, loc=point
+    )
+
+    await interactor(UnpostProductionOrderCommand(order_id=order.id))
+
+    assert staff_api.checked == [(POST_ORDER.code, point.id)]
+    assert inventory.unpost_calls == [order.id]
+    assert order.status is ProductionOrderStatus.DRAFT
+    assert order.posted_at is None
+    assert order.outputs[0].cost_kopecks is None
+    assert order.outputs[0].lot_id is None
+    assert repository.saved == [order]
+    assert transactions.commits == 1
 
 
 def build_get(*, order: ProductionOrder | None, allowed: bool = True, loc=None):

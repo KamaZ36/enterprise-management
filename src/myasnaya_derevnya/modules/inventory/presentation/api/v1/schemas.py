@@ -16,6 +16,8 @@ from myasnaya_derevnya.modules.inventory.application.dto import (
     OpeningBalanceListItem,
     ReceiptDetail,
     ReceiptListItem,
+    ShipmentDetail,
+    ShipmentListItem,
     TransferDetail,
     TransferLineItem,
     TransferListItem,
@@ -88,6 +90,27 @@ class UpdateWriteOffSchema(BaseModel):
     lines: list[WriteOffLineSchema] = Field(min_length=1)
     reason: str | None = None
     comment: str | None = None
+
+
+class ShipmentLineSchema(BaseModel):
+    nomenclature_id: UUID
+    quantity: Decimal = Field(gt=0)
+    lot_code: str | None = Field(default=None, max_length=64)
+
+
+class CreateShipmentSchema(BaseModel):
+    org_unit_id: UUID
+    occurred_at: datetime
+    recipient: str = Field(min_length=1, max_length=255)
+    lines: list[ShipmentLineSchema] = Field(min_length=1)
+    comment: str | None = Field(default=None, max_length=512)
+
+
+class UpdateShipmentSchema(BaseModel):
+    occurred_at: datetime
+    recipient: str = Field(min_length=1, max_length=255)
+    lines: list[ShipmentLineSchema] = Field(min_length=1)
+    comment: str | None = Field(default=None, max_length=512)
 
 
 class BalanceSchema(BaseModel):
@@ -386,6 +409,81 @@ class WriteOffDetailSchema(BaseModel):
             reason=detail.reason,
             comment=detail.comment,
             lines=[WriteOffLineViewSchema.from_dto(line) for line in detail.lines],
+            number=detail.number,
+        )
+
+
+class ShipmentListItemSchema(BaseModel):
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    recipient: str
+    line_count: int
+    number: str | None = None
+
+    @classmethod
+    def from_dto(cls, item: ShipmentListItem) -> ShipmentListItemSchema:
+        return cls(
+            id=item.id,
+            org_unit_id=item.org_unit_id,
+            status=item.status,
+            occurred_at=item.occurred_at,
+            posted_at=item.posted_at,
+            recipient=item.recipient,
+            line_count=item.line_count,
+            number=item.number,
+        )
+
+
+class ShipmentLineViewSchema(BaseModel):
+    id: UUID
+    nomenclature_id: UUID
+    nomenclature_name: str | None
+    quantity: Decimal
+    lot_code: str | None
+
+    @classmethod
+    def from_dto(cls, item) -> ShipmentLineViewSchema:
+        return cls(
+            id=item.id,
+            nomenclature_id=item.nomenclature_id,
+            nomenclature_name=item.nomenclature_name,
+            quantity=item.quantity,
+            lot_code=item.lot_code,
+        )
+
+
+class ShipmentListSchema(BaseModel):
+    items: list[ShipmentListItemSchema]
+    total: int
+    limit: int
+    offset: int
+
+
+class ShipmentDetailSchema(BaseModel):
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    recipient: str
+    comment: str | None
+    lines: list[ShipmentLineViewSchema]
+    number: str | None = None
+
+    @classmethod
+    def from_dto(cls, detail: ShipmentDetail) -> ShipmentDetailSchema:
+        return cls(
+            id=detail.id,
+            org_unit_id=detail.org_unit_id,
+            status=detail.status,
+            occurred_at=detail.occurred_at,
+            posted_at=detail.posted_at,
+            recipient=detail.recipient,
+            comment=detail.comment,
+            lines=[ShipmentLineViewSchema.from_dto(line) for line in detail.lines],
             number=detail.number,
         )
 

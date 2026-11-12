@@ -63,6 +63,9 @@ from myasnaya_derevnya.modules.inventory.application.interactors.opening_balance
 from myasnaya_derevnya.modules.inventory.application.interactors.production.post_production import (
     PostProductionInteractor,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.production.unpost import (
+    UnpostProductionInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptInteractor,
 )
@@ -86,6 +89,27 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.sales.post_sale import (
     PostSaleInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.create import (
+    CreateShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.delete import (
+    DeleteShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.get import (
+    GetShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.list import (
+    ListShipmentsInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.post import (
+    PostShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.unpost import (
+    UnpostShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.update import (
+    UpdateShipmentInteractor,
 )
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferInteractor,
@@ -184,6 +208,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.base imp
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.receipt.sqlalchemy import (
     SQLAlchemyReceiptReader,
 )
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.shipment.base import (
+    ShipmentReader,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.readers.shipment.sqlalchemy import (
+    SQLAlchemyShipmentReader,
+)
 from myasnaya_derevnya.modules.inventory.infrastructure.readers.transfer.base import (
     TransferReader,
 )
@@ -219,6 +249,12 @@ from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.bas
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.receipt.sqlalchemy import (
     SQLAlchemyReceiptRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.shipment.base import (
+    ShipmentRepository,
+)
+from myasnaya_derevnya.modules.inventory.infrastructure.repositories.shipment.sqlalchemy import (
+    SQLAlchemyShipmentRepository,
 )
 from myasnaya_derevnya.modules.inventory.infrastructure.repositories.stock_balance.base import (
     StockBalanceRepository,
@@ -291,6 +327,10 @@ class InventoryDepProvider(Provider):
         return SQLAlchemyWriteOffRepository(session)
 
     @provide(scope=Scope.REQUEST)
+    def get_shipment_repository(self, session: AsyncSession) -> ShipmentRepository:
+        return SQLAlchemyShipmentRepository(session)
+
+    @provide(scope=Scope.REQUEST)
     def get_inventory_count_repository(
         self, session: AsyncSession
     ) -> InventoryCountRepository:
@@ -340,6 +380,10 @@ class InventoryDepProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def get_write_off_reader(self, session: AsyncSession) -> WriteOffReader:
         return SQLAlchemyWriteOffReader(session)
+
+    @provide(scope=Scope.REQUEST)
+    def get_shipment_reader(self, session: AsyncSession) -> ShipmentReader:
+        return SQLAlchemyShipmentReader(session)
 
     @provide(scope=Scope.REQUEST)
     def get_inventory_count_reader(
@@ -401,6 +445,9 @@ class InventoryDepProvider(Provider):
     post_production_interactor = provide(
         PostProductionInteractor, scope=Scope.REQUEST
     )
+    unpost_production_interactor = provide(
+        UnpostProductionInteractor, scope=Scope.REQUEST
+    )
     post_sale_interactor = provide(PostSaleInteractor, scope=Scope.REQUEST)
     create_write_off_interactor = provide(CreateWriteOffInteractor, scope=Scope.REQUEST)
     delete_write_off_interactor = provide(
@@ -410,6 +457,10 @@ class InventoryDepProvider(Provider):
     update_write_off_interactor = provide(
         UpdateWriteOffInteractor, scope=Scope.REQUEST
     )
+    create_shipment_interactor = provide(CreateShipmentInteractor, scope=Scope.REQUEST)
+    delete_shipment_interactor = provide(DeleteShipmentInteractor, scope=Scope.REQUEST)
+    post_shipment_interactor = provide(PostShipmentInteractor, scope=Scope.REQUEST)
+    update_shipment_interactor = provide(UpdateShipmentInteractor, scope=Scope.REQUEST)
     create_inventory_count_interactor = provide(
         CreateInventoryCountInteractor, scope=Scope.REQUEST
     )
@@ -457,6 +508,8 @@ class InventoryDepProvider(Provider):
     get_receipt_interactor = provide(GetReceiptInteractor, scope=Scope.REQUEST)
     list_write_offs_interactor = provide(ListWriteOffsInteractor, scope=Scope.REQUEST)
     get_write_off_interactor = provide(GetWriteOffInteractor, scope=Scope.REQUEST)
+    list_shipments_interactor = provide(ListShipmentsInteractor, scope=Scope.REQUEST)
+    get_shipment_interactor = provide(GetShipmentInteractor, scope=Scope.REQUEST)
     create_transfer_interactor = provide(CreateTransferInteractor, scope=Scope.REQUEST)
     delete_transfer_interactor = provide(DeleteTransferInteractor, scope=Scope.REQUEST)
     post_transfer_interactor = provide(PostTransferInteractor, scope=Scope.REQUEST)
@@ -467,6 +520,9 @@ class InventoryDepProvider(Provider):
     )
     unpost_write_off_interactor = provide(
         UnpostWriteOffInteractor, scope=Scope.REQUEST
+    )
+    unpost_shipment_interactor = provide(
+        UnpostShipmentInteractor, scope=Scope.REQUEST
     )
     unpost_inventory_count_interactor = provide(
         UnpostInventoryCountInteractor, scope=Scope.REQUEST
@@ -502,6 +558,7 @@ class InventoryDepProvider(Provider):
         create_receipt_interactor: CreateReceiptInteractor,
         post_receipt_interactor: PostReceiptInteractor,
         post_production_interactor: PostProductionInteractor,
+        unpost_production_interactor: UnpostProductionInteractor,
         post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
         movement_repository: StockMovementRepository,
@@ -514,6 +571,7 @@ class InventoryDepProvider(Provider):
             create_receipt_interactor=create_receipt_interactor,
             post_receipt_interactor=post_receipt_interactor,
             post_production_interactor=post_production_interactor,
+            unpost_production_interactor=unpost_production_interactor,
             post_sale_interactor=post_sale_interactor,
             balance_repository=balance_repository,
             movement_repository=movement_repository,

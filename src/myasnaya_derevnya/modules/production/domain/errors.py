@@ -88,6 +88,11 @@ class ProductionOrderNotDraftError(ConflictError):
         return "Изменить можно только черновик производственного задания."
 
 
+class ProductionOrderNotPostedError(ConflictError):
+    def __str__(self) -> str:
+        return "Отменить проведение можно только у проведённого задания."
+
+
 class VetisReferenceRequiredError(ProductionDomainError):
     def __str__(self) -> str:
         return "Для ручного ВетИСа укажите идентификатор производственной операции."

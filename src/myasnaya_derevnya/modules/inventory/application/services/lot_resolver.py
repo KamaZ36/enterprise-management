@@ -33,6 +33,7 @@ class LotResolver:
         vetis_product_item_guid: UUID | None = None,
         vetis_entered_by: UUID | None = None,
         veterinary_document_id: UUID | None = None,
+        refresh_expiry: bool = False,
     ) -> UUID | None:
         if not lot_code:
             if _has_vetis(
@@ -52,6 +53,17 @@ class LotResolver:
             supplier_name=supplier_name,
         )
         if existing is not None:
+            changed = False
+
+            if (
+                refresh_expiry
+                and origin_org_unit_id is not None
+                and existing.origin_org_unit_id == origin_org_unit_id
+                and existing.expires_at != expires_at
+            ):
+                existing.change_expiry(expires_at)
+                changed = True
+
             if _has_vetis(
                 vetis_vsd_number,
                 vetis_vsd_guid,
@@ -67,7 +79,11 @@ class LotResolver:
                     entered_by=vetis_entered_by,
                     veterinary_document_id=veterinary_document_id,
                 )
+                changed = True
+
+            if changed:
                 await self._lot_repository.save(existing)
+
             return existing.id
 
         lot = StockLot.create(

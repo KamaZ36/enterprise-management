@@ -32,6 +32,8 @@ INVENTORY_TABLES = (
     "inventory.transfers",
     "inventory.receipt_lines",
     "inventory.receipts",
+    "inventory.shipment_lines",
+    "inventory.shipments",
     "inventory.write_off_lines",
     "inventory.write_offs",
     "inventory.stock_lot_balances",

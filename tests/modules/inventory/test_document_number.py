@@ -19,6 +19,7 @@ from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type impo
     [
         (DocumentType.RECEIPT, "ПН-2026-000123"),
         (DocumentType.WRITE_OFF, "СП-2026-000123"),
+        (DocumentType.SHIPMENT, "ОТ-2026-000123"),
         (DocumentType.TRANSFER, "ПМ-2026-000123"),
         (DocumentType.INVENTORY_COUNT, "ИНВ-2026-000123"),
         (DocumentType.OPENING_BALANCE, "ВО-2026-000123"),

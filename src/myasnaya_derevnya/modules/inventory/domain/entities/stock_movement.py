@@ -15,6 +15,7 @@ class MovementType(StrEnum):
     RECEIPT = "receipt"
     ISSUE = "issue"
     WRITE_OFF = "write_off"
+    SHIPMENT = "shipment"
     SALE = "sale"
     TRANSFER_OUT = "transfer_out"
     TRANSFER_IN = "transfer_in"

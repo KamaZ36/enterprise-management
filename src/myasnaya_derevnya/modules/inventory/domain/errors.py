@@ -75,6 +75,20 @@ class WriteOffNotFoundError(NotFoundError):
 
 
 @dataclass(slots=True, eq=False)
+class ShipmentNotFoundError(NotFoundError):
+    shipment_id: UUID
+
+    def __str__(self) -> str:
+        return f"Отгрузка {self.shipment_id} не найдена"
+
+
+@dataclass(slots=True, eq=False)
+class EmptyShipmentRecipientError(InventoryDomainError):
+    def __str__(self) -> str:
+        return "Не указан получатель отгрузки"
+
+
+@dataclass(slots=True, eq=False)
 class StockLotNotFoundError(NotFoundError):
     nomenclature_id: UUID
     lot_code: str

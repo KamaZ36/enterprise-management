@@ -40,6 +40,10 @@ from myasnaya_derevnya.modules.production.application.interactors.set_production
     SetProductionOrderVetisCommand,
     SetProductionOrderVetisInteractor,
 )
+from myasnaya_derevnya.modules.production.application.interactors.unpost_production_order import (
+    UnpostProductionOrderCommand,
+    UnpostProductionOrderInteractor,
+)
 from myasnaya_derevnya.modules.production.application.interactors.update_production_order import (
     ProductionOrderActualCommand,
     UpdateProductionOrderCommand,
@@ -273,6 +277,18 @@ async def post_production_order(request: Request, order_id: UUID) -> JSONRespons
     async with container(context={Request: request}) as context:
         interactor = await context.get(PostProductionOrderInteractor)
         await interactor(order_id)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/orders/{order_id}/unpost",
+    description="Отменить проведение задания и вернуть его в черновик",
+)
+async def unpost_production_order(request: Request, order_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostProductionOrderInteractor)
+        await interactor(UnpostProductionOrderCommand(order_id=order_id))
 
     return JSONResponse(content={"message": "ok"})
 

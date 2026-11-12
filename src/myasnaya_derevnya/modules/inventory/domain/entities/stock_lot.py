@@ -213,3 +213,6 @@ class StockLot:
         if self._expires_at is None:
             return False
         return self._expires_at < on
+
+    def change_expiry(self, expires_at: date | None) -> None:
+        self._expires_at = expires_at

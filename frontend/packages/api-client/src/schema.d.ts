@@ -1108,6 +1108,98 @@ export interface paths {
         patch: operations["update_write_off_api_inventory_write_offs__write_off_id__patch"];
         trace?: never;
     };
+    "/api/inventory/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Shipments
+         * @description Журнал отгрузок
+         */
+        get: operations["list_shipments_api_inventory_shipments_get"];
+        put?: never;
+        /**
+         * Create Shipment
+         * @description Создать отгрузку получателю (черновик)
+         */
+        post: operations["create_shipment_api_inventory_shipments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/shipments/{shipment_id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Shipment
+         * @description Провести отгрузку
+         */
+        post: operations["post_shipment_api_inventory_shipments__shipment_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/shipments/{shipment_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Shipment
+         * @description Отменить проведение отгрузки
+         */
+        post: operations["unpost_shipment_api_inventory_shipments__shipment_id__unpost_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/shipments/{shipment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shipment
+         * @description Карточка отгрузки
+         */
+        get: operations["get_shipment_api_inventory_shipments__shipment_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Shipment
+         * @description Удалить черновик отгрузки
+         */
+        delete: operations["delete_shipment_api_inventory_shipments__shipment_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Shipment
+         * @description Изменить черновик отгрузки
+         */
+        patch: operations["update_shipment_api_inventory_shipments__shipment_id__patch"];
+        trace?: never;
+    };
     "/api/inventory/opening-balances": {
         parameters: {
             query?: never;
@@ -1590,6 +1682,26 @@ export interface paths {
          * @description Провести задание
          */
         post: operations["post_production_order_api_production_orders__order_id__post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/orders/{order_id}/unpost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unpost Production Order
+         * @description Отменить проведение задания и вернуть его в черновик
+         */
+        post: operations["unpost_production_order_api_production_orders__order_id__unpost_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3055,6 +3167,25 @@ export interface components {
             permission_codes: string[];
             /** Grantable Role Ids */
             grantable_role_ids: string[];
+        };
+        /** CreateShipmentSchema */
+        CreateShipmentSchema: {
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Recipient */
+            recipient: string;
+            /** Lines */
+            lines: components["schemas"]["ShipmentLineSchema"][];
+            /** Comment */
+            comment?: string | null;
         };
         /** CreateTechCardSchema */
         CreateTechCardSchema: {
@@ -5168,6 +5299,106 @@ export interface components {
             /** Outputs */
             outputs?: components["schemas"]["ProductionOutputVetisSchema"][];
         };
+        /** ShipmentDetailSchema */
+        ShipmentDetailSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Recipient */
+            recipient: string;
+            /** Comment */
+            comment: string | null;
+            /** Lines */
+            lines: components["schemas"]["ShipmentLineViewSchema"][];
+            /** Number */
+            number?: string | null;
+        };
+        /** ShipmentLineSchema */
+        ShipmentLineSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Quantity */
+            quantity: number | string;
+            /** Lot Code */
+            lot_code?: string | null;
+        };
+        /** ShipmentLineViewSchema */
+        ShipmentLineViewSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /** Nomenclature Name */
+            nomenclature_name: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Lot Code */
+            lot_code: string | null;
+        };
+        /** ShipmentListItemSchema */
+        ShipmentListItemSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Org Unit Id
+             * Format: uuid
+             */
+            org_unit_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Posted At */
+            posted_at: string | null;
+            /** Recipient */
+            recipient: string;
+            /** Line Count */
+            line_count: number;
+            /** Number */
+            number?: string | null;
+        };
+        /** ShipmentListSchema */
+        ShipmentListSchema: {
+            /** Items */
+            items: components["schemas"]["ShipmentListItemSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /**
          * SpecLineRole
          * @enum {string}
@@ -5699,6 +5930,20 @@ export interface components {
             level?: number | null;
             /** Permission Codes */
             permission_codes?: string[] | null;
+        };
+        /** UpdateShipmentSchema */
+        UpdateShipmentSchema: {
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Recipient */
+            recipient: string;
+            /** Lines */
+            lines: components["schemas"]["ShipmentLineSchema"][];
+            /** Comment */
+            comment?: string | null;
         };
         /** UpdateTransferSchema */
         UpdateTransferSchema: {
@@ -8180,6 +8425,232 @@ export interface operations {
             };
         };
     };
+    list_shipments_api_inventory_shipments_get: {
+        parameters: {
+            query?: {
+                org_unit_id?: string | null;
+                limit?: number;
+                offset?: number;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentListSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_shipment_api_inventory_shipments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShipmentSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_shipment_api_inventory_shipments__shipment_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unpost_shipment_api_inventory_shipments__shipment_id__unpost_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_shipment_api_inventory_shipments__shipment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDetailSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_shipment_api_inventory_shipments__shipment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_shipment_api_inventory_shipments__shipment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shipment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateShipmentSchema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_opening_balances_api_inventory_opening_balances_get: {
         parameters: {
             query?: {
@@ -9270,6 +9741,37 @@ export interface operations {
         };
     };
     post_production_order_api_production_orders__order_id__post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unpost_production_order_api_production_orders__order_id__unpost_post: {
         parameters: {
             query?: never;
             header?: never;

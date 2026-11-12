@@ -253,3 +253,133 @@ async def test_order_without_stock_is_rejected(
 
     detail = await client.get(f"/api/production/orders/{order_id}")
     assert detail.json()["status"] == "draft"
+
+
+async def _posted_order(
+    client: AsyncClient, session: AsyncSession
+) -> tuple[str, str, str, str]:
+    """Создаёт проведённое задание: 100 кг сырья → 40 кг готовой продукции."""
+
+    org_unit_id = await _create_location(client, session)
+    raw_id = await _create_nomenclature(client, name="Говядина лопатка")
+    output_id = await _create_nomenclature(client, name="Лопатка копчёная")
+
+    await _receive(client, org_unit_id, raw_id, quantity="100", unit_cost="400")
+
+    tech_card = await client.post(
+        "/api/production/tech-cards",
+        json={
+            "code": f"{TEST_PREFIX}UNPOST-{uuid4().hex[:6]}",
+            "name": "Копчение для сторно",
+            "basis": "input",
+            "lines": [
+                {"role": "component", "nomenclature_id": raw_id, "quantity": "100"},
+                {
+                    "role": "output",
+                    "nomenclature_id": output_id,
+                    "quantity": "40",
+                    "output_kind": "main",
+                },
+            ],
+        },
+    )
+    assert tech_card.status_code == 201, tech_card.text
+
+    order = await client.post(
+        "/api/production/orders",
+        json={
+            "org_unit_id": org_unit_id,
+            "tech_card_id": tech_card.json()["id"],
+            "batch_count": "1",
+            "occurred_at": OCCURRED_AT,
+        },
+    )
+    assert order.status_code == 201, order.text
+    order_id = order.json()["id"]
+
+    posted = await client.post(f"/api/production/orders/{order_id}/post")
+    assert posted.status_code == 200, posted.text
+
+    return org_unit_id, raw_id, output_id, order_id
+
+
+async def _movement_count(
+    client: AsyncClient, org_unit_id: str, nomenclature_id: str
+) -> int:
+    response = await client.get(
+        "/api/inventory/movements",
+        params={"org_unit_id": org_unit_id, "nomenclature_id": nomenclature_id},
+    )
+    assert response.status_code == 200, response.text
+
+    return response.json()["total"]
+
+
+async def test_unpost_restores_stock_and_returns_order_to_draft(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    org_unit_id, raw_id, output_id, order_id = await _posted_order(
+        client, db_session
+    )
+
+    unposted = await client.post(f"/api/production/orders/{order_id}/unpost")
+    assert unposted.status_code == 200, unposted.text
+
+    detail = await client.get(f"/api/production/orders/{order_id}")
+    assert detail.status_code == 200, detail.text
+    payload = detail.json()
+    assert payload["status"] == "draft"
+    assert payload["posted_at"] is None
+    outputs = [line for line in payload["lines"] if line["role"] == "output"]
+    assert outputs[0]["cost"] is None
+    assert outputs[0]["lot_id"] is None
+
+    raw_balance = await _balance(client, org_unit_id, raw_id)
+    assert Decimal(raw_balance["quantity"]) == Decimal(100)
+    assert raw_balance["total_value_kopecks"] == 4000000
+
+    output_balance = await _balance(client, org_unit_id, output_id)
+    assert Decimal(output_balance["quantity"]) == 0
+
+    assert await _movement_count(client, org_unit_id, output_id) == 0
+    assert await _movement_count(client, org_unit_id, raw_id) == 1
+
+    reposted = await client.post(f"/api/production/orders/{order_id}/post")
+    assert reposted.status_code == 200, reposted.text
+
+    raw_balance = await _balance(client, org_unit_id, raw_id)
+    assert Decimal(raw_balance["quantity"]) == 0
+    output_balance = await _balance(client, org_unit_id, output_id)
+    assert Decimal(output_balance["quantity"]) == Decimal(40)
+    assert await _movement_count(client, org_unit_id, output_id) == 1
+
+
+async def test_unpost_after_output_shipment_is_rejected(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    org_unit_id, _, output_id, order_id = await _posted_order(client, db_session)
+
+    shipment = await client.post(
+        "/api/inventory/shipments",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": OCCURRED_AT,
+            "recipient": "Магазин на углу",
+            "lines": [{"nomenclature_id": output_id, "quantity": "10"}],
+        },
+    )
+    assert shipment.status_code == 201, shipment.text
+    shipment_id = shipment.json()["shipment_id"]
+
+    shipped = await client.post(f"/api/inventory/shipments/{shipment_id}/post")
+    assert shipped.status_code == 200, shipped.text
+
+    unposted = await client.post(f"/api/production/orders/{order_id}/unpost")
+    assert unposted.status_code == 409, unposted.text
+    assert unposted.json()["error"] == "DocumentCannotBeUnpostedError"
+
+    detail = await client.get(f"/api/production/orders/{order_id}")
+    assert detail.json()["status"] == "posted"
+
+    output_balance = await _balance(client, org_unit_id, output_id)
+    assert Decimal(output_balance["quantity"]) == Decimal(30)

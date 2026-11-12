@@ -7,6 +7,7 @@ from myasnaya_derevnya.modules.inventory.domain.value_objects.document_type impo
 PREFIX_BY_TYPE = {
     DocumentType.RECEIPT: "ПН",
     DocumentType.WRITE_OFF: "СП",
+    DocumentType.SHIPMENT: "ОТ",
     DocumentType.TRANSFER: "ПМ",
     DocumentType.INVENTORY_COUNT: "ИНВ",
     DocumentType.OPENING_BALANCE: "ВО",

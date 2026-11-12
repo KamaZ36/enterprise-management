@@ -12,6 +12,10 @@ from myasnaya_derevnya.modules.inventory.application.interactors.production.post
     ProductionIssueCommand,
     ProductionReceiptCommand,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.production.unpost import (
+    UnpostProductionCommand,
+    UnpostProductionInteractor,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.receipts.create import (
     CreateReceiptCommand,
     CreateReceiptInteractor,
@@ -113,6 +117,7 @@ class InventoryAPI:
         create_receipt_interactor: CreateReceiptInteractor,
         post_receipt_interactor: PostReceiptInteractor,
         post_production_interactor: PostProductionInteractor,
+        unpost_production_interactor: UnpostProductionInteractor,
         post_sale_interactor: PostSaleInteractor,
         balance_repository: StockBalanceRepository,
         movement_repository: StockMovementRepository,
@@ -124,6 +129,7 @@ class InventoryAPI:
         self._create_receipt_interactor = create_receipt_interactor
         self._post_receipt_interactor = post_receipt_interactor
         self._post_production_interactor = post_production_interactor
+        self._unpost_production_interactor = unpost_production_interactor
         self._post_sale_interactor = post_sale_interactor
         self._balance_repository = balance_repository
         self._movement_repository = movement_repository
@@ -323,6 +329,11 @@ class InventoryAPI:
                 ),
                 posted_by=posted_by,
             )
+        )
+
+    async def unpost_production(self, *, document_id: UUID) -> None:
+        await self._unpost_production_interactor(
+            UnpostProductionCommand(document_id=document_id)
         )
 
     async def post_sale(

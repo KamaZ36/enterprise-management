@@ -12,6 +12,7 @@ from myasnaya_derevnya.modules.production.domain.errors import (
     OutputExceedsInputError,
     ProductionOrderLineNotFoundError,
     ProductionOrderNotDraftError,
+    ProductionOrderNotPostedError,
     VetisReferenceRequiredError,
     WrongProductionLineRoleError,
 )
@@ -388,6 +389,21 @@ class ProductionOrder:
         ]
         self._status = ProductionOrderStatus.POSTED
         self._posted_at = get_datetime_utc()
+
+    def reset_posting(self) -> None:
+        """Возвращает проведённое задание в черновик после сторно движений."""
+
+        if self._status is not ProductionOrderStatus.POSTED:
+            raise ProductionOrderNotPostedError()
+
+        self._status = ProductionOrderStatus.DRAFT
+        self._posted_at = None
+        self._lines = [
+            replace(line, cost_kopecks=None, lot_id=None)
+            if line.role is SpecLineRole.OUTPUT
+            else line
+            for line in self._lines
+        ]
 
     def apply_costs(self, costs: Mapping[UUID, int]) -> None:
         self._lines = [

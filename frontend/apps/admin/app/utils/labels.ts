@@ -2,6 +2,7 @@ export const MOVEMENT_TYPES: Record<string, string> = {
   receipt: "Поступление",
   issue: "Выдача",
   write_off: "Списание",
+  shipment: "Отгрузка",
   sale: "Продажа",
   transfer_in: "Перемещение (приход)",
   transfer_out: "Перемещение (расход)",

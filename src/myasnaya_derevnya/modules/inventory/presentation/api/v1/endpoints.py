@@ -115,6 +115,36 @@ from myasnaya_derevnya.modules.inventory.application.interactors.receipts.update
     UpdateReceiptInteractor,
     UpdateReceiptLineCommand,
 )
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.create import (
+    CreateShipmentCommand,
+    CreateShipmentInteractor,
+    ShipmentLineCommand,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.delete import (
+    DeleteShipmentCommand,
+    DeleteShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.get import (
+    GetShipmentInteractor,
+    GetShipmentQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.list import (
+    ListShipmentsInteractor,
+    ListShipmentsQuery,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.post import (
+    PostShipmentCommand,
+    PostShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.unpost import (
+    UnpostShipmentCommand,
+    UnpostShipmentInteractor,
+)
+from myasnaya_derevnya.modules.inventory.application.interactors.shipments.update import (
+    UpdateShipmentCommand,
+    UpdateShipmentInteractor,
+    UpdateShipmentLineCommand,
+)
 from myasnaya_derevnya.modules.inventory.application.interactors.transfers.create import (
     CreateTransferCommand,
     CreateTransferInteractor,
@@ -181,6 +211,7 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     CreateInventoryCountSchema,
     CreateOpeningBalanceSchema,
     CreateReceiptSchema,
+    CreateShipmentSchema,
     CreateTransferSchema,
     CreateWriteOffSchema,
     InventoryCountDetailSchema,
@@ -200,6 +231,10 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     ReceiptLineSchema,
     ReceiptListItemSchema,
     ReceiptListSchema,
+    ShipmentDetailSchema,
+    ShipmentLineSchema,
+    ShipmentListItemSchema,
+    ShipmentListSchema,
     TransferDetailSchema,
     TransferLineSchema,
     TransferListItemSchema,
@@ -207,6 +242,7 @@ from myasnaya_derevnya.modules.inventory.presentation.api.v1.schemas import (
     UpdateInventoryCountSchema,
     UpdateOpeningBalanceSchema,
     UpdateReceiptSchema,
+    UpdateShipmentSchema,
     UpdateTransferSchema,
     UpdateWriteOffSchema,
     WriteOffDetailSchema,
@@ -238,6 +274,30 @@ def _receipt_lines(lines: list[ReceiptLineSchema]) -> list[ReceiptLineCommand]:
 def _write_off_lines(lines: list[WriteOffLineSchema]) -> list[WriteOffLineCommand]:
     return [
         WriteOffLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
+def _shipment_lines(lines: list[ShipmentLineSchema]) -> list[ShipmentLineCommand]:
+    return [
+        ShipmentLineCommand(
+            nomenclature_id=line.nomenclature_id,
+            quantity=line.quantity,
+            lot_code=line.lot_code,
+        )
+        for line in lines
+    ]
+
+
+def _update_shipment_lines(
+    lines: list[ShipmentLineSchema],
+) -> list[UpdateShipmentLineCommand]:
+    return [
+        UpdateShipmentLineCommand(
             nomenclature_id=line.nomenclature_id,
             quantity=line.quantity,
             lot_code=line.lot_code,
@@ -457,6 +517,78 @@ async def delete_write_off(request: Request, write_off_id: UUID) -> JSONResponse
     async with container(context={Request: request}) as context:
         interactor = await context.get(DeleteWriteOffInteractor)
         await interactor(DeleteWriteOffCommand(write_off_id=write_off_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/shipments",
+    description="Создать отгрузку получателю (черновик)",
+    status_code=201,
+)
+async def create_shipment(
+    request: Request, data: CreateShipmentSchema
+) -> JSONResponse:
+    command = CreateShipmentCommand(
+        org_unit_id=data.org_unit_id,
+        occurred_at=data.occurred_at,
+        recipient=data.recipient,
+        lines=_shipment_lines(data.lines),
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(CreateShipmentInteractor)
+        shipment_id = await interactor(command)
+
+    return JSONResponse(status_code=201, content={"shipment_id": str(shipment_id)})
+
+
+@router.post("/shipments/{shipment_id}/post", description="Провести отгрузку")
+async def post_shipment(request: Request, shipment_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(PostShipmentInteractor)
+        await interactor(PostShipmentCommand(shipment_id=shipment_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.post(
+    "/shipments/{shipment_id}/unpost",
+    description="Отменить проведение отгрузки",
+)
+async def unpost_shipment(request: Request, shipment_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UnpostShipmentInteractor)
+        await interactor(UnpostShipmentCommand(shipment_id=shipment_id))
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.patch("/shipments/{shipment_id}", description="Изменить черновик отгрузки")
+async def update_shipment(
+    request: Request, shipment_id: UUID, data: UpdateShipmentSchema
+) -> JSONResponse:
+    command = UpdateShipmentCommand(
+        shipment_id=shipment_id,
+        occurred_at=data.occurred_at,
+        recipient=data.recipient,
+        lines=_update_shipment_lines(data.lines),
+        comment=data.comment,
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(UpdateShipmentInteractor)
+        await interactor(command)
+
+    return JSONResponse(content={"message": "ok"})
+
+
+@router.delete("/shipments/{shipment_id}", description="Удалить черновик отгрузки")
+async def delete_shipment(request: Request, shipment_id: UUID) -> JSONResponse:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(DeleteShipmentInteractor)
+        await interactor(DeleteShipmentCommand(shipment_id=shipment_id))
 
     return JSONResponse(content={"message": "ok"})
 
@@ -809,6 +941,49 @@ async def get_write_off(request: Request, write_off_id: UUID) -> WriteOffDetailS
         detail = await interactor(GetWriteOffQuery(write_off_id=write_off_id))
 
     return WriteOffDetailSchema.from_dto(detail)
+
+
+@router.get(
+    "/shipments",
+    response_model=ShipmentListSchema,
+    description="Журнал отгрузок",
+)
+async def list_shipments(
+    request: Request,
+    org_unit_id: UUID | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    search: str | None = None,
+) -> ShipmentListSchema:
+    query = ListShipmentsQuery(
+        org_unit_id=org_unit_id, limit=limit, offset=offset, search=search
+    )
+
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(ListShipmentsInteractor)
+        page = await interactor(query)
+
+    return ShipmentListSchema(
+        items=[ShipmentListItemSchema.from_dto(item) for item in page.items],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
+@router.get(
+    "/shipments/{shipment_id}",
+    response_model=ShipmentDetailSchema,
+    description="Карточка отгрузки",
+)
+async def get_shipment(
+    request: Request, shipment_id: UUID
+) -> ShipmentDetailSchema:
+    async with container(context={Request: request}) as context:
+        interactor = await context.get(GetShipmentInteractor)
+        detail = await interactor(GetShipmentQuery(shipment_id=shipment_id))
+
+    return ShipmentDetailSchema.from_dto(detail)
 
 
 def _transfer_lines(lines: list[TransferLineSchema]) -> list[TransferLineCommand]:

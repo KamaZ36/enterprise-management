@@ -28,6 +28,9 @@ from myasnaya_derevnya.modules.production.application.interactors.post_productio
 from myasnaya_derevnya.modules.production.application.interactors.set_production_order_vetis import (
     SetProductionOrderVetisInteractor,
 )
+from myasnaya_derevnya.modules.production.application.interactors.unpost_production_order import (
+    UnpostProductionOrderInteractor,
+)
 from myasnaya_derevnya.modules.production.application.interactors.update_production_order import (
     UpdateProductionOrderInteractor,
 )
@@ -98,6 +101,9 @@ class ProductionDepProvider(Provider):
     )
     post_production_order_interactor = provide(
         PostProductionOrderInteractor, scope=Scope.REQUEST
+    )
+    unpost_production_order_interactor = provide(
+        UnpostProductionOrderInteractor, scope=Scope.REQUEST
     )
     set_production_order_vetis_interactor = provide(
         SetProductionOrderVetisInteractor, scope=Scope.REQUEST

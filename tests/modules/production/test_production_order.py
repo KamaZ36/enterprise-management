@@ -17,6 +17,7 @@ from myasnaya_derevnya.modules.production.domain.errors import (
     OutputExceedsInputError,
     ProductionOrderLineNotFoundError,
     ProductionOrderNotDraftError,
+    ProductionOrderNotPostedError,
     VetisReferenceRequiredError,
     WrongProductionLineRoleError,
 )
@@ -286,3 +287,36 @@ def test_costs_are_applied_to_output_lines() -> None:
     order.apply_costs({output.id: 12345})
 
     assert order.outputs[0].cost_kopecks == 12345
+
+
+def test_reset_posting_returns_order_to_draft() -> None:
+    order = make_order()
+    order.post()
+    output = order.outputs[0]
+    order.apply_costs({output.id: 12345})
+    order.apply_output_lots({output.id: uuid4()})
+
+    order.reset_posting()
+
+    assert order.status is ProductionOrderStatus.DRAFT
+    assert order.posted_at is None
+    assert order.outputs[0].cost_kopecks is None
+    assert order.outputs[0].lot_id is None
+
+
+def test_reset_posting_keeps_component_lot() -> None:
+    order = make_order()
+    lot_id = uuid4()
+    order.set_lot(order.components[0].id, lot_id)
+    order.post()
+
+    order.reset_posting()
+
+    assert order.components[0].lot_id == lot_id
+
+
+def test_reset_posting_of_draft_is_rejected() -> None:
+    order = make_order()
+
+    with pytest.raises(ProductionOrderNotPostedError):
+        order.reset_posting()

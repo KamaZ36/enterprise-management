@@ -255,6 +255,13 @@
           Провести
         </el-button>
         <el-button
+          v-if="order.status === 'posted' && can('production.order.post')"
+          :loading="unposting"
+          @click="askUnpostOrder"
+        >
+          Отменить проведение
+        </el-button>
+        <el-button
           v-if="editable && can('production.order.manage')"
           type="danger"
           plain
@@ -316,6 +323,7 @@ const order = ref<ProductionOrderDetail | null>(null);
 const pending = ref(false);
 const saving = ref(false);
 const posting = ref(false);
+const unposting = ref(false);
 const cancelling = ref(false);
 const error = ref("");
 const actuals = reactive<Record<string, number>>({});
@@ -540,6 +548,44 @@ async function postOrder(): Promise<void> {
     await load();
   } finally {
     posting.value = false;
+  }
+}
+
+async function askUnpostOrder(): Promise<void> {
+  const confirmed = await confirm({
+    title:
+      "Отменить проведение? Движения будут сторнированы, задание вернётся в черновик.",
+    confirmText: "Отменить проведение",
+    danger: true,
+  });
+
+  if (confirmed) {
+    await unpostOrder();
+  }
+}
+
+async function unpostOrder(): Promise<void> {
+  error.value = "";
+  unposting.value = true;
+
+  try {
+    const { response, error: failure } = await api.POST(
+      "/api/production/orders/{order_id}/unpost",
+      { params: { path: { order_id: orderId } } },
+    );
+
+    if (!response.ok) {
+      error.value = messageOf(
+        failure,
+        `Не удалось отменить проведение: ${response.status}`,
+      );
+      await load();
+      return;
+    }
+
+    await load();
+  } finally {
+    unposting.value = false;
   }
 }
 

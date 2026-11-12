@@ -106,6 +106,7 @@ class PostProductionInteractor:
                 vetis_vsd_guid=receipt.vetis_vsd_guid,
                 vetis_batch_id=receipt.vetis_batch_id,
                 vetis_entered_by=command.posted_by,
+                refresh_expiry=True,
             )
             for receipt in command.receipts
         ]

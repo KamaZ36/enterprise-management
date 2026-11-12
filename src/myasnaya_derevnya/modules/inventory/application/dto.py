@@ -87,6 +87,40 @@ class WriteOffDetail:
 
 
 @dataclass(frozen=True, slots=True)
+class ShipmentListItem:
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    recipient: str
+    line_count: int
+    number: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ShipmentLineItem:
+    id: UUID
+    nomenclature_id: UUID
+    quantity: Decimal
+    lot_code: str | None
+    nomenclature_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ShipmentDetail:
+    id: UUID
+    org_unit_id: UUID
+    status: str
+    occurred_at: datetime
+    posted_at: datetime | None
+    recipient: str
+    comment: str | None
+    lines: list[ShipmentLineItem]
+    number: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class BalanceListItem:
     org_unit_id: UUID
     nomenclature_id: UUID
