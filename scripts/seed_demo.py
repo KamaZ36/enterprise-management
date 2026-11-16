@@ -16,7 +16,9 @@
 
 Дополнительно создаются категории и номенклатура, техкарты и начальные
 остатки: поступления (с партиями и сроками годности), производственное
-задание и перемещения готовой продукции по точкам.
+задание и перемещения готовой продукции по точкам. Для кафе создаётся
+демо-остаток готовых блюд, чтобы заказ можно было выдать; заказы создаются
+только с канала «Сайт».
 
 Для витрины кафе дополнительно создаётся меню: категории разделов, блюда,
 прайс-лист «Меню кафе» с ценами и привязка этого прайс-листа к точке
@@ -53,8 +55,9 @@ import argparse
 import asyncio
 import sys
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 from sqlalchemy import text
@@ -126,6 +129,12 @@ truncate table
     orders.order_lines,
     orders.orders,
     orders.order_number_counters,
+    pos.receipt_lines,
+    pos.receipts,
+    pos.import_batches,
+    pos.product_map,
+    pos.agents,
+    pos.sources,
     catalog.stop_list_entries,
     catalog.prices,
     catalog.price_list_bindings,
@@ -306,6 +315,11 @@ SHOP_PRICES: dict[str, str] = {
 
 # Позиции меню кафе, которые демонстрационно уходят в стоп-лист.
 CAFE_STOP_LIST: tuple[str, ...] = ("solyanka", "mushroom_soup", "napoleon")
+
+# Демо-остаток готовых блюд в кафе. В реальной жизни блюда должны появляться
+# из производства/техкарт, но для демонстрации выдачи заказа нужен остаток.
+CAFE_STOCK_DOCUMENT = "SEED-CAFE-MENU"
+CAFE_STOCK_QUANTITY = "50"
 
 # key, sku, name, unit, category key, price (руб. строкой), description
 CAFE_MENU: list[dict[str, Any]] = [
@@ -720,6 +734,7 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "production.tech_card.read",
             "stop_list.read",
             "stop_list.manage",
+            "report.read",
         ),
     },
     {
@@ -767,6 +782,7 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "cash_register.receipt_read",
             "pos.receipt_read",
             "stop_list.read",
+            "report.read",
         ),
     },
     {
@@ -795,6 +811,7 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "staff.employee.read",
             "stop_list.read",
             "stop_list.manage",
+            "report.read",
         ),
     },
     {
@@ -838,6 +855,7 @@ STAFF_ROLES: list[dict[str, Any]] = [
             "cash_register.receipt_read",
             "pos.receipt_read",
             "stop_list.read",
+            "report.read",
         ),
     },
 ]
@@ -1046,6 +1064,12 @@ PRODUCTION_ORDERS: list[dict[str, Any]] = [
         "batch_count": "1",
         "comment": "Замес и варка",
     },
+    {
+        "unit": "PRODUCTION",
+        "tech_card": "TTK-KOTLET",
+        "batch_count": "1",
+        "comment": "Замес и формовка котлет",
+    },
 ]
 
 # Перемещения идут после производства: развозим готовую продукцию по точкам.
@@ -1066,13 +1090,18 @@ TRANSFERS: list[dict[str, Any]] = [
         "lines": [
             {"nomenclature": "doctor", "quantity": "20"},
             {"nomenclature": "krakow", "quantity": "15"},
+            {"nomenclature": "kotlet", "quantity": "10"},
         ],
     },
     {
         "from_unit": "PRODUCTION",
         "to_unit": "SHOP_BORISOGLEBSK",
         "comment": "Поставка на рынок",
-        "lines": [{"nomenclature": "doctor", "quantity": "15"}],
+        "lines": [
+            {"nomenclature": "doctor", "quantity": "15"},
+            {"nomenclature": "krakow", "quantity": "10"},
+            {"nomenclature": "kotlet", "quantity": "10"},
+        ],
     },
     {
         "from_unit": "PRODUCTION",
@@ -1080,10 +1109,85 @@ TRANSFERS: list[dict[str, Any]] = [
         "comment": "Поставка в Терновку",
         "lines": [
             {"nomenclature": "doctor", "quantity": "12"},
+            {"nomenclature": "krakow", "quantity": "10"},
             {"nomenclature": "kotlet", "quantity": "10"},
         ],
     },
 ]
+
+
+DEMO_ORDERS: list[dict[str, Any]] = [
+    {
+        "unit": "CAFE",
+        "channel": "site",
+        "status": "new",
+        "lines": [("meat_platter", "1"), ("borsch", "2"), ("tea_black", "2")],
+    },
+    {
+        "unit": "CAFE",
+        "channel": "site",
+        "status": "preparing",
+        "lines": [("kotlet_puree", "2"), ("mors", "2")],
+    },
+    {
+        "unit": "CAFE",
+        "channel": "site",
+        "status": "ready",
+        "lines": [("syrniki", "2"), ("cappuccino", "2")],
+    },
+    {
+        "unit": "SHOP_GRBANOVSKY",
+        "channel": "site",
+        "status": "new",
+        "lines": [("doctor", "0.5"), ("krakow", "0.3")],
+    },
+    {
+        "unit": "SHOP_BORISOGLEBSK",
+        "channel": "site",
+        "status": "new",
+        "lines": [("kotlet", "0.5")],
+    },
+    {
+        "unit": "SHOP_TERNOVKA",
+        "channel": "site",
+        "status": "new",
+        "lines": [("doctor", "0.4")],
+    },
+]
+
+# Демо-продажи из касс DoKa: нужны, чтобы отчёт по продажам был не пустым.
+POS_PRODUCT_GUIDS: dict[str, str] = {
+    "doctor": "11111111-1111-1111-1111-111111111111",
+    "krakow": "22222222-2222-2222-2222-222222222222",
+    "kotlet": "33333333-3333-3333-3333-333333333333",
+}
+
+POS_DOKA_ORG_IDS: dict[str, str] = {
+    "SHOP_GRBANOVSKY": "1000000001",
+    "SHOP_BORISOGLEBSK": "1000000002",
+    "SHOP_TERNOVKA": "1000000003",
+}
+
+POS_DEMO_RECEIPTS: list[dict[str, Any]] = [
+    {
+        "payment_kind": "card",
+        "lines": [
+            ("doctor", "0.5", "620.00"),
+            ("krakow", "0.3", "680.00"),
+        ],
+    },
+    {
+        "payment_kind": "cash",
+        "lines": [("kotlet", "0.6", "480.00")],
+    },
+]
+
+ORDER_STATUS_ACTIONS: dict[str, tuple[str, ...]] = {
+    "new": (),
+    "confirmed": ("confirm",),
+    "preparing": ("confirm", "preparing"),
+    "ready": ("confirm", "preparing", "ready"),
+}
 
 
 class SeedError(RuntimeError):
@@ -1103,7 +1207,8 @@ def _expiry(days: int | None) -> str | None:
 
 class Api:
     def __init__(self, base_url: str) -> None:
-        self._client = httpx.AsyncClient(base_url=base_url, timeout=30.0)
+        self.base_url = base_url.rstrip("/")
+        self._client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
 
     async def login(self, username: str, password: str) -> None:
         response = await self._client.post(
@@ -1685,6 +1790,56 @@ async def ensure_cafe_stop_list(
         print(f"  + в стоп-лист кафе: {key}")
 
 
+async def ensure_cafe_stock(
+    api: Api,
+    unit_ids_by_code: dict[str, str],
+    menu_nomenclature_ids: dict[str, str],
+) -> None:
+    """Остаток готовых блюд в кафе, чтобы заказ можно было выдать.
+
+    Иначе ``complete`` пытается списать блюдо со склада и падает с
+    ``InsufficientStockError``: витринные блюда не совпадают с сырьём.
+    """
+    cafe_id = unit_ids_by_code["CAFE"]
+    existing = await api.get(
+        "/api/inventory/receipts",
+        org_unit_id=cafe_id,
+        search=CAFE_STOCK_DOCUMENT,
+        limit=1,
+    )
+    if existing["total"]:
+        print("  · остаток блюд кафе уже есть")
+        return
+
+    lines = [
+        {
+            "nomenclature_id": menu_nomenclature_ids[spec["key"]],
+            "quantity": CAFE_STOCK_QUANTITY,
+            "unit_cost": str(
+                (Decimal(spec["price"]) * Decimal("0.4")).quantize(
+                    Decimal("0.01")
+                )
+            ),
+            "lot_code": f"CAFE-{spec['sku']}",
+            "expires_at": _expiry(5),
+        }
+        for spec in CAFE_MENU
+    ]
+    created = await api.post(
+        "/api/inventory/receipts",
+        json={
+            "org_unit_id": cafe_id,
+            "occurred_at": _now_iso(),
+            "supplier_name": "Демо-кухня",
+            "supplier_document_number": CAFE_STOCK_DOCUMENT,
+            "comment": "Стартовый остаток готовых блюд кафе",
+            "lines": lines,
+        },
+    )
+    await api.post(f"/api/inventory/receipts/{created['receipt_id']}/post")
+    print(f"  + остаток кафе: {len(lines)} блюд по {CAFE_STOCK_QUANTITY} шт.")
+
+
 async def ensure_tech_cards(api: Api, nomenclature_ids: dict[str, str]) -> dict[str, str]:
     cards = await api.get("/api/production/tech-cards", limit=100)
     by_code = {card["code"]: card["id"] for card in cards["items"]}
@@ -1807,6 +1962,170 @@ async def post_transfers(
         print(f"  + перемещение: {spec['comment']}")
 
 
+async def ensure_demo_orders(
+    api: Api,
+    unit_ids_by_code: dict[str, str],
+    nomenclature_ids: dict[str, str],
+) -> None:
+    """Пара живых заказов, чтобы рабочее место было не пустым."""
+    existing = await api.get(
+        "/api/orders", day=date.today().isoformat(), limit=1
+    )
+    if existing["total"]:
+        print("  · заказы уже есть — пропускаем")
+        return
+
+    for spec in DEMO_ORDERS:
+        created = await api.post(
+            "/api/orders",
+            json={
+                "org_unit_id": unit_ids_by_code[spec["unit"]],
+                "channel": spec["channel"],
+                "lines": [
+                    {
+                        "nomenclature_id": nomenclature_ids[key],
+                        "quantity": quantity,
+                    }
+                    for key, quantity in spec["lines"]
+                ],
+            },
+        )
+        order_id = created["order_id"]
+
+        for action in ORDER_STATUS_ACTIONS[spec["status"]]:
+            await api.post(f"/api/orders/{order_id}/{action}")
+
+        print(
+            f"  + заказ {spec['unit']} — {spec['status']} "
+            f"({len(spec['lines'])} поз.)"
+        )
+
+
+async def ensure_demo_pos_sales(
+    api: Api,
+    unit_ids_by_code: dict[str, str],
+    nomenclature_ids: dict[str, str],
+) -> None:
+    """Демонстрационные продажи через кассы DoKa.
+
+    Идём тем же путём, что и настоящий агент: создаём источник, выдаём
+    ключ, размечаем товары и отправляем пакет чеков. Потом проводим их
+    по складу. Так отчёт по продажам проверяется на реальной цепочке.
+    """
+    existing = await api.get("/api/pos/receipts", limit=1)
+    if existing["total"]:
+        print("  · чеки DoKa уже есть — пропускаем")
+        return
+
+    shop_codes = ("SHOP_GRBANOVSKY", "SHOP_BORISOGLEBSK", "SHOP_TERNOVKA")
+    sources = await api.get("/api/pos/sources")
+    sources_by_doka = {
+        source["doka_org_id"]: source for source in sources
+    }
+
+    for index, unit_code in enumerate(shop_codes, start=1):
+        doka_org_id = POS_DOKA_ORG_IDS[unit_code]
+        source = sources_by_doka.get(doka_org_id)
+        if source is None:
+            source = await api.post(
+                "/api/pos/sources",
+                json={
+                    "doka_org_id": doka_org_id,
+                    "name": f"Демо-касса {index}",
+                    "org_unit_id": unit_ids_by_code[unit_code],
+                },
+            )
+            print(f"  + источник DoKa «{source['name']}»")
+
+        for key, product_guid in POS_PRODUCT_GUIDS.items():
+            await api.put(
+                f"/api/pos/sources/{source['id']}/product-map",
+                json={
+                    "doka_product_guid": product_guid,
+                    "nomenclature_id": nomenclature_ids[key],
+                    "unit_factor": "1",
+                },
+            )
+
+        install_id = f"demo-install-{index}"
+        key_result = await api.post(
+            f"/api/pos/sources/{source['id']}/agents/keys",
+            json={
+                "install_id": install_id,
+                "hostname": f"demo-cash-{index}",
+                "version": "seed",
+            },
+        )
+        receipts = []
+        for receipt_index, receipt_spec in enumerate(POS_DEMO_RECEIPTS, start=1):
+            lines = []
+            total = 0
+            for key, quantity, price in receipt_spec["lines"]:
+                price_kopecks = int(Decimal(price) * 100)
+                amount = int(
+                    (Decimal(price) * Decimal(quantity) * 100).quantize(
+                        Decimal(1)
+                    )
+                )
+                total += amount
+                lines.append(
+                    {
+                        "product_guid": POS_PRODUCT_GUIDS[key],
+                        "product_name": key,
+                        "quantity": quantity,
+                        "price_kopecks": price_kopecks,
+                        "amount_kopecks": amount,
+                    }
+                )
+
+            receipts.append(
+                {
+                    "guid": uuid4().hex,
+                    "occurred_at": _now_iso(),
+                    "kind": "sale",
+                    "payment_kind": receipt_spec["payment_kind"],
+                    "total_kopecks": total,
+                    "number": f"{index}-{receipt_index}",
+                    "lines": lines,
+                }
+            )
+
+        headers = {
+            "Authorization": f"Bearer {key_result['api_key']}",
+            "X-Install-Id": install_id,
+            "X-Agent-Version": "seed",
+        }
+        async with httpx.AsyncClient(
+            base_url=api.base_url, timeout=30.0, headers=headers
+        ) as agent:
+            response = await agent.post(
+                "/api/pos/receipts",
+                json={
+                    "source": {"doka_org_id": doka_org_id},
+                    "agent": {
+                        "install_id": install_id,
+                        "version": "seed",
+                        "hostname": f"demo-cash-{index}",
+                    },
+                    "file": {
+                        "name": f"seed-{index}.xml",
+                        "exported_at": _now_iso(),
+                    },
+                    "receipts": receipts,
+                },
+            )
+            if response.status_code >= 400:
+                raise SeedError(
+                    f"POST /api/pos/receipts → {response.status_code}: "
+                    f"{response.text[:400]}"
+                )
+
+        print(f"  + чеки DoKa для «{source['name']}»: {len(receipts)}")
+
+    await api.post("/api/pos/receipts/post-pending", json={"limit": 100})
+    print("  · чеки DoKa проведены по складу")
+
+
 async def has_stock(api: Api, org_unit_id: str) -> bool:
     balances = await api.get(f"/api/inventory/locations/{org_unit_id}/balances")
 
@@ -1847,6 +2166,9 @@ async def run(args: argparse.Namespace) -> None:
         print("Стоп-лист кафе…")
         await ensure_cafe_stop_list(api, unit_ids_by_code, menu_nomenclature_ids)
 
+        print("Остаток блюд кафе…")
+        await ensure_cafe_stock(api, unit_ids_by_code, menu_nomenclature_ids)
+
         print("Техкарты…")
         tech_card_ids = await ensure_tech_cards(api, nomenclature_ids)
 
@@ -1859,6 +2181,16 @@ async def run(args: argparse.Namespace) -> None:
             await post_production(api, unit_ids_by_code, tech_card_ids)
             print("Перемещения…")
             await post_transfers(api, unit_ids_by_code, nomenclature_ids)
+
+        print("Заказы…")
+        await ensure_demo_orders(
+            api,
+            unit_ids_by_code,
+            {**nomenclature_ids, **menu_nomenclature_ids},
+        )
+
+        print("Продажи DoKa…")
+        await ensure_demo_pos_sales(api, unit_ids_by_code, nomenclature_ids)
 
         print("\nДемо-доступы (пароль у сотрудников: "
               f"{DEMO_STAFF_PASSWORD}):")
