@@ -47,6 +47,9 @@ class FakeBusinessAPI:
     async def org_unit_titles(self, org_unit_ids: object) -> dict[object, str]:
         return {}
 
+    async def stock_locations(self) -> list[object]:
+        return []
+
 
 class FakeRoleAssignmentRepository:
     def __init__(self, assignments: list[ResolvedAssignment]) -> None:

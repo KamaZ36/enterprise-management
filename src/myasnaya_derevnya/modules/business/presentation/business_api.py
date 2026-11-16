@@ -18,6 +18,7 @@ class StockLocation:
     code: str
     name: str
     is_active: bool
+    type: str = ""
 
 
 class BusinessAPI:
@@ -61,4 +62,5 @@ class BusinessAPI:
             code=unit.code,
             name=unit.name,
             is_active=unit.is_active,
+            type=unit.type.value,
         )

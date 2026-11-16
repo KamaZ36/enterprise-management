@@ -78,4 +78,5 @@ class PermissionItem:
 class CurrentUserScope:
     id: UUID
     title: str
+    type: str
     permissions: frozenset[str]

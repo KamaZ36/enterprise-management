@@ -138,6 +138,7 @@ class CurrentUserRoleSchema(BaseModel):
 class CurrentUserScopeSchema(BaseModel):
     id: UUID
     title: str
+    type: str
     permissions: list[str]
 
 
@@ -167,6 +168,7 @@ class CurrentUserSchema(BaseModel):
                 CurrentUserScopeSchema(
                     id=item.id,
                     title=item.title,
+                    type=item.type,
                     permissions=sorted(item.permissions),
                 )
                 for item in view.scopes

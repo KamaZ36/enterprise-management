@@ -3,6 +3,7 @@ import { useCurrentUser } from "~/composables/useCurrentUser";
 export type UnitOption = {
   id: string;
   title: string;
+  type: string;
   permissions: string[];
 };
 
@@ -20,6 +21,7 @@ export function useMyUnits() {
     (user.value?.scopes ?? []).map((scope) => ({
       id: scope.id,
       title: scope.title,
+      type: scope.type,
       permissions: Array.isArray(scope.permissions) ? scope.permissions : [],
     })),
   );

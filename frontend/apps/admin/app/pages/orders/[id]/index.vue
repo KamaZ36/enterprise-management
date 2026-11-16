@@ -55,8 +55,8 @@
       <el-descriptions-item label="К выдаче">
         {{ order.planned_at ? formatTime(order.planned_at) : "как можно скорее" }}
       </el-descriptions-item>
-      <el-descriptions-item label="Телефон">
-        {{ order.contact_phone ?? "не указан" }}
+      <el-descriptions-item v-if="order.contact_phone" label="Телефон клиента">
+        {{ order.contact_phone }}
       </el-descriptions-item>
       <el-descriptions-item v-if="order.comment" label="Комментарий" :span="2">
         {{ order.comment }}

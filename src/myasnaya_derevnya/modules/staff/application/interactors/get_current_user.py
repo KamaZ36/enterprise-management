@@ -44,10 +44,13 @@ class GetCurrentUserInteractor:
         scopes: tuple[CurrentUserScope, ...] = ()
         if access.by_unit:
             titles = await self._business_api.org_unit_titles(access.by_unit)
+            locations = await self._business_api.stock_locations()
+            types = {location.id: location.type for location in locations}
             scopes = tuple(
                 CurrentUserScope(
                     id=unit_id,
                     title=titles.get(unit_id, str(unit_id)),
+                    type=types.get(unit_id, ""),
                     permissions=access.by_unit[unit_id],
                 )
                 for unit_id in sorted(access.by_unit, key=str)
