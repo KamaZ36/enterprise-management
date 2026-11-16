@@ -18,9 +18,6 @@ from myasnaya_derevnya.modules.pos.domain.entities.receipt import (
 from myasnaya_derevnya.modules.pos.infrastructure.repositories.receipt.base import (
     PosReceiptRepository,
 )
-from myasnaya_derevnya.modules.production.presentation.production_api import (
-    ProductionAPI,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +27,20 @@ QUANTITY_STEP = Decimal("0.000001")
 class ReceiptPostingService:
     """Проводит чек DoKa по складу и фиксирует итоговый статус.
 
-    Списание идёт не по проданной позиции, а по её техкарте: если номенклатура
-    является главным выходом техкарты, со склада списываются компоненты.
-    Потери в техкарте не имеют номенклатуры, поэтому отдельными строками
-    не списываются — они уже учтены в себестоимости выхода.
+    Списывается именно проданная номенклатура: чек фиксирует факт продажи,
+    а не производство. Разбор блюда на компоненты должен происходить в
+    производственном задании, иначе магазин, продающий готовый товар,
+    пытался бы списать сырьё, которого у него нет.
     """
 
     def __init__(
         self,
         receipt_repository: PosReceiptRepository,
         inventory_api: InventoryAPI,
-        production_api: ProductionAPI,
         transaction_manager: TransactionManager,
     ) -> None:
         self._receipt_repository = receipt_repository
         self._inventory_api = inventory_api
-        self._production_api = production_api
         self._transaction_manager = transaction_manager
 
     async def post(self, receipt: PosReceipt) -> PosReceipt:
@@ -143,21 +138,11 @@ class ReceiptPostingService:
             if line.nomenclature_id is None:
                 continue
 
-            quantity = line.quantity * line.unit_factor
-            recipe = await self._production_api.recipe_for_output(
-                line.nomenclature_id, receipt.occurred_at.date()
+            _add(
+                totals,
+                line.nomenclature_id,
+                line.quantity * line.unit_factor,
             )
-
-            if recipe is None:
-                _add(totals, line.nomenclature_id, quantity)
-                continue
-
-            for component in recipe.components:
-                _add(
-                    totals,
-                    component.nomenclature_id,
-                    quantity * component.quantity_per_output,
-                )
 
         return [
             SaleLine(

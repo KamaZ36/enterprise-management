@@ -124,11 +124,6 @@ class FakeInventoryAPI:
         return ()
 
 
-class FakeProductionAPI:
-    async def recipe_for_output(self, nomenclature_id: UUID, on_date):
-        return None
-
-
 def build_interactor(*, mappings_factory=None):
     transaction_manager = FakeTransactionManager()
     receipt_repository = FakeReceiptRepository()
@@ -148,7 +143,6 @@ def build_interactor(*, mappings_factory=None):
     posting_service = ReceiptPostingService(
         receipt_repository=receipt_repository,
         inventory_api=inventory,
-        production_api=FakeProductionAPI(),
         transaction_manager=transaction_manager,
     )
     interactor = ImportPosReceiptsInteractor(

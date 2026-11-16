@@ -104,9 +104,6 @@ from myasnaya_derevnya.modules.pos.infrastructure.repositories.source.base impor
 from myasnaya_derevnya.modules.pos.infrastructure.repositories.source.sqlalchemy import (
     SQLAlchemyPosSourceRepository,
 )
-from myasnaya_derevnya.modules.production.presentation.production_api import (
-    ProductionAPI,
-)
 
 
 class PosDepProvider(Provider):
@@ -147,13 +144,11 @@ class PosDepProvider(Provider):
         self,
         receipt_repository: PosReceiptRepository,
         inventory_api: InventoryAPI,
-        production_api: ProductionAPI,
         transaction_manager: TransactionManager,
     ) -> ReceiptPostingService:
         return ReceiptPostingService(
             receipt_repository=receipt_repository,
             inventory_api=inventory_api,
-            production_api=production_api,
             transaction_manager=transaction_manager,
         )
 

@@ -77,16 +77,10 @@ class FakeInventoryAPI:
         )
 
 
-class FakeProductionAPI:
-    async def recipe_for_output(self, nomenclature_id: UUID, on_date):
-        return None
-
-
 def build_posting_service(session, repository) -> ReceiptPostingService:
     return ReceiptPostingService(
         receipt_repository=repository,
         inventory_api=FakeInventoryAPI(session),
-        production_api=FakeProductionAPI(),
         transaction_manager=SQLAlchemyTransactionManager(session),
     )
 
