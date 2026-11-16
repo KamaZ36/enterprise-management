@@ -15,6 +15,7 @@ from myasnaya_derevnya.modules.production.domain.entities.production_order impor
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
     ProductionLocationNotFoundError,
+    ProductionLocationTypeError,
     TechCardNotFoundError,
 )
 from myasnaya_derevnya.modules.production.domain.permissions import MANAGE_ORDERS
@@ -65,6 +66,8 @@ class CreateProductionOrderInteractor:
         location = await self._inventory_api.get_location(command.org_unit_id)
         if location is None:
             raise ProductionLocationNotFoundError(command.org_unit_id)
+        if location.type != "production":
+            raise ProductionLocationTypeError()
 
         allowed = await self._staff_api.can(
             user_id=user_id,

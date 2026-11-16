@@ -30,6 +30,7 @@ class LocationSchema(BaseModel):
     id: UUID
     name: str
     is_active: bool
+    type: str = ""
 
     @classmethod
     def from_dto(cls, location: LocationListItem) -> LocationSchema:
@@ -37,6 +38,7 @@ class LocationSchema(BaseModel):
             id=location.id,
             name=location.name,
             is_active=location.is_active,
+            type=location.type,
         )
 
 

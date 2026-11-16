@@ -3686,6 +3686,11 @@ export interface components {
             name: string;
             /** Is Active */
             is_active: boolean;
+            /**
+             * Type
+             * @default
+             */
+            type: string;
         };
         /** LoginByPasswordCommand */
         LoginByPasswordCommand: {

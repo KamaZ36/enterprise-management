@@ -19,7 +19,7 @@
         style="width: 220px"
         @change="reload"
       >
-        <LocationOptions :locations="locations" />
+        <LocationOptions :locations="productionLocations" />
       </el-select>
 
       <el-select
@@ -99,9 +99,17 @@
     <el-dialog v-model="createOpen" title="Новое задание" width="640">
       <el-form label-position="top">
         <el-form-item label="Цех">
-          <el-select v-model="form.org_unit_id" style="width: 100%">
-            <LocationOptions :locations="locations" />
+          <el-select
+            v-model="form.org_unit_id"
+            placeholder="Выберите цех"
+            style="width: 100%"
+          >
+            <LocationOptions :locations="productionLocations" />
           </el-select>
+          <p v-if="!productionLocations.length" class="muted">
+            Нет подразделений типа «Производство». Создайте цех в
+            «Подразделениях».
+          </p>
         </el-form-item>
 
         <el-form-item label="Техкарта">
@@ -198,6 +206,9 @@ const { can } = useCurrentUser();
 
 const items = ref<ProductionOrderListItem[]>([]);
 const locations = ref<Location[]>([]);
+const productionLocations = computed(() =>
+  locations.value.filter((location) => location.type === "production"),
+);
 const techCards = ref<TechCardListItem[]>([]);
 const total = ref(0);
 const page = ref(1);
@@ -311,7 +322,8 @@ async function openOrder(row: ProductionOrderListItem): Promise<void> {
 
 function openCreate(): void {
   createError.value = "";
-  form.org_unit_id = locationId.value ?? locations.value[0]?.id ?? "";
+  form.org_unit_id =
+    locationId.value ?? productionLocations.value[0]?.id ?? "";
   form.tech_card_id = techCards.value[0]?.id ?? "";
   form.batch_count = 1;
   form.occurred_at = localNow();

@@ -73,6 +73,7 @@ class LocationInfo:
     id: UUID
     name: str
     is_active: bool
+    type: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +214,7 @@ class InventoryAPI:
             id=location.id,
             name=location.name,
             is_active=location.is_active,
+            type=location.type,
         )
 
     async def list_locations(self) -> list[LocationInfo]:
@@ -221,6 +223,7 @@ class InventoryAPI:
                 id=location.id,
                 name=location.name,
                 is_active=location.is_active,
+                type=location.type,
             )
             for location in await self._business_api.stock_locations()
         ]

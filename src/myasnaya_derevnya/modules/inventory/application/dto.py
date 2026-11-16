@@ -168,6 +168,7 @@ class LocationListItem:
     id: UUID
     name: str
     is_active: bool
+    type: str = ""
 
 
 @dataclass(frozen=True, slots=True)

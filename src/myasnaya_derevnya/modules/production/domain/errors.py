@@ -24,6 +24,11 @@ class ProductionLocationNotFoundError(NotFoundError):
         return f"Цех {self._org_unit_id} не найден."
 
 
+class ProductionLocationTypeError(ProductionDomainError):
+    def __str__(self) -> str:
+        return "Производственное задание можно создать только в цехе."
+
+
 class ProductionOrderNotFoundError(NotFoundError):
     def __init__(self, order_id: UUID) -> None:
         self._order_id = order_id

@@ -57,6 +57,7 @@ from myasnaya_derevnya.modules.production.domain.entities.tech_card import (
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
     ProductionLocationNotFoundError,
+    ProductionLocationTypeError,
     ProductionOrderNotDraftError,
     ProductionOrderNotFoundError,
     ProductionOrderNotPostedError,
@@ -211,8 +212,8 @@ def post_order(order: ProductionOrder) -> None:
     order.post()
 
 
-def location(name: str = "Цех") -> LocationInfo:
-    return LocationInfo(id=uuid4(), name=name, is_active=True)
+def location(name: str = "Цех", type_: str = "production") -> LocationInfo:
+    return LocationInfo(id=uuid4(), name=name, is_active=True, type=type_)
 
 
 def build_create(*, allowed: bool = True, card: TechCard | None, loc=None):
@@ -263,6 +264,25 @@ async def test_create_unknown_location_is_reported() -> None:
             )
         )
 
+    assert repository.added == []
+
+
+async def test_create_rejects_non_production_location() -> None:
+    card = make_card()
+    cafe = location(name="Кафе", type_="cafe")
+    interactor, repository, staff_api, _, _ = build_create(card=card, loc=cafe)
+
+    with pytest.raises(ProductionLocationTypeError):
+        await interactor(
+            CreateProductionOrderCommand(
+                org_unit_id=cafe.id,
+                tech_card_id=card.id,
+                batch_count=Decimal(1),
+                occurred_at=get_datetime_utc(),
+            )
+        )
+
+    assert staff_api.checked == []
     assert repository.added == []
 
 

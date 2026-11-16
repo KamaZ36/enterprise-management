@@ -46,6 +46,7 @@ class ListLocationsInteractor:
                 id=location.id,
                 name=location.name,
                 is_active=location.is_active,
+                type=location.type,
             )
             for location in locations
         ]
