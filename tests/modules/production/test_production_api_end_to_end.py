@@ -157,6 +157,12 @@ async def test_production_flow_moves_stock_and_absorbs_losses(
     assert order.status_code == 201, order.text
     order_id = order.json()["id"]
 
+    empty_output = await client.post(f"/api/production/orders/{order_id}/post")
+    assert empty_output.status_code == 400
+    assert empty_output.json()["error"] == "EmptyProductionOutputError"
+
+    await _fill_outputs(client, order_id)
+
     posted = await client.post(f"/api/production/orders/{order_id}/post")
     assert posted.status_code == 200, posted.text
 
@@ -244,6 +250,7 @@ async def test_order_without_stock_is_rejected(
         },
     )
     order_id = order.json()["id"]
+    await _fill_outputs(client, order_id)
 
     posted = await client.post(f"/api/production/orders/{order_id}/post")
 
@@ -253,6 +260,30 @@ async def test_order_without_stock_is_rejected(
 
     detail = await client.get(f"/api/production/orders/{order_id}")
     assert detail.json()["status"] == "draft"
+
+
+async def _fill_outputs(client: AsyncClient, order_id: str) -> None:
+    """Вводит фактический выход по норме: без него задание не проводится."""
+
+    detail = await client.get(f"/api/production/orders/{order_id}")
+    assert detail.status_code == 200, detail.text
+    outputs = [
+        line for line in detail.json()["lines"] if line["role"] == "output"
+    ]
+
+    response = await client.patch(
+        f"/api/production/orders/{order_id}",
+        json={
+            "actuals": [
+                {
+                    "line_id": line["id"],
+                    "quantity": line["planned_quantity"],
+                }
+                for line in outputs
+            ]
+        },
+    )
+    assert response.status_code == 200, response.text
 
 
 async def _posted_order(
@@ -296,6 +327,7 @@ async def _posted_order(
     )
     assert order.status_code == 201, order.text
     order_id = order.json()["id"]
+    await _fill_outputs(client, order_id)
 
     posted = await client.post(f"/api/production/orders/{order_id}/post")
     assert posted.status_code == 200, posted.text

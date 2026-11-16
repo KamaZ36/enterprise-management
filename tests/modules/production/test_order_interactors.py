@@ -205,6 +205,12 @@ def make_order(*, org_unit_id: UUID | None = None) -> ProductionOrder:
     )
 
 
+def post_order(order: ProductionOrder) -> None:
+    for line in order.outputs:
+        order.set_actual(line.id, line.planned_quantity)
+    order.post()
+
+
 def location(name: str = "Цех") -> LocationInfo:
     return LocationInfo(id=uuid4(), name=name, is_active=True)
 
@@ -464,7 +470,7 @@ async def test_cancel_marks_order_and_commits() -> None:
 async def test_set_vetis_works_for_posted_order() -> None:
     point = location()
     order = make_order(org_unit_id=point.id)
-    order.post()
+    post_order(order)
     inventory, repository, staff_api, transactions = build_on_order(
         order=order, loc=point
     )
@@ -584,7 +590,7 @@ async def test_post_posts_to_inventory_and_applies_costs() -> None:
 async def test_post_rejects_posted_order() -> None:
     point = location()
     order = make_order(org_unit_id=point.id)
-    order.post()
+    post_order(order)
     interactor, _, _, _, _ = build_post(order=order, loc=point)
 
     with pytest.raises(ProductionOrderNotDraftError):
@@ -631,7 +637,7 @@ async def test_unpost_rejects_draft_order() -> None:
 async def test_unpost_requires_post_permission() -> None:
     point = location()
     order = make_order(org_unit_id=point.id)
-    order.post()
+    post_order(order)
     interactor, repository, inventory, staff_api, _ = build_unpost(
         order=order, allowed=False, loc=point
     )
@@ -647,7 +653,7 @@ async def test_unpost_requires_post_permission() -> None:
 async def test_unpost_stornoes_inventory_and_returns_draft() -> None:
     point = location()
     order = make_order(org_unit_id=point.id)
-    order.post()
+    post_order(order)
     output_line = order.outputs[0]
     order.apply_costs({output_line.id: 12345})
     order.apply_output_lots({output_line.id: uuid4()})

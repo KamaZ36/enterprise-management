@@ -144,12 +144,18 @@ class ProductionOrder:
         if batch_count <= 0:
             raise EmptyBatchError()
 
+        # Сырьё списывается по норме, а фактический выход цех вводит сам:
+        # иначе проведение без правок записывало бы план как факт.
         lines = [
             ProductionOrderLine(
                 id=uuid7(),
                 role=line.role,
                 planned_quantity=line.quantity * batch_count,
-                actual_quantity=line.quantity * batch_count,
+                actual_quantity=(
+                    line.quantity * batch_count
+                    if line.role is SpecLineRole.COMPONENT
+                    else Decimal(0)
+                ),
                 nomenclature_id=line.nomenclature_id,
                 loss_kind=line.loss_kind,
                 output_kind=line.output_kind,

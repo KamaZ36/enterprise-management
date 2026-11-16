@@ -23,7 +23,18 @@
 
       <p v-if="order.comment" class="muted">{{ order.comment }}</p>
 
-      <h3 class="group">Входы</h3>
+      <h3 class="group">
+        Входы
+        <el-button
+          v-if="editable"
+          link
+          type="primary"
+          class="group__action"
+          @click="toggleRefineInputs"
+        >
+          {{ refineInputs ? "Списать по норме" : "Уточнить расход" }}
+        </el-button>
+      </h3>
       <el-table :data="components" border>
         <el-table-column label="Позиция">
           <template #default="{ row }">
@@ -58,8 +69,8 @@
         <el-table-column label="Факт" width="200">
           <template #default="{ row }">
             <el-input-number
-              v-if="editable"
-              :model-value="actuals[row.id]"
+              v-if="editable && refineInputs"
+              :model-value="actuals[row.id] ?? undefined"
               :min="0"
               :step="1"
               :precision="3"
@@ -67,6 +78,9 @@
               style="width: 100%"
               @update:model-value="setActual(row.id, $event)"
             />
+            <span v-else-if="editable">
+              {{ formatQuantity(actuals[row.id] ?? row.planned_quantity) }}
+            </span>
             <span v-else>{{ formatQuantity(row.actual_quantity) }}</span>
           </template>
         </el-table-column>
@@ -90,15 +104,16 @@
         <el-table-column label="Норма" width="140" align="right">
           <template #default="{ row }">{{ formatQuantity(row.planned_quantity) }}</template>
         </el-table-column>
-        <el-table-column label="Факт" width="200">
+        <el-table-column label="Факт, обязательно" width="200">
           <template #default="{ row }">
             <el-input-number
               v-if="editable"
-              :model-value="actuals[row.id]"
+              :model-value="actuals[row.id] ?? undefined"
               :min="0"
               :step="1"
               :precision="3"
               size="small"
+              placeholder="Сколько получилось"
               style="width: 100%"
               @update:model-value="setActual(row.id, $event)"
             />
@@ -128,22 +143,33 @@
       </el-table>
 
       <h3 class="group">Потери</h3>
-      <p v-if="!losses.length" class="muted">
-        Потери посчитаются при проведении как разница «вход минус выход».
+      <p v-if="editable" class="muted">
+        <template v-if="outputsFilled">
+          Потери: <strong>{{ formatQuantity(liveLosses) }}</strong> — разница
+          «фактический расход сырья минус фактический выход».
+        </template>
+        <template v-else>
+          Укажите фактический выход — потери посчитаются автоматически.
+        </template>
       </p>
-      <el-table v-else :data="losses" border>
-        <el-table-column label="Вид">
-          <template #default="{ row }">
-            {{ LOSS_TITLES[row.loss_kind] ?? "Не классифицировано" }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Норма" width="140" align="right">
-          <template #default="{ row }">{{ formatQuantity(row.planned_quantity) }}</template>
-        </el-table-column>
-        <el-table-column label="Факт" width="140" align="right">
-          <template #default="{ row }">{{ formatQuantity(row.actual_quantity) }}</template>
-        </el-table-column>
-      </el-table>
+      <template v-else>
+        <p v-if="!losses.length" class="muted">
+          Потери не рассчитаны.
+        </p>
+        <el-table v-else :data="losses" border>
+          <el-table-column label="Вид">
+            <template #default="{ row }">
+              {{ LOSS_TITLES[row.loss_kind] ?? "Не классифицировано" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="Норма" width="140" align="right">
+            <template #default="{ row }">{{ formatQuantity(row.planned_quantity) }}</template>
+          </el-table-column>
+          <el-table-column label="Факт" width="140" align="right">
+            <template #default="{ row }">{{ formatQuantity(row.actual_quantity) }}</template>
+          </el-table-column>
+        </el-table>
+      </template>
 
       <h3 class="group">ВетИС</h3>
       <el-form label-position="top">
@@ -238,6 +264,8 @@
         class="alert"
       />
 
+      <p v-if="finishHint" class="hint">{{ finishHint }}</p>
+
       <div class="actions">
         <el-button
           v-if="editable && can('production.order.manage')"
@@ -250,9 +278,10 @@
           v-if="editable && can('production.order.post')"
           type="primary"
           :loading="posting"
+          :disabled="!canFinish"
           @click="askPostOrder"
         >
-          Провести
+          Завершить производство
         </el-button>
         <el-button
           v-if="order.status === 'posted' && can('production.order.post')"
@@ -326,9 +355,10 @@ const posting = ref(false);
 const unposting = ref(false);
 const cancelling = ref(false);
 const error = ref("");
-const actuals = reactive<Record<string, number>>({});
+const actuals = reactive<Record<string, number | null>>({});
 const selectedLots = reactive<Record<string, string | null>>({});
 const expiries = reactive<Record<string, string | null>>({});
+const refineInputs = ref(false);
 const savingVetis = ref(false);
 const vetis = reactive({
   status: "not_specified" as ProductionVetisStatus,
@@ -344,15 +374,55 @@ const components = computed(() => byRole("component"));
 const outputs = computed(() => byRole("output"));
 const losses = computed(() => byRole("loss"));
 
+const inputsTotal = computed(() =>
+  components.value.reduce(
+    (total, line) => total + Number(actuals[line.id] ?? 0),
+    0,
+  ),
+);
+const outputsTotal = computed(() =>
+  outputs.value.reduce(
+    (total, line) => total + Number(actuals[line.id] ?? 0),
+    0,
+  ),
+);
+const outputsFilled = computed(
+  () =>
+    outputs.value.length > 0 &&
+    outputs.value.every(
+      (line) => actuals[line.id] !== null && actuals[line.id] !== undefined,
+    ) &&
+    outputsTotal.value > 0,
+);
+const liveLosses = computed(() => inputsTotal.value - outputsTotal.value);
+
+const finishHint = computed(() => {
+  if (!editable.value) {
+    return "";
+  }
+  if (!outputs.value.length) {
+    return "В техкарте нет выходов — завершить производство нельзя.";
+  }
+  if (!outputsFilled.value) {
+    return "Укажите фактическое количество по каждому выходу — без этого завершить производство нельзя.";
+  }
+  if (liveLosses.value < 0) {
+    return "Выход больше расхода сырья — проверьте количества.";
+  }
+
+  return "";
+});
+const canFinish = computed(() => editable.value && !finishHint.value);
+
 function byRole(role: string): ProductionOrderLine[] {
   return order.value?.lines.filter((line) => line.role === role) ?? [];
 }
 
-function formatQuantity(value: string): string {
+function formatQuantity(value: string | number): string {
   const numeric = Number(value);
 
   return Number.isNaN(numeric)
-    ? value
+    ? String(value)
     : numeric.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 }
 
@@ -388,15 +458,34 @@ function setExpiry(lineId: string, value: string | null | undefined): void {
   expiries[lineId] = value || null;
 }
 
-function setActual(lineId: string, value: number | undefined): void {
-  actuals[lineId] = Number(value ?? 0);
+function setActual(lineId: string, value: number | null | undefined): void {
+  actuals[lineId] = value === null || value === undefined ? null : Number(value);
 }
 
 function fillActuals(): void {
+  // Пока выход не введён ни разу, все поля показываются пустыми. Если хоть
+  // один выход заполнен, показываем введённые значения — включая нули.
+  const outputsStarted = (order.value?.lines ?? []).some(
+    (line) => line.role === "output" && Number(line.actual_quantity) > 0,
+  );
+
   for (const line of order.value?.lines ?? []) {
-    actuals[line.id] = Number(line.actual_quantity);
+    const actual = Number(line.actual_quantity);
+    const empty = line.role === "output" && !outputsStarted;
+
+    actuals[line.id] = empty ? null : actual;
     selectedLots[line.id] = line.lot_id ?? null;
     expiries[line.id] = line.expires_at ?? null;
+  }
+}
+
+function toggleRefineInputs(): void {
+  refineInputs.value = !refineInputs.value;
+
+  if (!refineInputs.value) {
+    for (const line of components.value) {
+      actuals[line.id] = Number(line.planned_quantity);
+    }
   }
 }
 
@@ -453,33 +542,43 @@ async function load(): Promise<void> {
   }
 }
 
-async function saveActuals(): Promise<void> {
+async function persistActuals(): Promise<boolean> {
   error.value = "";
+  const editableLines = [...components.value, ...outputs.value];
+  const { response, error: failure } = await api.PATCH(
+    "/api/production/orders/{order_id}",
+    {
+      params: { path: { order_id: orderId } },
+      body: {
+        actuals: editableLines.map((line) => ({
+          line_id: line.id,
+          quantity: String(actuals[line.id] ?? 0),
+          lot_id: line.role === "component" ? selectedLots[line.id] ?? null : null,
+          expires_at: line.role === "output" ? expiries[line.id] ?? null : null,
+        })),
+      },
+    },
+  );
+
+  if (!response.ok) {
+    error.value = messageOf(
+      failure,
+      `Не удалось сохранить факт: ${response.status}`,
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+async function saveActuals(): Promise<void> {
   saving.value = true;
 
   try {
-    const editableLines = [...components.value, ...outputs.value];
-    const { response, error: failure } = await api.PATCH(
-      "/api/production/orders/{order_id}",
-      {
-        params: { path: { order_id: orderId } },
-        body: {
-          actuals: editableLines.map((line) => ({
-            line_id: line.id,
-            quantity: String(actuals[line.id] ?? 0),
-            lot_id: line.role === "component" ? selectedLots[line.id] ?? null : null,
-            expires_at: line.role === "output" ? expiries[line.id] ?? null : null,
-          })),
-        },
-      },
-    );
-
-    if (!response.ok) {
-      error.value = messageOf(failure, `Не удалось сохранить факт: ${response.status}`);
-      return;
+    if (await persistActuals()) {
+      await load();
     }
-
-    await load();
   } finally {
     saving.value = false;
   }
@@ -524,25 +623,40 @@ async function saveVetis(): Promise<void> {
 }
 
 async function askPostOrder(): Promise<void> {
-  if (await confirm({ title: "Провести задание?" })) {
-    await postOrder();
+  if (!canFinish.value) {
+    error.value = finishHint.value;
+    return;
+  }
+
+  const confirmed = await confirm({
+    title:
+      "Завершить производство? Сырьё будет списано, готовая продукция приходована.",
+    confirmText: "Завершить производство",
+  });
+
+  if (confirmed) {
+    await finishProduction();
   }
 }
 
-async function postOrder(): Promise<void> {
-  error.value = "";
+async function finishProduction(): Promise<void> {
   posting.value = true;
 
   try {
+    if (!(await persistActuals())) {
+      return;
+    }
+
     const { response, error: failure } = await api.POST(
       "/api/production/orders/{order_id}/post",
       { params: { path: { order_id: orderId } } },
     );
 
     if (!response.ok) {
-      error.value = messageOf(failure, `Не удалось провести: ${response.status}`);
-      await load();
-      return;
+      error.value = messageOf(
+        failure,
+        `Не удалось завершить производство: ${response.status}`,
+      );
     }
 
     await load();
@@ -626,8 +740,18 @@ onMounted(load);
   font-size: 16px;
 }
 
+.group__action {
+  margin-left: 12px;
+  font-size: 13px;
+}
+
 .alert {
   margin-top: 20px;
+}
+
+.hint {
+  margin-top: 20px;
+  color: #e6a23c;
 }
 
 .actions {

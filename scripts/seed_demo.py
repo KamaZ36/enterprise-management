@@ -1237,6 +1237,11 @@ class Api:
 
         return self._json(response)
 
+    async def patch(self, path: str, json: Any | None = None) -> Any:
+        response = await self._client.patch(path, json=json)
+
+        return self._json(response)
+
     async def aclose(self) -> None:
         await self._client.aclose()
 
@@ -1930,6 +1935,25 @@ async def post_production(
                 "comment": spec["comment"],
             },
         )
+
+        # Выход в задании пустой: перед проведением вводим фактический выпуск.
+        detail = await api.get(f"/api/production/orders/{created['id']}")
+        outputs = [
+            line for line in detail["lines"] if line["role"] == "output"
+        ]
+        await api.patch(
+            f"/api/production/orders/{created['id']}",
+            json={
+                "actuals": [
+                    {
+                        "line_id": line["id"],
+                        "quantity": line["planned_quantity"],
+                    }
+                    for line in outputs
+                ]
+            },
+        )
+
         await api.post(f"/api/production/orders/{created['id']}/post")
         print(f"  + производственное задание по {spec['tech_card']}")
 

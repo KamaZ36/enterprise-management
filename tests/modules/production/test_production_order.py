@@ -70,6 +70,18 @@ def make_order(batch_count: str = "1") -> ProductionOrder:
     )
 
 
+def fill_outputs(order: ProductionOrder) -> None:
+    """Вводит фактический выход по норме — без него задание не проводится."""
+
+    for line in order.outputs:
+        order.set_actual(line.id, line.planned_quantity)
+
+
+def post_order(order: ProductionOrder) -> None:
+    fill_outputs(order)
+    order.post()
+
+
 def test_order_copies_card_lines_scaled_by_batch() -> None:
     order = make_order("2")
 
@@ -77,6 +89,8 @@ def test_order_copies_card_lines_scaled_by_batch() -> None:
     assert order.components[0].planned_quantity == Decimal(200)
     assert order.components[0].actual_quantity == Decimal(200)
     assert order.outputs[0].planned_quantity == Decimal(80)
+    assert order.outputs[0].actual_quantity == Decimal(0)
+    assert order.losses[0].actual_quantity == Decimal(0)
 
 
 def test_zero_batch_is_rejected() -> None:
@@ -112,7 +126,7 @@ def test_expiry_cannot_be_set_on_component() -> None:
 
 def test_traceability_is_frozen_after_post() -> None:
     order = make_order()
-    order.post()
+    post_order(order)
 
     with pytest.raises(ProductionOrderNotDraftError):
         order.set_lot(order.components[0].id, uuid4())
@@ -134,7 +148,7 @@ def test_manual_vetis_requires_operation_id() -> None:
 
 def test_vetis_can_be_set_after_posting() -> None:
     order = make_order()
-    order.post()
+    post_order(order)
     order.set_vetis(
         status=VetisStatus.MANUAL,
         operation_id="OP-42",
@@ -194,9 +208,9 @@ def test_output_vetis_is_rejected_for_component() -> None:
 def test_post_makes_losses_equal_to_residual() -> None:
     order = make_order()
 
-
-    actual_output = order.outputs[0].actual_quantity - Decimal(4)
-    order.set_actual(order.outputs[0].id, actual_output)
+    main, by_product = order.outputs
+    order.set_actual(main.id, main.planned_quantity - Decimal(4))
+    order.set_actual(by_product.id, by_product.planned_quantity)
     order.post()
 
     assert order.status is ProductionOrderStatus.POSTED
@@ -256,7 +270,7 @@ def test_order_without_output_is_rejected() -> None:
 
 def test_posted_order_cannot_be_changed() -> None:
     order = make_order()
-    order.post()
+    post_order(order)
 
     with pytest.raises(ProductionOrderNotDraftError):
         order.set_actual(order.outputs[0].id, Decimal(1))
@@ -281,7 +295,7 @@ def test_cancel_marks_draft_as_cancelled() -> None:
 
 def test_costs_are_applied_to_output_lines() -> None:
     order = make_order()
-    order.post()
+    post_order(order)
     output = order.outputs[0]
 
     order.apply_costs({output.id: 12345})
@@ -291,7 +305,7 @@ def test_costs_are_applied_to_output_lines() -> None:
 
 def test_reset_posting_returns_order_to_draft() -> None:
     order = make_order()
-    order.post()
+    post_order(order)
     output = order.outputs[0]
     order.apply_costs({output.id: 12345})
     order.apply_output_lots({output.id: uuid4()})
@@ -308,7 +322,7 @@ def test_reset_posting_keeps_component_lot() -> None:
     order = make_order()
     lot_id = uuid4()
     order.set_lot(order.components[0].id, lot_id)
-    order.post()
+    post_order(order)
 
     order.reset_posting()
 
