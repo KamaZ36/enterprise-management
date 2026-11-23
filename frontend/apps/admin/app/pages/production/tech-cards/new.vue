@@ -16,18 +16,19 @@
 
     <el-form label-position="top" class="form">
       <el-row :gutter="16">
-        <el-col :xs="24" :md="12">
-          <el-form-item label="Код">
-            <el-input v-model="form.code" placeholder="BEEF-SHOULDER" />
-            <span class="hint">
-              Код общий для редакций: новая техкарта с тем же кодом станет v2.
-            </span>
-          </el-form-item>
-        </el-col>
-
-        <el-col :xs="24" :md="12">
+        <el-col :xs="24" :md="24">
           <el-form-item label="Название">
-            <el-input v-model="form.name" placeholder="Разделка говяжьей лопатки" />
+            <el-input v-model="form.name" placeholder="Докторская колбаса" />
+            <span class="hint">
+              <template v-if="generatedCode">
+                Код сформируется автоматически:
+                <strong>{{ generatedCode }}</strong>. Если техкарта с таким
+                названием уже есть, создастся её новая версия.
+              </template>
+              <template v-else>
+                Код сформируется из названия автоматически.
+              </template>
+            </span>
           </el-form-item>
         </el-col>
       </el-row>
@@ -145,6 +146,7 @@
 import type { components } from "@md/api-client";
 
 import { CAN } from "~/utils/access";
+import { slugify } from "~/utils/slug";
 
 definePageMeta({ permissions: CAN.techCardCreate });
 
@@ -166,7 +168,6 @@ const saving = ref(false);
 const error = ref("");
 
 const form = reactive({
-  code: "",
   name: "",
   comment: "",
   components: [{ nomenclature_id: "", quantity: "" }],
@@ -181,9 +182,11 @@ const form = reactive({
   losses: [] as Array<{ loss_kind: string; quantity: string }>,
 });
 
+const generatedCode = computed(() => slugify(form.name));
+
 const canSubmit = computed(
   () =>
-    form.code.trim().length > 0 &&
+    generatedCode.value.length > 0 &&
     form.name.trim().length > 0 &&
     form.components.some((line) => line.nomenclature_id && line.quantity) &&
     form.outputs.some((line) => line.nomenclature_id && line.quantity),
@@ -255,7 +258,7 @@ async function submit(): Promise<void> {
       "/api/production/tech-cards",
       {
         body: {
-          code: form.code.trim(),
+          code: generatedCode.value,
           name: form.name.trim(),
           basis: "input",
           comment: form.comment.trim() || null,
