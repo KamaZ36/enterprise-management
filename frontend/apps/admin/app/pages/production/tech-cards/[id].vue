@@ -12,10 +12,6 @@
 
       <p class="muted">
         Код: <strong>{{ card.code }}</strong>
-        · норма {{ BASIS_TITLES[card.basis] ?? card.basis }}
-        <template v-if="card.valid_from">
-          · действует с {{ formatDate(card.valid_from) }}
-        </template>
       </p>
 
       <p v-if="card.comment" class="muted">{{ card.comment }}</p>
@@ -85,11 +81,6 @@ definePageMeta({ permissions: CAN.techCardsOpen });
 
 type TechCardDetail = components["schemas"]["TechCardDetailSchema"];
 
-const BASIS_TITLES: Record<string, string> = {
-  input: "по входу",
-  output: "по выходу",
-};
-
 const OUTPUT_TITLES: Record<string, string> = {
   main: "Основной",
   by_product: "Попутный",
@@ -126,10 +117,6 @@ function formatQuantity(value: string): string {
   return Number.isNaN(numeric)
     ? value
     : numeric.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
-}
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("ru-RU");
 }
 
 async function load(): Promise<void> {

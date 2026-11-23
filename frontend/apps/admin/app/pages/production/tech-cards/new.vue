@@ -16,7 +16,7 @@
 
     <el-form label-position="top" class="form">
       <el-row :gutter="16">
-        <el-col :xs="24" :md="8">
+        <el-col :xs="24" :md="12">
           <el-form-item label="Код">
             <el-input v-model="form.code" placeholder="BEEF-SHOULDER" />
             <span class="hint">
@@ -25,39 +25,15 @@
           </el-form-item>
         </el-col>
 
-        <el-col :xs="24" :md="8">
+        <el-col :xs="24" :md="12">
           <el-form-item label="Название">
             <el-input v-model="form.name" placeholder="Разделка говяжьей лопатки" />
-          </el-form-item>
-        </el-col>
-
-        <el-col :xs="24" :md="8">
-          <el-form-item label="Что задаёт норму">
-            <el-select v-model="form.basis" style="width: 100%">
-              <el-option
-                label="Вход — разделка, обработка партии"
-                value="input"
-              />
-              <el-option label="Выход — рецептура, фасовка" value="output" />
-            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="16">
-        <el-col :xs="24" :md="8">
-          <el-form-item label="Действует с">
-            <el-date-picker
-              v-model="form.valid_from"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="не обязательно"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-
-        <el-col :xs="24" :md="16">
+        <el-col :xs="24" :md="24">
           <el-form-item label="Комментарий">
             <el-input v-model="form.comment" placeholder="не обязательно" />
           </el-form-item>
@@ -125,7 +101,7 @@
       </div>
       <el-button text type="primary" @click="addOutput">+ Выход</el-button>
 
-      <h3 class="group">Потери</h3>
+      <h3 class="group">Потери (не обязательно)</h3>
       <div v-for="(line, index) in form.losses" :key="`l-${index}`" class="line">
         <el-select v-model="line.loss_kind" class="line__kind">
           <el-option
@@ -143,8 +119,9 @@
       <el-button text type="primary" @click="addLoss">+ Потери</el-button>
 
       <p class="hint">
-        Сумма входов и выходов не обязана сходиться: разницу при проведении
-        спишут как потери, распределив её по указанным видам.
+        Раздел можно не заполнять: сумма входов и выходов не обязана сходиться.
+        Разницу при проведении система спишет как потери. Виды нужны, только
+        если хотите видеть разбивку — иначе потери пойдут одной строкой.
       </p>
 
       <div class="actions">
@@ -191,8 +168,6 @@ const error = ref("");
 const form = reactive({
   code: "",
   name: "",
-  basis: "input" as "input" | "output",
-  valid_from: null as string | null,
   comment: "",
   components: [{ nomenclature_id: "", quantity: "" }],
   outputs: [
@@ -203,7 +178,7 @@ const form = reactive({
       cost_coefficient: "",
     },
   ],
-  losses: [{ loss_kind: "shrinkage", quantity: "" }],
+  losses: [] as Array<{ loss_kind: string; quantity: string }>,
 });
 
 const canSubmit = computed(
@@ -282,8 +257,7 @@ async function submit(): Promise<void> {
         body: {
           code: form.code.trim(),
           name: form.name.trim(),
-          basis: form.basis,
-          valid_from: form.valid_from || null,
+          basis: "input",
           comment: form.comment.trim() || null,
           lines: buildLines(),
         },

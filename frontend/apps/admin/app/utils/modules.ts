@@ -100,16 +100,16 @@ export const MODULES: ModuleDefinition[
     icon: "Box",
     tabs: [
       {
-        path: "/production/tech-cards",
-        title: "Техкарты",
-        icon: "Files",
-        permissions: CAN.techCardsOpen,
-      },
-      {
         path: "/production/orders",
         title: "Задания",
         icon: "Box",
         permissions: CAN.productionOrdersOpen,
+      },
+      {
+        path: "/production/tech-cards",
+        title: "Техкарты",
+        icon: "Files",
+        permissions: CAN.techCardsOpen,
       },
     ],
   },

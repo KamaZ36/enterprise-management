@@ -44,11 +44,6 @@
       <el-table-column label="Версия" width="100" align="right">
         <template #default="{ row }">v{{ row.version }}</template>
       </el-table-column>
-      <el-table-column label="Норма" width="170">
-        <template #default="{ row }">
-          {{ BASIS_TITLES[row.basis] ?? row.basis }}
-        </template>
-      </el-table-column>
       <el-table-column label="Строк" width="90" align="right" prop="line_count" />
       <el-table-column label="Создана" width="170">
         <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
@@ -81,11 +76,6 @@ import { CAN } from "~/utils/access";
 definePageMeta({ permissions: CAN.techCardsOpen });
 
 type TechCardListItem = components["schemas"]["TechCardListItemSchema"];
-
-const BASIS_TITLES: Record<string, string> = {
-  input: "По входу",
-  output: "По выходу",
-};
 
 const PAGE_SIZE = 50;
 
