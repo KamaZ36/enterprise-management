@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { company } from "~/utils/company";
+
 const menuOpen = ref(false);
 const config = useRuntimeConfig();
 const cafeAppUrl = String(config.public.cafeAppUrl);
@@ -47,13 +49,25 @@ const cafeAppUrl = String(config.public.cafeAppUrl);
         </div>
 
         <div class="bottom__contacts">
-          <div>Телефон: <span class="muted">укажите свой</span></div>
-          <div>Адрес: <span class="muted">укажите свой</span></div>
+          <div>
+            Телефон:
+            <span class="muted">{{ company.phone || "укажите свой" }}</span>
+          </div>
+          <div>
+            Адрес:
+            <span class="muted">{{ company.address || "укажите свой" }}</span>
+          </div>
         </div>
       </div>
 
       <div class="wrap muted small">
         © {{ new Date().getFullYear() }} Мясная деревня
+      </div>
+
+      <div class="wrap muted small">
+        {{ company.legalName }} · ИНН {{ company.inn }} · ОГРНИП
+        {{ company.ogrnip }} ·
+        <NuxtLink to="/legal">Реквизиты</NuxtLink>
       </div>
     </footer>
   </div>

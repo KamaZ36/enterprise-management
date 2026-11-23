@@ -72,6 +72,12 @@
           <a :href="landingUrl">На главную</a>
         </div>
       </div>
+
+      <div class="wrap muted small">
+        {{ company.legalName }} · ИНН {{ company.inn }} · ОГРНИП
+        {{ company.ogrnip }} ·
+        <NuxtLink to="/legal">Реквизиты</NuxtLink>
+      </div>
     </footer>
 
     <AuthModal />
@@ -79,6 +85,8 @@
 </template>
 
 <script setup lang="ts">
+import { company } from "~/utils/company";
+
 const api = useApi();
 const config = useRuntimeConfig();
 const landingUrl = String(config.public.landingUrl);

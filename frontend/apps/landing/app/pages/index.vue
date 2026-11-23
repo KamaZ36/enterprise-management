@@ -133,19 +133,25 @@
           <div class="contact">
             <div class="contact__icon"><AppIcon name="phone" /></div>
             <div class="contact__title">Телефон</div>
-            <div class="contact__text">+7 (000) 000-00-00</div>
+            <div class="contact__text">
+              {{ company.phone || "+7 (000) 000-00-00" }}
+            </div>
           </div>
 
           <div class="contact">
             <div class="contact__icon"><AppIcon name="pin" /></div>
             <div class="contact__title">Адрес</div>
-            <div class="contact__text">Укажите адрес производства и магазинов</div>
+            <div class="contact__text">
+              {{ company.address || "Укажите адрес производства и магазинов" }}
+            </div>
           </div>
 
           <div class="contact">
             <div class="contact__icon"><AppIcon name="clock" /></div>
             <div class="contact__title">Часы работы</div>
-            <div class="contact__text">Укажите часы работы</div>
+            <div class="contact__text">
+              {{ company.hours || "Укажите часы работы" }}
+            </div>
           </div>
 
           <div class="map">
@@ -158,6 +164,8 @@
 </template>
 
 <script setup lang="ts">
+import { company } from "~/utils/company";
+
 useHead({
   link: [
     { rel: "preload", as: "image", href: "/hero.jpg", fetchpriority: "high" },
