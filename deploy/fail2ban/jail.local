@@ -1,0 +1,47 @@
+# fail2ban для сервера myasnaya-derevnya.ru.
+# Устанавливается в /etc/fail2ban/jail.local
+
+[DEFAULT]
+# Бан на час после 5 ошибок за 10 минут.
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+ignoreip = 127.0.0.1/8 ::1
+
+# ---------------------------------------------------------------------------
+# SSH. На Ubuntu 24.04 нет /var/log/auth.log — читаем journald.
+# ---------------------------------------------------------------------------
+[sshd]
+enabled  = true
+backend  = systemd
+mode     = aggressive
+maxretry = 5
+findtime = 10m
+bantime  = 1h
+
+# ---------------------------------------------------------------------------
+# Подбор пароля к API: 401/403/429 на /api/auth/login.
+# Логи пишет Nginx (log_format md_api).
+# ---------------------------------------------------------------------------
+[nginx-md-api]
+enabled  = true
+# Без этого Ubuntu выбирает systemd-бэкенд и не читает файлы Nginx.
+backend  = polling
+filter   = nginx-md-api
+logpath  = /var/log/nginx/md-api-access.log
+port     = http,https
+maxretry = 10
+findtime = 10m
+bantime  = 1h
+
+# ---------------------------------------------------------------------------
+# Сканеры и попытки открыть несуществующие служебные пути.
+# ---------------------------------------------------------------------------
+[nginx-botsearch]
+enabled  = true
+backend  = polling
+port     = http,https
+logpath  = /var/log/nginx/md-*-access.log
+maxretry = 5
+findtime = 10m
+bantime  = 1h

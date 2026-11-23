@@ -192,7 +192,8 @@ pnpm dev:cafe       # 3002
 | `CORS_ORIGINS` | JSON-массив источников (нужен только при разных доменах) |
 
 Прод-настройки и домены описаны в `.env.prod.example` и
-[`docs/deploy.md`](docs/deploy.md).
+[`docs/deploy.md`](docs/deploy.md). Вариант с системным Nginx и fail2ban —
+[`docs/deploy-nginx.md`](docs/deploy-nginx.md).
 
 ---
 

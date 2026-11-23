@@ -1,0 +1,79 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+# Прод-стек без Caddy: статику фронтенда отдаёт системный Nginx,
+# он же проксирует /api и /media на backend.
+# Порты наружу: только backend на loopback (Nginx ходит в него локально).
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:?DB_USER не задан в .env.prod}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD не задан в .env.prod}
+      POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE не задан в .env.prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *default-logging
+
+  migrate:
+    build: .
+    image: md-backend:latest
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    logging: *default-logging
+
+  backend:
+    build: .
+    image: md-backend:latest
+    env_file: .env.prod
+    command:
+      - uvicorn
+      - --factory
+      - myasnaya_derevnya.main:create_app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips=*
+    init: true
+    volumes:
+      - media_data:/app/media
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+  media_data:
