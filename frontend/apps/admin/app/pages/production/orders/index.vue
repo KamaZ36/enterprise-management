@@ -174,6 +174,10 @@
           <el-button text type="primary" @click="addComponent">
             + Сырьё
           </el-button>
+          <p v-if="nomenclaturesError" class="hint">{{ nomenclaturesError }}</p>
+          <p v-else-if="!nomenclatures.length" class="hint">
+            Номенклатуры пока нет — заведите её в «Справочниках».
+          </p>
 
           <h3 class="group">Выход</h3>
           <div
@@ -302,6 +306,7 @@ const productionLocations = computed(() =>
 );
 const techCards = ref<TechCardListItem[]>([]);
 const nomenclatures = ref<Nomenclature[]>([]);
+const nomenclaturesError = ref("");
 const total = ref(0);
 const page = ref(1);
 const locationId = ref<string | null>(null);
@@ -419,11 +424,15 @@ async function loadDictionaries(): Promise<void> {
   }
 
   const nomenclatureResponse = await api.GET("/api/catalog/nomenclatures", {
-    params: { query: { limit: 200 } },
+    params: { query: { limit: 100 } },
   });
 
   if (nomenclatureResponse.response.ok && nomenclatureResponse.data) {
     nomenclatures.value = nomenclatureResponse.data.items;
+    nomenclaturesError.value = "";
+  } else {
+    nomenclatures.value = [];
+    nomenclaturesError.value = "Не удалось загрузить номенклатуру";
   }
 
   if (can("production.order.read")) {
