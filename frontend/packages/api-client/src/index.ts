@@ -6,13 +6,46 @@ export type { components, paths };
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 export function createApiClient(options: {
   baseUrl: string;
   getToken?: () => string | null;
   onUnauthorized?: () => void;
   onForbidden?: () => void;
+  /**
+   * Предельное время ожидания ответа. `0` — без ограничения (для долгих
+   * операций вроде загрузки чеков из ОФД).
+   */
+  timeoutMs?: number;
 }) {
-  const client = createClient<paths>({ baseUrl: options.baseUrl });
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+  const client = createClient<paths>({
+    baseUrl: options.baseUrl,
+    fetch: async (input: Request) => {
+      const timeoutSignal =
+        timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined;
+      const signal = timeoutSignal
+        ? AbortSignal.any([input.signal, timeoutSignal])
+        : input.signal;
+
+      try {
+        return await fetch(input, { signal });
+      } catch (cause) {
+        const aborted =
+          typeof DOMException !== "undefined" &&
+          cause instanceof DOMException &&
+          (cause.name === "TimeoutError" || cause.name === "AbortError");
+
+        if (aborted) {
+          throw new Error("Сервер не ответил вовремя — попробуйте ещё раз");
+        }
+
+        throw cause;
+      }
+    },
+  });
 
   client.use({
     onRequest({ request }) {

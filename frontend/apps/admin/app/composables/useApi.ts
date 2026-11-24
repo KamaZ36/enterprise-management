@@ -2,7 +2,7 @@ import { createApiClient } from "@md/api-client";
 
 import { useAccessNotice } from "~/composables/useAccessNotice";
 
-export function useApi() {
+export function useApi(options: { timeoutMs?: number } = {}) {
   const config = useRuntimeConfig();
   const router = useRouter();
   const token = useState<string | null>("auth.token", () => null);
@@ -17,6 +17,7 @@ export function useApi() {
   return createApiClient({
     baseUrl,
     getToken: () => token.value,
+    timeoutMs: options.timeoutMs,
     onForbidden: () => forbidden(),
     onUnauthorized: () => {
       token.value = null;

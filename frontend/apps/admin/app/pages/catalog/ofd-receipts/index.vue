@@ -425,7 +425,7 @@ const UNIT_LABELS: Record<string, string> = {
   METER: "м",
 };
 
-const api = useApi();
+const api = useApi({ timeoutMs: 0 }); // синхронизация ОФД бывает долгой
 const { can } = useCurrentUser();
 
 const items = ref<OfdReceipt[]>([]);
