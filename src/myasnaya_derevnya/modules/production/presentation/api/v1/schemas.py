@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from myasnaya_derevnya.modules.production.application.dto import (
     ProductionOrderDetail,
@@ -187,9 +187,9 @@ class ProductionOrderLineSchema(BaseModel):
 class ProductionOrderListItemSchema(BaseModel):
     id: UUID
     org_unit_id: UUID
-    tech_card_id: UUID
-    tech_card_code: str
-    tech_card_version: int
+    tech_card_id: UUID | None = None
+    tech_card_code: str | None = None
+    tech_card_version: int | None = None
     status: ProductionOrderStatus
     occurred_at: datetime
     batch_count: Decimal
@@ -226,9 +226,9 @@ class ProductionOrderListSchema(BaseModel):
 class ProductionOrderDetailSchema(BaseModel):
     id: UUID
     org_unit_id: UUID
-    tech_card_id: UUID
-    tech_card_code: str
-    tech_card_version: int
+    tech_card_id: UUID | None = None
+    tech_card_code: str | None = None
+    tech_card_version: int | None = None
     status: ProductionOrderStatus
     occurred_at: datetime
     batch_count: Decimal
@@ -269,12 +269,42 @@ class ProductionOrderDetailSchema(BaseModel):
         )
 
 
+class ManualProductionLineSchema(BaseModel):
+    nomenclature_id: UUID
+    quantity: Decimal = Field(default=Decimal(0), ge=0)
+
+
 class CreateProductionOrderSchema(BaseModel):
+    """Задание по техкарте или вручную.
+
+    По техкарте: ``tech_card_id`` + ``batch_count``.
+    Вручную: ``components`` (сырьё с количеством) и ``outputs`` (что
+    выпускаем; фактическое количество вводится при проведении).
+    """
+
     org_unit_id: UUID
-    tech_card_id: UUID
-    batch_count: Decimal = Field(gt=0)
     occurred_at: datetime
+    tech_card_id: UUID | None = None
+    batch_count: Decimal | None = Field(default=None, gt=0)
+    components: list[ManualProductionLineSchema] = Field(default_factory=list)
+    outputs: list[ManualProductionLineSchema] = Field(default_factory=list)
     comment: str | None = None
+
+    @model_validator(mode="after")
+    def validate_mode(self) -> CreateProductionOrderSchema:
+        if self.tech_card_id is not None:
+            if self.batch_count is None:
+                raise ValueError(
+                    "Для задания по техкарте укажите количество закладок"
+                )
+            return self
+
+        if not self.components:
+            raise ValueError("Добавьте хотя бы одну строку сырья")
+        if not self.outputs:
+            raise ValueError("Добавьте хотя бы один вид готовой продукции")
+
+        return self
 
 
 class ProductionOrderActualSchema(BaseModel):

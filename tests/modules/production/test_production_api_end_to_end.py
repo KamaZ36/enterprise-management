@@ -415,3 +415,76 @@ async def test_unpost_after_output_shipment_is_rejected(
 
     output_balance = await _balance(client, org_unit_id, output_id)
     assert Decimal(output_balance["quantity"]) == Decimal(30)
+
+
+async def test_manual_order_without_tech_card(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    """Задание без техкарты: вход вводится при создании, выход — при проведении."""
+
+    org_unit_id = await _create_location(client, db_session)
+    raw_id = await _create_nomenclature(client, name="Фарш")
+    main_id = await _create_nomenclature(client, name="Колбаса")
+
+    await _receive(client, org_unit_id, raw_id, quantity="20", unit_cost="100")
+
+    created = await client.post(
+        "/api/production/orders",
+        json={
+            "org_unit_id": org_unit_id,
+            "occurred_at": OCCURRED_AT,
+            "components": [{"nomenclature_id": raw_id, "quantity": "20"}],
+            "outputs": [{"nomenclature_id": main_id}],
+        },
+    )
+    assert created.status_code == 201, created.text
+    order_id = created.json()["id"]
+
+    detail = await client.get(f"/api/production/orders/{order_id}")
+    assert detail.status_code == 200, detail.text
+    payload = detail.json()
+    assert payload["tech_card_id"] is None
+    assert payload["tech_card_code"] is None
+
+    components = [
+        line for line in payload["lines"] if line["role"] == "component"
+    ]
+    assert len(components) == 1
+    assert Decimal(components[0]["actual_quantity"]) == Decimal(20)
+
+    output_line = next(
+        line for line in payload["lines"] if line["role"] == "output"
+    )
+
+    # Без фактического выхода провести нельзя.
+    empty_output = await client.post(f"/api/production/orders/{order_id}/post")
+    assert empty_output.status_code == 400
+    assert empty_output.json()["error"] == "EmptyProductionOutputError"
+
+    updated = await client.patch(
+        f"/api/production/orders/{order_id}",
+        json={"actuals": [{"line_id": output_line["id"], "quantity": "18"}]},
+    )
+    assert updated.status_code == 200, updated.text
+
+    posted = await client.post(f"/api/production/orders/{order_id}/post")
+    assert posted.status_code == 200, posted.text
+
+    raw_balance = await _balance(client, org_unit_id, raw_id)
+    assert Decimal(raw_balance["quantity"]) == 0
+
+    main_balance = await _balance(client, org_unit_id, main_id)
+    assert Decimal(main_balance["quantity"]) == Decimal(18)
+
+    posted_payload = (
+        await client.get(f"/api/production/orders/{order_id}")
+    ).json()
+
+    losses = [line for line in posted_payload["lines"] if line["role"] == "loss"]
+    assert len(losses) == 1
+    assert Decimal(losses[0]["actual_quantity"]) == Decimal(2)
+
+    # 20 кг по 100 ₽ = 2000 ₽ ушло на 18 кг выхода.
+    output = next(line for line in posted_payload["lines"] if line["role"] == "output")
+    assert output["cost"] == 200000
+    assert main_balance["total_value_kopecks"] == 200000

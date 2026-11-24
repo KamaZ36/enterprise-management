@@ -12,6 +12,7 @@ from myasnaya_derevnya.modules.production.application.interactors.cancel_product
 from myasnaya_derevnya.modules.production.application.interactors.create_production_order import (
     CreateProductionOrderCommand,
     CreateProductionOrderInteractor,
+    ManualProductionLineCommand,
 )
 from myasnaya_derevnya.modules.production.application.interactors.create_tech_card import (
     CreateTechCardCommand,
@@ -187,9 +188,23 @@ async def create_production_order(
 ) -> JSONResponse:
     command = CreateProductionOrderCommand(
         org_unit_id=data.org_unit_id,
+        occurred_at=data.occurred_at,
         tech_card_id=data.tech_card_id,
         batch_count=data.batch_count,
-        occurred_at=data.occurred_at,
+        components=tuple(
+            ManualProductionLineCommand(
+                nomenclature_id=line.nomenclature_id,
+                quantity=line.quantity,
+            )
+            for line in data.components
+        ),
+        outputs=tuple(
+            ManualProductionLineCommand(
+                nomenclature_id=line.nomenclature_id,
+                quantity=line.quantity,
+            )
+            for line in data.outputs
+        ),
         comment=data.comment,
     )
 

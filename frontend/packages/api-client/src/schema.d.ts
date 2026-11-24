@@ -3102,7 +3102,14 @@ export interface components {
             /** Price */
             price: number | string;
         };
-        /** CreateProductionOrderSchema */
+        /**
+         * CreateProductionOrderSchema
+         * @description Задание по техкарте или вручную.
+         *
+         *     По техкарте: ``tech_card_id`` + ``batch_count``.
+         *     Вручную: ``components`` (сырьё с количеством) и ``outputs`` (что
+         *     выпускаем; фактическое количество вводится при проведении).
+         */
         CreateProductionOrderSchema: {
             /**
              * Org Unit Id
@@ -3110,17 +3117,18 @@ export interface components {
              */
             org_unit_id: string;
             /**
-             * Tech Card Id
-             * Format: uuid
-             */
-            tech_card_id: string;
-            /** Batch Count */
-            batch_count: number | string;
-            /**
              * Occurred At
              * Format: date-time
              */
             occurred_at: string;
+            /** Tech Card Id */
+            tech_card_id?: string | null;
+            /** Batch Count */
+            batch_count?: number | string | null;
+            /** Components */
+            components?: components["schemas"]["ManualProductionLineSchema"][];
+            /** Outputs */
+            outputs?: components["schemas"]["ManualProductionLineSchema"][];
             /** Comment */
             comment?: string | null;
         };
@@ -3767,6 +3775,19 @@ export interface components {
              * @description Стоимость партии в копейках. null — нет права видеть стоимость
              */
             total_value_kopecks?: number | null;
+        };
+        /** ManualProductionLineSchema */
+        ManualProductionLineSchema: {
+            /**
+             * Nomenclature Id
+             * Format: uuid
+             */
+            nomenclature_id: string;
+            /**
+             * Quantity
+             * @default 0
+             */
+            quantity: number | string;
         };
         /** MapOfdReceiptLineResultSchema */
         MapOfdReceiptLineResultSchema: {
@@ -4881,15 +4902,12 @@ export interface components {
              * Format: uuid
              */
             org_unit_id: string;
-            /**
-             * Tech Card Id
-             * Format: uuid
-             */
-            tech_card_id: string;
+            /** Tech Card Id */
+            tech_card_id?: string | null;
             /** Tech Card Code */
-            tech_card_code: string;
+            tech_card_code?: string | null;
             /** Tech Card Version */
-            tech_card_version: number;
+            tech_card_version?: number | null;
             status: components["schemas"]["ProductionOrderStatus"];
             /**
              * Occurred At
@@ -4967,15 +4985,12 @@ export interface components {
              * Format: uuid
              */
             org_unit_id: string;
-            /**
-             * Tech Card Id
-             * Format: uuid
-             */
-            tech_card_id: string;
+            /** Tech Card Id */
+            tech_card_id?: string | null;
             /** Tech Card Code */
-            tech_card_code: string;
+            tech_card_code?: string | null;
             /** Tech Card Version */
-            tech_card_version: number;
+            tech_card_version?: number | null;
             status: components["schemas"]["ProductionOrderStatus"];
             /**
              * Occurred At

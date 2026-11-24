@@ -6,7 +6,10 @@
 
     <template v-else-if="order">
       <h1 class="page__title">
-        Задание {{ order.tech_card_code }} v{{ order.tech_card_version }}
+        <template v-if="order.tech_card_code">
+          Задание {{ order.tech_card_code }} v{{ order.tech_card_version }}
+        </template>
+        <template v-else>Задание без техкарты</template>
         <el-tag :type="STATUS_TYPES[order.status] ?? 'info'" effect="light">
           {{ STATUS_TITLES[order.status] ?? order.status }}
         </el-tag>
@@ -15,7 +18,9 @@
       <p class="muted">
         {{ order.location_name ?? "Цех" }}
         · {{ formatTime(order.occurred_at) }}
-        · закладок {{ formatQuantity(order.batch_count) }}
+        <template v-if="order.tech_card_id">
+          · закладок {{ formatQuantity(order.batch_count) }}
+        </template>
         <template v-if="order.posted_at">
           · проведено {{ formatTime(order.posted_at) }}
         </template>

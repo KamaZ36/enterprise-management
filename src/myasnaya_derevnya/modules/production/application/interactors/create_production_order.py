@@ -11,9 +11,11 @@ from myasnaya_derevnya.modules.inventory.presentation.inventory_api import (
     InventoryAPI,
 )
 from myasnaya_derevnya.modules.production.domain.entities.production_order import (
+    ManualProductionLine,
     ProductionOrder,
 )
 from myasnaya_derevnya.modules.production.domain.errors import (
+    EmptyBatchError,
     ProductionLocationNotFoundError,
     ProductionLocationTypeError,
     TechCardNotFoundError,
@@ -31,11 +33,19 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
+class ManualProductionLineCommand:
+    nomenclature_id: UUID
+    quantity: Decimal
+
+
+@dataclass(frozen=True, slots=True)
 class CreateProductionOrderCommand:
     org_unit_id: UUID
-    tech_card_id: UUID
-    batch_count: Decimal
     occurred_at: datetime
+    tech_card_id: UUID | None = None
+    batch_count: Decimal | None = None
+    components: tuple[ManualProductionLineCommand, ...] = ()
+    outputs: tuple[ManualProductionLineCommand, ...] = ()
     comment: str | None = None
 
 
@@ -59,9 +69,18 @@ class CreateProductionOrderInteractor:
     async def __call__(self, command: CreateProductionOrderCommand) -> UUID:
         user_id = await self._identity_provider.get_current_user_id()
 
-        tech_card = await self._tech_card_repository.get_by_id(command.tech_card_id)
-        if tech_card is None:
-            raise TechCardNotFoundError(command.tech_card_id)
+        tech_card = None
+        batch_count = None
+
+        if command.tech_card_id is not None:
+            tech_card = await self._tech_card_repository.get_by_id(
+                command.tech_card_id
+            )
+            if tech_card is None:
+                raise TechCardNotFoundError(command.tech_card_id)
+            if command.batch_count is None or command.batch_count <= 0:
+                raise EmptyBatchError()
+            batch_count = command.batch_count
 
         location = await self._inventory_api.get_location(command.org_unit_id)
         if location is None:
@@ -77,14 +96,36 @@ class CreateProductionOrderInteractor:
         if not allowed:
             raise ForbiddenError()
 
-        order = ProductionOrder.create(
-            org_unit_id=command.org_unit_id,
-            tech_card=tech_card,
-            batch_count=command.batch_count,
-            occurred_at=command.occurred_at,
-            created_by=user_id,
-            comment=command.comment,
-        )
+        if tech_card is None:
+            order = ProductionOrder.create_manual(
+                org_unit_id=command.org_unit_id,
+                components=[
+                    ManualProductionLine(
+                        nomenclature_id=line.nomenclature_id,
+                        quantity=line.quantity,
+                    )
+                    for line in command.components
+                ],
+                outputs=[
+                    ManualProductionLine(
+                        nomenclature_id=line.nomenclature_id,
+                        quantity=line.quantity,
+                    )
+                    for line in command.outputs
+                ],
+                occurred_at=command.occurred_at,
+                created_by=user_id,
+                comment=command.comment,
+            )
+        else:
+            order = ProductionOrder.create(
+                org_unit_id=command.org_unit_id,
+                tech_card=tech_card,
+                batch_count=batch_count,
+                occurred_at=command.occurred_at,
+                created_by=user_id,
+                comment=command.comment,
+            )
 
         await self._order_repository.add(order)
         await self._transaction_manager.commit()
@@ -94,7 +135,7 @@ class CreateProductionOrderInteractor:
             extra={
                 "production_order_id": str(order.id),
                 "org_unit_id": str(order.org_unit_id),
-                "tech_card_id": str(command.tech_card_id),
+                "tech_card_id": str(order.tech_card_id),
             },
         )
 

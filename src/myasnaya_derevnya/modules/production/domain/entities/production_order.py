@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal
@@ -9,6 +9,7 @@ from myasnaya_derevnya.modules.production.domain.errors import (
     EmptyBatchError,
     EmptyProductionInputError,
     EmptyProductionOutputError,
+    InvalidProductionLineQuantityError,
     OutputExceedsInputError,
     ProductionOrderLineNotFoundError,
     ProductionOrderNotDraftError,
@@ -89,14 +90,26 @@ class ProductionOrderLine:
         return self.actual_quantity * coefficient
 
 
+@dataclass(frozen=True, slots=True)
+class ManualProductionLine:
+    """Строка задания, введённая вручную: без техкарты.
+
+    Для входа количество обязательно, для выхода — необязательно:
+    факт выхода цех вводит при проведении.
+    """
+
+    nomenclature_id: UUID
+    quantity: Decimal = Decimal(0)
+
+
 class ProductionOrder:
     def __init__(
         self,
         id: UUID,
         org_unit_id: UUID,
-        tech_card_id: UUID,
-        tech_card_code: str,
-        tech_card_version: int,
+        tech_card_id: UUID | None,
+        tech_card_code: str | None,
+        tech_card_version: int | None,
         status: ProductionOrderStatus,
         occurred_at: datetime,
         batch_count: Decimal,
@@ -179,6 +192,71 @@ class ProductionOrder:
             comment=comment,
         )
 
+    @classmethod
+    def create_manual(
+        cls,
+        *,
+        org_unit_id: UUID,
+        components: Sequence[ManualProductionLine],
+        outputs: Sequence[ManualProductionLine],
+        occurred_at: datetime,
+        created_by: UUID | None = None,
+        comment: str | None = None,
+    ) -> ProductionOrder:
+        """Задание без техкарты: вход и выход задаются вручную.
+
+        Сырьё списывается введённым количеством, фактический выход цех
+        вводит при проведении — так же, как в задании по техкарте.
+        """
+        if not components:
+            raise EmptyProductionInputError()
+        if not outputs:
+            raise EmptyProductionOutputError()
+
+        lines: list[ProductionOrderLine] = []
+
+        for component in components:
+            if component.quantity <= 0:
+                raise InvalidProductionLineQuantityError()
+            lines.append(
+                ProductionOrderLine(
+                    id=uuid7(),
+                    role=SpecLineRole.COMPONENT,
+                    planned_quantity=component.quantity,
+                    actual_quantity=component.quantity,
+                    nomenclature_id=component.nomenclature_id,
+                )
+            )
+
+        for output in outputs:
+            if output.quantity < 0:
+                raise InvalidProductionLineQuantityError()
+            lines.append(
+                ProductionOrderLine(
+                    id=uuid7(),
+                    role=SpecLineRole.OUTPUT,
+                    planned_quantity=output.quantity,
+                    actual_quantity=Decimal(0),
+                    nomenclature_id=output.nomenclature_id,
+                    output_kind=OutputKind.MAIN,
+                )
+            )
+
+        return cls(
+            id=uuid7(),
+            org_unit_id=org_unit_id,
+            tech_card_id=None,
+            tech_card_code=None,
+            tech_card_version=None,
+            status=ProductionOrderStatus.DRAFT,
+            occurred_at=occurred_at,
+            batch_count=ONE,
+            created_at=get_datetime_utc(),
+            lines=lines,
+            created_by=created_by,
+            comment=comment,
+        )
+
     @property
     def id(self) -> UUID:
         return self._id
@@ -188,15 +266,15 @@ class ProductionOrder:
         return self._org_unit_id
 
     @property
-    def tech_card_id(self) -> UUID:
+    def tech_card_id(self) -> UUID | None:
         return self._tech_card_id
 
     @property
-    def tech_card_code(self) -> str:
+    def tech_card_code(self) -> str | None:
         return self._tech_card_code
 
     @property
-    def tech_card_version(self) -> int:
+    def tech_card_version(self) -> int | None:
         return self._tech_card_version
 
     @property

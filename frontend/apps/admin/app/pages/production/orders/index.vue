@@ -65,11 +65,16 @@
       </el-table-column>
       <el-table-column label="Техкарта" width="240">
         <template #default="{ row }">
-          {{ row.tech_card_code }} v{{ row.tech_card_version }}
+          <span v-if="row.tech_card_code" class="muted">
+            {{ row.tech_card_code }} v{{ row.tech_card_version }}
+          </span>
+          <span v-else class="muted">вручную</span>
         </template>
       </el-table-column>
       <el-table-column label="Закладок" width="120" align="right">
-        <template #default="{ row }">{{ formatQuantity(row.batch_count) }}</template>
+        <template #default="{ row }">
+          {{ row.tech_card_id ? formatQuantity(row.batch_count) : "—" }}
+        </template>
       </el-table-column>
       <el-table-column label="Статус" width="150">
         <template #default="{ row }">
@@ -112,19 +117,104 @@
           </p>
         </el-form-item>
 
-        <el-form-item label="Техкарта">
-          <el-select v-model="form.tech_card_id" filterable style="width: 100%">
-            <el-option
-              v-for="card in techCards"
-              :key="card.id"
-              :label="`${card.code} v${card.version} — ${card.name}`"
-              :value="card.id"
-            />
-          </el-select>
+        <el-form-item label="Способ">
+          <el-radio-group v-model="form.mode">
+            <el-radio-button value="card">По техкарте</el-radio-button>
+            <el-radio-button value="manual">Вручную</el-radio-button>
+          </el-radio-group>
         </el-form-item>
 
+        <template v-if="form.mode === 'card'">
+          <el-form-item label="Техкарта">
+            <el-select v-model="form.tech_card_id" filterable style="width: 100%">
+              <el-option
+                v-for="card in techCards"
+                :key="card.id"
+                :label="`${card.code} v${card.version} — ${card.name}`"
+                :value="card.id"
+              />
+            </el-select>
+          </el-form-item>
+        </template>
+
+        <template v-else>
+          <h3 class="group">Сырьё</h3>
+          <div
+            v-for="(line, index) in form.components"
+            :key="`c-${index}`"
+            class="line"
+          >
+            <el-select
+              v-model="line.nomenclature_id"
+              filterable
+              placeholder="Сырьё"
+              class="line__name"
+            >
+              <el-option
+                v-for="item in nomenclatures"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
+            </el-select>
+            <el-input
+              v-model="line.quantity"
+              placeholder="Кол-во"
+              class="line__qty"
+            />
+            <el-button
+              text
+              type="danger"
+              :disabled="form.components.length === 1"
+              @click="form.components.splice(index, 1)"
+            >
+              Убрать
+            </el-button>
+          </div>
+          <el-button text type="primary" @click="addComponent">
+            + Сырьё
+          </el-button>
+
+          <h3 class="group">Выход</h3>
+          <div
+            v-for="(line, index) in form.outputs"
+            :key="`o-${index}`"
+            class="line"
+          >
+            <el-select
+              v-model="line.nomenclature_id"
+              filterable
+              placeholder="Готовая продукция"
+              class="line__name"
+            >
+              <el-option
+                v-for="item in nomenclatures"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
+            </el-select>
+            <el-button
+              text
+              type="danger"
+              :disabled="form.outputs.length === 1"
+              @click="form.outputs.splice(index, 1)"
+            >
+              Убрать
+            </el-button>
+          </div>
+          <el-button text type="primary" @click="addOutput">
+            + Выход
+          </el-button>
+
+          <p class="hint">
+            Количество выхода вводится при проведении. Разница между сырьём и
+            выходом станет потерями.
+          </p>
+        </template>
+
         <el-row :gutter="16">
-          <el-col :span="12">
+          <el-col v-if="form.mode === 'card'" :span="12">
             <el-form-item label="Закладок">
               <el-input-number
                 v-model="form.batch_count"
@@ -135,7 +225,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="form.mode === 'card' ? 12 : 24">
             <el-form-item label="Дата">
               <el-date-picker
                 v-model="form.occurred_at"
@@ -165,7 +255,7 @@
         <el-button
           type="primary"
           :loading="saving"
-          :disabled="!form.org_unit_id || !form.tech_card_id"
+          :disabled="!canSubmit"
           @click="createOrder"
         >
           Создать
@@ -186,6 +276,7 @@ type ProductionOrderListItem =
   components["schemas"]["ProductionOrderListItemSchema"];
 type TechCardListItem = components["schemas"]["TechCardListItemSchema"];
 type Location = components["schemas"]["LocationSchema"];
+type Nomenclature = components["schemas"]["NomenclatureSchema"];
 
 const STATUS_TITLES: Record<string, string> = {
   draft: "Черновик",
@@ -210,6 +301,7 @@ const productionLocations = computed(() =>
   locations.value.filter((location) => location.type === "production"),
 );
 const techCards = ref<TechCardListItem[]>([]);
+const nomenclatures = ref<Nomenclature[]>([]);
 const total = ref(0);
 const page = ref(1);
 const locationId = ref<string | null>(null);
@@ -221,12 +313,40 @@ const createOpen = ref(false);
 const createError = ref("");
 const saving = ref(false);
 const form = reactive({
+  mode: "card" as "card" | "manual",
   org_unit_id: "",
   tech_card_id: "",
   batch_count: 1,
+  components: [{ nomenclature_id: "", quantity: "" }],
+  outputs: [{ nomenclature_id: "" }],
   occurred_at: "",
   comment: "",
 });
+
+const canSubmit = computed(() => {
+  if (!form.org_unit_id) {
+    return false;
+  }
+
+  if (form.mode === "card") {
+    return Boolean(form.tech_card_id) && form.batch_count > 0;
+  }
+
+  const componentsOk = form.components.some(
+    (line) => line.nomenclature_id && Number(line.quantity) > 0,
+  );
+  const outputsOk = form.outputs.some((line) => line.nomenclature_id);
+
+  return componentsOk && outputsOk;
+});
+
+function addComponent(): void {
+  form.components.push({ nomenclature_id: "", quantity: "" });
+}
+
+function addOutput(): void {
+  form.outputs.push({ nomenclature_id: "" });
+}
 
 function formatDay(value: string): string {
   return new Date(value).toLocaleDateString("ru-RU");
@@ -298,6 +418,14 @@ async function loadDictionaries(): Promise<void> {
     techCards.value = cardResponse.data.items;
   }
 
+  const nomenclatureResponse = await api.GET("/api/catalog/nomenclatures", {
+    params: { query: { limit: 200 } },
+  });
+
+  if (nomenclatureResponse.response.ok && nomenclatureResponse.data) {
+    nomenclatures.value = nomenclatureResponse.data.items;
+  }
+
   if (can("production.order.read")) {
     const { data, response } = await api.GET("/api/inventory/locations", {});
     if (response.ok && data) {
@@ -322,10 +450,13 @@ async function openOrder(row: ProductionOrderListItem): Promise<void> {
 
 function openCreate(): void {
   createError.value = "";
+  form.mode = techCards.value.length ? "card" : "manual";
   form.org_unit_id =
     locationId.value ?? productionLocations.value[0]?.id ?? "";
   form.tech_card_id = techCards.value[0]?.id ?? "";
   form.batch_count = 1;
+  form.components = [{ nomenclature_id: "", quantity: "" }];
+  form.outputs = [{ nomenclature_id: "" }];
   form.occurred_at = localNow();
   form.comment = "";
   createOpen.value = true;
@@ -336,17 +467,38 @@ async function createOrder(): Promise<void> {
   saving.value = true;
 
   try {
+    const body: components["schemas"]["CreateProductionOrderSchema"] =
+      form.mode === "card"
+        ? {
+            org_unit_id: form.org_unit_id,
+            occurred_at: form.occurred_at || localNow(),
+            tech_card_id: form.tech_card_id,
+            batch_count: String(form.batch_count),
+            comment: form.comment.trim() || null,
+          }
+        : {
+            org_unit_id: form.org_unit_id,
+            occurred_at: form.occurred_at || localNow(),
+            components: form.components
+              .filter(
+                (line) => line.nomenclature_id && Number(line.quantity) > 0,
+              )
+              .map((line) => ({
+                nomenclature_id: line.nomenclature_id,
+                quantity: String(Number(line.quantity)),
+              })),
+            outputs: form.outputs
+              .filter((line) => line.nomenclature_id)
+              .map((line) => ({
+                nomenclature_id: line.nomenclature_id,
+                quantity: "0",
+              })),
+            comment: form.comment.trim() || null,
+          };
+
     const { data, response, error: failure } = await api.POST(
       "/api/production/orders",
-      {
-        body: {
-          org_unit_id: form.org_unit_id,
-          tech_card_id: form.tech_card_id,
-          batch_count: String(form.batch_count),
-          occurred_at: form.occurred_at || localNow(),
-          comment: form.comment.trim() || null,
-        },
-      },
+      { body },
     );
 
     if (!response.ok || !data) {
@@ -381,5 +533,34 @@ onMounted(async () => {
 .pager {
   margin-top: 16px;
   justify-content: flex-end;
+}
+
+.group {
+  margin: 24px 0 12px;
+  font-size: 16px;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.line__name {
+  flex: 1;
+  min-width: 220px;
+}
+
+.line__qty {
+  width: 140px;
+}
+
+.hint {
+  display: block;
+  margin-top: 8px;
+  color: #909399;
+  font-size: 12px;
 }
 </style>

@@ -78,6 +78,11 @@ class EmptyProductionInputError(ProductionDomainError):
         return "Нельзя провести задание без списания компонентов."
 
 
+class InvalidProductionLineQuantityError(ProductionDomainError):
+    def __str__(self) -> str:
+        return "Количество в строке задания должно быть больше нуля."
+
+
 class OutputExceedsInputError(ProductionDomainError):
     def __str__(self) -> str:
         return "Выпуск больше входа: проверьте фактические количества."

@@ -94,9 +94,9 @@ class ProductionOrderLineItem:
 class ProductionOrderListItem:
     id: UUID
     org_unit_id: UUID
-    tech_card_id: UUID
-    tech_card_code: str
-    tech_card_version: int
+    tech_card_id: UUID | None
+    tech_card_code: str | None
+    tech_card_version: int | None
     status: ProductionOrderStatus
     occurred_at: datetime
     batch_count: Decimal
@@ -110,9 +110,9 @@ class ProductionOrderListItem:
 class ProductionOrderDetail:
     id: UUID
     org_unit_id: UUID
-    tech_card_id: UUID
-    tech_card_code: str
-    tech_card_version: int
+    tech_card_id: UUID | None
+    tech_card_code: str | None
+    tech_card_version: int | None
     status: ProductionOrderStatus
     occurred_at: datetime
     batch_count: Decimal
