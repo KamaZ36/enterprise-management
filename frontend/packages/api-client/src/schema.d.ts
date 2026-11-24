@@ -3495,6 +3495,8 @@ export interface components {
             dismissed_at: string | null;
             /** Is Active */
             is_active: boolean;
+            /** Username */
+            username?: string | null;
         };
         /**
          * FulfillmentType

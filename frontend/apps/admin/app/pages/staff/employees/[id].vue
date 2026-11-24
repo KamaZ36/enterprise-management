@@ -57,6 +57,9 @@
         <el-descriptions-item label="Уволен">
           {{ formatDate(employee.dismissed_at) }}
         </el-descriptions-item>
+        <el-descriptions-item label="Логин">
+          {{ employee.username ?? "—" }}
+        </el-descriptions-item>
         <el-descriptions-item label="Идентификатор пользователя">
           <span class="mono">{{ employee.user_id }}</span>
         </el-descriptions-item>

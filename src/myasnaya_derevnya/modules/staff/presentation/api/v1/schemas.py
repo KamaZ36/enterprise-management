@@ -32,6 +32,7 @@ class EmployeeSchema(BaseModel):
     hired_at: date
     dismissed_at: date | None
     is_active: bool
+    username: str | None = None
 
     @classmethod
     def from_dto(cls, employee: EmployeeListItem) -> EmployeeSchema:
@@ -48,6 +49,7 @@ class EmployeeSchema(BaseModel):
             hired_at=employee.hired_at,
             dismissed_at=employee.dismissed_at,
             is_active=employee.is_active,
+            username=employee.username,
         )
 
 

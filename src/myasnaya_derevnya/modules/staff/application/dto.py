@@ -21,6 +21,7 @@ class EmployeeListItem:
     dismissed_at: date | None
     is_active: bool
     org_unit_name: str | None = None
+    username: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -22,6 +22,9 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.create_user i
 from myasnaya_derevnya.modules.auth.application.interactors.system.ensure_user_by_phone import (
     EnsureUserByPhoneInteractor,
 )
+from myasnaya_derevnya.modules.auth.application.interactors.system.list_usernames import (
+    ListUsernamesInteractor,
+)
 from myasnaya_derevnya.modules.auth.application.interactors.system.request_login_code import (
     RequestLoginCodeInteractor,
 )
@@ -45,6 +48,12 @@ from myasnaya_derevnya.modules.auth.application.services.password_login_policy i
 )
 from myasnaya_derevnya.modules.auth.application.services.password_service import (
     PasswordService,
+)
+from myasnaya_derevnya.modules.auth.infrastructure.readers.username.base import (
+    UsernameReader,
+)
+from myasnaya_derevnya.modules.auth.infrastructure.readers.username.sqlalchemy import (
+    SQLAlchemyUsernameReader,
 )
 from myasnaya_derevnya.modules.auth.infrastructure.repositories.credential.base import (
     CredentialRepository,
@@ -148,6 +157,10 @@ class AuthDepProvider(Provider):
     ) -> UserIdentityRepository:
         return SQLAlchemyUserIdentityRepository(session)
 
+    @provide(scope=Scope.REQUEST)
+    def get_username_reader(self, session: AsyncSession) -> UsernameReader:
+        return SQLAlchemyUsernameReader(session)
+
 
     password_service = provide(PasswordService, scope=Scope.REQUEST)
 
@@ -187,5 +200,7 @@ class AuthDepProvider(Provider):
         SetUserActiveInteractor, scope=Scope.REQUEST
     )
 
+
+    list_usernames_interactor = provide(ListUsernamesInteractor, scope=Scope.REQUEST)
 
     auth_api = provide(AuthAPI, scope=Scope.REQUEST)

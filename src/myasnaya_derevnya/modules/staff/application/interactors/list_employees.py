@@ -3,6 +3,7 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.staff.application.dto import EmployeeListItem
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
@@ -37,11 +38,13 @@ class ListEmployeesInteractor:
         employee_reader: EmployeeReader,
         access_service: AccessService,
         business_api: BusinessAPI,
+        auth_api: AuthAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._employee_reader = employee_reader
         self._access_service = access_service
         self._business_api = business_api
+        self._auth_api = auth_api
 
     async def __call__(self, query: ListEmployeesQuery) -> EmployeePage:
         current_user_id = await self._identity_provider.get_current_user_id()
@@ -64,11 +67,23 @@ class ListEmployeesInteractor:
         )
 
         return EmployeePage(
-            items=await self._with_unit_names(items),
+            items=await self._with_usernames(await self._with_unit_names(items)),
             total=total,
             limit=query.limit,
             offset=query.offset,
         )
+
+    async def _with_usernames(
+        self, items: list[EmployeeListItem]
+    ) -> list[EmployeeListItem]:
+        if not items:
+            return items
+
+        usernames = await self._auth_api.usernames({item.user_id for item in items})
+
+        return [
+            replace(item, username=usernames.get(item.user_id)) for item in items
+        ]
 
     async def _with_unit_names(
         self, items: list[EmployeeListItem]

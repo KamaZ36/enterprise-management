@@ -52,6 +52,13 @@
 
       <el-table-column prop="position" label="Должность" min-width="200" />
 
+      <el-table-column label="Логин" width="170">
+        <template #default="{ row }">
+          <span v-if="row.username">{{ row.username }}</span>
+          <span v-else class="muted">—</span>
+        </template>
+      </el-table-column>
+
       <el-table-column label="Точка" min-width="180">
         <template #default="{ row }">{{ row.org_unit_name ?? "—" }}</template>
       </el-table-column>
@@ -130,7 +137,14 @@
         </el-form-item>
 
         <el-form-item label="Логин для входа">
-          <el-input v-model="form.username" placeholder="ivanov" />
+          <el-input
+            v-model="form.username"
+            placeholder="ivanov"
+            @input="usernameEdited = true"
+          />
+          <span class="hint">
+            Подставляется из ФИО, можно поправить вручную.
+          </span>
         </el-form-item>
 
         <el-alert
@@ -181,6 +195,7 @@
 <script setup lang="ts">
 
 import { CAN } from "~/utils/access";
+import { loginFromName } from "~/utils/slug";
 
 definePageMeta({ permissions: CAN.employeesOpen });
 import type { components } from "@md/api-client";
@@ -233,6 +248,17 @@ const form = reactive({
   username: "",
   org_unit_id: "",
 });
+
+const usernameEdited = ref(false);
+
+watch(
+  [() => form.last_name, () => form.first_name],
+  () => {
+    if (!usernameEdited.value) {
+      form.username = loginFromName(form.last_name, form.first_name);
+    }
+  },
+);
 
 function reasonOf(status: number, fallback: string): string {
   if (status === 403) {
@@ -322,6 +348,7 @@ async function loadOrgUnits(): Promise<void> {
 
 function openCreate(): void {
   createError.value = "";
+  usernameEdited.value = false;
 
   if (!form.org_unit_id) {
     form.org_unit_id =
@@ -381,6 +408,7 @@ async function createEmployee(): Promise<void> {
     form.phone_number = "";
     form.username = "";
     form.org_unit_id = "";
+    usernameEdited.value = false;
 
     page.value = 1;
     await load();
@@ -406,6 +434,13 @@ watch(page, load);
 </script>
 
 <style scoped>
+.hint {
+  display: block;
+  margin-top: 4px;
+  color: #909399;
+  font-size: 12px;
+}
+
 .page__error {
   margin-bottom: 16px;
 }

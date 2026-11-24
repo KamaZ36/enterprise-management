@@ -41,14 +41,31 @@ const TRANSLIT: Record<string, string> = {
  * повторное создание техкарты становится новой версией, а не дублем.
  */
 export function slugify(value: string): string {
-  const latin = Array.from(value.toLowerCase())
-    .map((char) => TRANSLIT[char] ?? char)
-    .join("");
-
-  return latin
+  return transliterate(value)
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64)
     .replace(/-+$/g, "")
     .toUpperCase();
+}
+
+/**
+ * Логин сотрудника из ФИО: «Струк» + «Елена» → «struk_elena».
+ */
+export function loginFromName(lastName: string, firstName: string): string {
+  const part = (value: string): string =>
+    transliterate(value)
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+  return [part(lastName), part(firstName)]
+    .filter(Boolean)
+    .join("_")
+    .slice(0, 64);
+}
+
+function transliterate(value: string): string {
+  return Array.from(value.toLowerCase())
+    .map((char) => TRANSLIT[char] ?? char)
+    .join("");
 }

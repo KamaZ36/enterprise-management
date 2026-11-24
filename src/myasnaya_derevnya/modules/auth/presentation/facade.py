@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from uuid import UUID
 
 from myasnaya_derevnya.modules.auth.application.interactors.system.create_employee_credential import (
@@ -9,6 +10,10 @@ from myasnaya_derevnya.modules.auth.application.interactors.system.create_user i
 )
 from myasnaya_derevnya.modules.auth.application.interactors.system.ensure_user_by_phone import (
     EnsureUserByPhoneInteractor,
+)
+from myasnaya_derevnya.modules.auth.application.interactors.system.list_usernames import (
+    ListUsernamesInteractor,
+    ListUsernamesQuery,
 )
 from myasnaya_derevnya.modules.auth.application.interactors.system.request_login_code import (
     RequestLoginCodeInteractor,
@@ -40,6 +45,7 @@ class AuthAPI:
         verify_login_code_interactor: VerifyLoginCodeInteractor,
         start_session_interactor: StartSessionInteractor,
         set_user_active_interactor: SetUserActiveInteractor,
+        list_usernames_interactor: ListUsernamesInteractor,
     ) -> None:
         self._create_user_interactor = create_user_interactor
         self._create_employee_credential_interactor = (
@@ -51,6 +57,13 @@ class AuthAPI:
         self._verify_login_code_interactor = verify_login_code_interactor
         self._start_session_interactor = start_session_interactor
         self._set_user_active_interactor = set_user_active_interactor
+        self._list_usernames_interactor = list_usernames_interactor
+
+    async def usernames(self, user_ids: Collection[UUID]) -> dict[UUID, str]:
+        """Логины пользователей: {user_id: username}."""
+        return await self._list_usernames_interactor(
+            ListUsernamesQuery(user_ids=frozenset(user_ids))
+        )
 
     async def create_user(self) -> UUID:
         user_id = await self._create_user_interactor()

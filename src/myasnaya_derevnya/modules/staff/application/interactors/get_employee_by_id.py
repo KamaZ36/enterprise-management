@@ -3,6 +3,7 @@ from uuid import UUID
 
 from myasnaya_derevnya.core.errors import ForbiddenError
 from myasnaya_derevnya.core.identity_provider import IdentityProvider
+from myasnaya_derevnya.modules.auth.presentation.facade import AuthAPI
 from myasnaya_derevnya.modules.business.presentation.business_api import BusinessAPI
 from myasnaya_derevnya.modules.staff.application.dto import EmployeeListItem
 from myasnaya_derevnya.modules.staff.application.services.access_service import (
@@ -27,11 +28,13 @@ class GetEmployeeByIdInteractor:
         employee_reader: EmployeeReader,
         access_service: AccessService,
         business_api: BusinessAPI,
+        auth_api: AuthAPI,
     ) -> None:
         self._identity_provider = identity_provider
         self._employee_reader = employee_reader
         self._access_service = access_service
         self._business_api = business_api
+        self._auth_api = auth_api
 
     async def __call__(self, query: GetEmployeeByIdQuery) -> EmployeeListItem:
         current_user_id = await self._identity_provider.get_current_user_id()
@@ -49,7 +52,10 @@ class GetEmployeeByIdInteractor:
             raise EmployeeNotFound()
 
         titles = await self._business_api.org_unit_titles({employee.org_unit_id})
+        usernames = await self._auth_api.usernames({employee.user_id})
 
         return replace(
-            employee, org_unit_name=titles.get(employee.org_unit_id)
+            employee,
+            org_unit_name=titles.get(employee.org_unit_id),
+            username=usernames.get(employee.user_id),
         )

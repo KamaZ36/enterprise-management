@@ -43,6 +43,11 @@ class FakeBusinessAPI:
         return {}
 
 
+class FakeAuthAPI:
+    async def usernames(self, user_ids) -> dict[UUID, str]:
+        return {}
+
+
 class FakeEmployeeReader:
     def __init__(
         self,
@@ -95,6 +100,7 @@ def build_list(
         employee_reader=reader,
         access_service=FakeAccessService(scope),
         business_api=FakeBusinessAPI(),  # type: ignore[arg-type]
+        auth_api=FakeAuthAPI(),  # type: ignore[arg-type]
     )
 
     return interactor, reader
@@ -109,6 +115,7 @@ def build_get(
         employee_reader=reader,
         access_service=FakeAccessService(scope),
         business_api=FakeBusinessAPI(),  # type: ignore[arg-type]
+        auth_api=FakeAuthAPI(),  # type: ignore[arg-type]
     )
 
     return interactor, reader
