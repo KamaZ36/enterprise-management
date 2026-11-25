@@ -57,7 +57,7 @@
       border
       @row-click="openOrder"
     >
-      <el-table-column label="Дата" width="130">
+      <el-table-column label="Дата производства" width="170">
         <template #default="{ row }">{{ formatDay(row.occurred_at) }}</template>
       </el-table-column>
       <el-table-column label="Цех">
@@ -230,13 +230,16 @@
             </el-form-item>
           </el-col>
           <el-col :span="form.mode === 'card' ? 12 : 24">
-            <el-form-item label="Дата">
+            <el-form-item label="Дата производства">
               <el-date-picker
                 v-model="form.occurred_at"
                 type="datetime"
                 value-format="YYYY-MM-DDTHH:mm:ssZ"
                 style="width: 100%"
               />
+              <span class="hint">
+                На эту дату спишется сырьё и оприходуется продукция.
+              </span>
             </el-form-item>
           </el-col>
         </el-row>

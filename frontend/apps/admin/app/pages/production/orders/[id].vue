@@ -17,10 +17,11 @@
 
       <p class="muted">
         {{ order.location_name ?? "Цех" }}
-        · {{ formatTime(order.occurred_at) }}
+        · производство {{ formatTime(order.occurred_at) }}
         <template v-if="order.tech_card_id">
           · закладок {{ formatQuantity(order.batch_count) }}
         </template>
+        · создано {{ formatTime(order.created_at) }}
         <template v-if="order.posted_at">
           · проведено {{ formatTime(order.posted_at) }}
         </template>
