@@ -37,7 +37,7 @@ async def test_username_lookup_ignores_case_and_spaces(
     repository = SQLAlchemyUserIdentityRepository(db_session)
 
     found = await repository.get_by_identifier_and_type(
-        f"  струк елена {suffix}  ", UserIdentityType.USERNAME
+        f"  струк   елена {suffix}  ", UserIdentityType.USERNAME
     )
 
     assert found is not None

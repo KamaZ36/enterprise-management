@@ -30,7 +30,7 @@ class SQLAlchemyUserIdentityRepository(UserIdentityRepository):
     ) -> UserIdentity | None:
         stmt = select(USER_IDENTITIES_TABLE).where(
             func.lower(USER_IDENTITIES_TABLE.c.identifier)
-            == identifier.strip().lower(),
+            == " ".join(identifier.split()).lower(),
             USER_IDENTITIES_TABLE.c.identity_type == identity_type.value,
         )
         result = await self._session.execute(stmt)
