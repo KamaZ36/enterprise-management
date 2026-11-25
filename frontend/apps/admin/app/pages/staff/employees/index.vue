@@ -52,12 +52,6 @@
 
       <el-table-column prop="position" label="Должность" min-width="200" />
 
-      <el-table-column label="Логин" width="170">
-        <template #default="{ row }">
-          <span v-if="row.username">{{ row.username }}</span>
-          <span v-else class="muted">—</span>
-        </template>
-      </el-table-column>
 
       <el-table-column label="Точка" min-width="180">
         <template #default="{ row }">{{ row.org_unit_name ?? "—" }}</template>
