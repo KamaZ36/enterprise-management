@@ -497,6 +497,14 @@ async def test_manual_order_without_tech_card(
     )
     assert report.status_code == 200, report.text
 
+    lots = (
+        await client.get(f"/api/inventory/locations/{org_unit_id}/lots")
+    ).json()
+    lot_row = next(
+        item for item in lots["items"] if item["nomenclature_id"] == main_id
+    )
+    assert lot_row["lot_code"].startswith("MANUAL-")
+
     manual_rows = [
         row for row in report.json()["items"] if row["tech_card_code"] is None
     ]

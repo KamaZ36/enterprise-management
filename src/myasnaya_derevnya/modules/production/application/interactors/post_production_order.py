@@ -120,8 +120,6 @@ class PostProductionOrderInteractor:
 
     def _lot_code(self, order: ProductionOrder, output_number: int) -> str:
         day = order.occurred_at.strftime("%Y%m%d")
+        prefix = order.tech_card_code or "MANUAL"
 
-        return (
-            f"{order.tech_card_code}-{day}-{str(order.id)[:8]}-"
-            f"{output_number:02d}"
-        )
+        return f"{prefix}-{day}-{str(order.id)[:8]}-{output_number:02d}"
