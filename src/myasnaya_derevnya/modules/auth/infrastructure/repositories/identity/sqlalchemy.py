@@ -1,4 +1,4 @@
-from sqlalchemy import RowMapping, insert, select, update
+from sqlalchemy import RowMapping, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from myasnaya_derevnya.modules.auth.domain.entities.identity import (
@@ -29,7 +29,8 @@ class SQLAlchemyUserIdentityRepository(UserIdentityRepository):
         self, identifier: str, identity_type: UserIdentityType
     ) -> UserIdentity | None:
         stmt = select(USER_IDENTITIES_TABLE).where(
-            USER_IDENTITIES_TABLE.c.identifier == identifier,
+            func.lower(USER_IDENTITIES_TABLE.c.identifier)
+            == identifier.strip().lower(),
             USER_IDENTITIES_TABLE.c.identity_type == identity_type.value,
         )
         result = await self._session.execute(stmt)

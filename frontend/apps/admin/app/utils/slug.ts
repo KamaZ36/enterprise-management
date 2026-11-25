@@ -50,18 +50,35 @@ export function slugify(value: string): string {
 }
 
 /**
- * Логин сотрудника из ФИО: «Струк» + «Елена» → «struk_elena».
+ * Логин сотрудника из ФИО: «Струк» + «Елена» + «Николаевна» →
+ * «Струк Елена Николаевна».
+ *
+ * Кириллицей и как в документе: сотрудникам так проще вводить. Поиск при
+ * входе не зависит от регистра, а лишние пробелы обрезаются.
  */
-export function loginFromName(lastName: string, firstName: string): string {
-  const part = (value: string): string =>
-    transliterate(value)
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
-
-  return [part(lastName), part(firstName)]
+export function loginFromName(
+  lastName: string,
+  firstName: string,
+  middleName = "",
+): string {
+  return [lastName, firstName, middleName]
+    .map(capitalizeWords)
     .filter(Boolean)
-    .join("_")
-    .slice(0, 64);
+    .join(" ")
+    .slice(0, 64)
+    .trim();
+}
+
+function capitalizeWords(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("ru-RU")
+    .replace(
+      /(^|[\s-])(\p{L})/gu,
+      (_, separator: string, letter: string) =>
+        separator + letter.toLocaleUpperCase("ru-RU"),
+    );
 }
 
 function transliterate(value: string): string {

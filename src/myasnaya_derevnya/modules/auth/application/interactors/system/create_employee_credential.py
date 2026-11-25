@@ -58,7 +58,7 @@ class CreateEmployeeCredentialInteractor:
         user_identity = UserIdentity.create(
             user_id=user.id,
             identity_type=UserIdentityType.USERNAME,
-            identifier=command.username,
+            identifier=command.username.strip(),
         )
 
         password_hash = self._password_service.hash(command.password)

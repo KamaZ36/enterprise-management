@@ -139,11 +139,12 @@
         <el-form-item label="Логин для входа">
           <el-input
             v-model="form.username"
-            placeholder="ivanov"
+            placeholder="Струк Елена Николаевна"
             @input="usernameEdited = true"
           />
           <span class="hint">
-            Подставляется из ФИО, можно поправить вручную.
+            Подставляется из ФИО. Регистр при входе не важен, лишние
+            пробелы обрезаются.
           </span>
         </el-form-item>
 
@@ -252,10 +253,14 @@ const form = reactive({
 const usernameEdited = ref(false);
 
 watch(
-  [() => form.last_name, () => form.first_name],
+  [() => form.last_name, () => form.first_name, () => form.middle_name],
   () => {
     if (!usernameEdited.value) {
-      form.username = loginFromName(form.last_name, form.first_name);
+      form.username = loginFromName(
+        form.last_name,
+        form.first_name,
+        form.middle_name,
+      );
     }
   },
 );
