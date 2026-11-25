@@ -5063,13 +5063,15 @@ export interface components {
             /** Org Unit Name */
             org_unit_name: string | null;
             /** Tech Card Code */
-            tech_card_code: string;
+            tech_card_code?: string | null;
             /** Orders Count */
             orders_count: number;
             /** Output Quantity */
             output_quantity: string;
             /** Cost Kopecks */
             cost_kopecks: number | null;
+            /** Product Name */
+            product_name?: string | null;
         };
         /** ProductionReportSchema */
         ProductionReportSchema: {

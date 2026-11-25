@@ -46,10 +46,11 @@ class TurnoverReportRow:
 class ProductionReportRow:
     org_unit_id: UUID
     org_unit_name: str | None
-    tech_card_code: str
+    tech_card_code: str | None
     orders_count: int
     output_quantity: Decimal
     cost_kopecks: int | None
+    product_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -146,10 +146,11 @@ class TurnoverReportSchema(BaseModel):
 class ProductionReportRowSchema(BaseModel):
     org_unit_id: UUID
     org_unit_name: str | None
-    tech_card_code: str
+    tech_card_code: str | None = None
     orders_count: int
     output_quantity: Decimal
     cost_kopecks: int | None
+    product_name: str | None = None
 
     @classmethod
     def from_dto(cls, item: ProductionReportRow) -> ProductionReportRowSchema:
@@ -160,6 +161,7 @@ class ProductionReportRowSchema(BaseModel):
             orders_count=item.orders_count,
             output_quantity=item.output_quantity,
             cost_kopecks=item.cost_kopecks,
+            product_name=item.product_name,
         )
 
 

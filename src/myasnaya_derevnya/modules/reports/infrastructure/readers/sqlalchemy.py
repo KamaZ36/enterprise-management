@@ -357,10 +357,22 @@ class SQLAlchemyReportsReader(ReportsReader):
             return []
 
         start, end = _period(date_from, date_to)
+
+        # У заданий без техкарты кода нет — группируем их по выпускаемой
+        # позиции, иначе все ручные задания слились бы в одну строку.
+        manual_product = case(
+            (
+                PRODUCTION_ORDERS_TABLE.c.tech_card_code.is_(None),
+                NOMENCLATURES_TABLE.c.name,
+            ),
+            else_=None,
+        )
+
         stmt = (
             select(
                 PRODUCTION_ORDERS_TABLE.c.org_unit_id,
                 PRODUCTION_ORDERS_TABLE.c.tech_card_code,
+                manual_product.label("product_name"),
                 func.count(distinct(PRODUCTION_ORDERS_TABLE.c.id)).label("orders"),
                 func.coalesce(
                     func.sum(PRODUCTION_ORDER_LINES_TABLE.c.actual_quantity), 0
@@ -374,6 +386,10 @@ class SQLAlchemyReportsReader(ReportsReader):
                     PRODUCTION_ORDER_LINES_TABLE,
                     PRODUCTION_ORDER_LINES_TABLE.c.order_id
                     == PRODUCTION_ORDERS_TABLE.c.id,
+                ).outerjoin(
+                    NOMENCLATURES_TABLE,
+                    NOMENCLATURES_TABLE.c.id
+                    == PRODUCTION_ORDER_LINES_TABLE.c.nomenclature_id,
                 )
             )
             .where(
@@ -385,10 +401,12 @@ class SQLAlchemyReportsReader(ReportsReader):
             .group_by(
                 PRODUCTION_ORDERS_TABLE.c.org_unit_id,
                 PRODUCTION_ORDERS_TABLE.c.tech_card_code,
+                manual_product,
             )
             .order_by(
                 PRODUCTION_ORDERS_TABLE.c.org_unit_id,
                 PRODUCTION_ORDERS_TABLE.c.tech_card_code,
+                manual_product,
             )
         )
         rows = (await self._session.execute(self._filter(stmt, PRODUCTION_ORDERS_TABLE.c.org_unit_id, org_unit_ids))).mappings().all()
@@ -401,6 +419,7 @@ class SQLAlchemyReportsReader(ReportsReader):
                 orders_count=int(row["orders"] or 0),
                 output_quantity=row["output_quantity"],
                 cost_kopecks=int(row["cost_kopecks"] or 0),
+                product_name=row["product_name"],
             )
             for row in rows
         ]

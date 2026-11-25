@@ -488,3 +488,17 @@ async def test_manual_order_without_tech_card(
     output = next(line for line in posted_payload["lines"] if line["role"] == "output")
     assert output["cost"] == 200000
     assert main_balance["total_value_kopecks"] == 200000
+
+    # Отчёт по производству не падает на задании без техкарты и группирует
+    # такие задания по выпускаемой позиции.
+    report = await client.get(
+        "/api/reports/production",
+        params={"date_from": "2026-10-14", "date_to": "2026-10-14"},
+    )
+    assert report.status_code == 200, report.text
+
+    manual_rows = [
+        row for row in report.json()["items"] if row["tech_card_code"] is None
+    ]
+    assert manual_rows
+    assert any(row["product_name"] == "Колбаса" for row in manual_rows)

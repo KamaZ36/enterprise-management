@@ -309,7 +309,14 @@
           empty-text="Выпуска за период нет"
         >
           <el-table-column prop="org_unit_name" label="Цех" min-width="200" />
-          <el-table-column prop="tech_card_code" label="Техкарта" min-width="180" />
+          <el-table-column label="Техкарта / продукт" min-width="200">
+            <template #default="{ row }">
+              <span v-if="row.tech_card_code">{{ row.tech_card_code }}</span>
+              <span v-else class="muted">
+                вручную · {{ row.product_name ?? "без названия" }}
+              </span>
+            </template>
+          </el-table-column>
           <el-table-column label="Заданий" width="100" align="right">
             <template #default="{ row }">{{ row.orders_count }}</template>
           </el-table-column>
