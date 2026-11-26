@@ -46,7 +46,7 @@ class ReceiptLineSchema(BaseModel):
     nomenclature_id: UUID
     quantity: Decimal = Field(gt=0)
     unit_cost: Decimal = Field(default=Decimal(0), ge=0)
-    lot_code: str | None = None
+    lot_code: str | None = Field(default=None, max_length=64)
     expires_at: date | None = None
     vetis_vsd_number: str | None = Field(default=None, max_length=64)
     vetis_vsd_guid: UUID | None = None
@@ -67,7 +67,7 @@ class CreateReceiptSchema(BaseModel):
 class WriteOffLineSchema(BaseModel):
     nomenclature_id: UUID
     quantity: Decimal = Field(gt=0)
-    lot_code: str | None = None
+    lot_code: str | None = Field(default=None, max_length=64)
 
 
 class CreateWriteOffSchema(BaseModel):
@@ -687,7 +687,7 @@ class OpeningBalanceLineSchema(BaseModel):
     nomenclature_id: UUID
     quantity: Decimal = Field(gt=0)
     unit_cost: Decimal = Field(ge=0)
-    lot_code: str | None = None
+    lot_code: str | None = Field(default=None, max_length=64)
     expires_at: date | None = None
 
 

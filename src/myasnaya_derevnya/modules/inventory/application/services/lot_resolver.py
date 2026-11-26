@@ -35,6 +35,8 @@ class LotResolver:
         veterinary_document_id: UUID | None = None,
         refresh_expiry: bool = False,
     ) -> UUID | None:
+        lot_code = _normalize_lot_code(lot_code)
+
         if not lot_code:
             if _has_vetis(
                 vetis_vsd_number,
@@ -112,6 +114,7 @@ class LotResolver:
         produced_at: date | None = None,
         supplier_name: str | None = None,
     ) -> StockLot | None:
+        lot_code = _normalize_lot_code(lot_code)
         if not lot_code:
             return None
 
@@ -177,6 +180,7 @@ class LotResolver:
         await self._lot_repository.save(lot)
 
     async def require(self, *, nomenclature_id: UUID, lot_code: str) -> UUID:
+        lot_code = _normalize_lot_code(lot_code) or lot_code
         matches = await self._lot_repository.list_by_code(nomenclature_id, lot_code)
         if not matches:
             raise StockLotNotFoundError(
@@ -188,6 +192,14 @@ class LotResolver:
             )
 
         return matches[0].id
+
+
+def _normalize_lot_code(lot_code: str | None) -> str | None:
+    """Обрезает пробелы: « LOT-1 » и «LOT-1» — это одна партия."""
+    if lot_code is None:
+        return None
+
+    return lot_code.strip() or None
 
 
 def _has_vetis(*values: object | None) -> bool:

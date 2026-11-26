@@ -267,3 +267,28 @@ async def test_second_vsd_for_same_lot_is_rejected(
             vetis_vsd_number="ВСД-456",
             vetis_vsd_guid=second_guid,
         )
+
+
+async def test_lot_code_is_trimmed(
+    db_session: AsyncSession, make_location, make_nomenclature
+) -> None:
+    warehouse = await make_location()
+    meat = await make_nomenclature()
+
+    await receive(
+        db_session,
+        warehouse.id,
+        meat.id,
+        lot_code="  M-01  ",
+        supplier_name="Ферма Ивановых",
+    )
+    await receive(
+        db_session,
+        warehouse.id,
+        meat.id,
+        lot_code="M-01",
+        supplier_name="Ферма Ивановых",
+        quantity="5",
+    )
+
+    assert await lot_codes(db_session, meat.id) == ["M-01"]
